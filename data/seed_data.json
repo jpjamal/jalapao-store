@@ -123,239 +123,239 @@
   "compras": [
     {
       "data": "2025-12-13",
-      "produto": "SMWATCH001",
-      "qtd": 2,
-      "preco_unitario": 45.9
+      "quantidade": 2,
+      "preco_unitario": 45.9,
+      "produto_id": 1
     },
     {
       "data": "2025-12-13",
-      "produto": "FONE001",
-      "qtd": 4,
-      "preco_unitario": 33.96
+      "quantidade": 4,
+      "preco_unitario": 33.96,
+      "produto_id": 2
     },
     {
       "data": "2025-12-13",
-      "produto": "SMWATCH002",
-      "qtd": 1,
-      "preco_unitario": 54.6
+      "quantidade": 1,
+      "preco_unitario": 54.6,
+      "produto_id": 5
     },
     {
       "data": "2025-12-13",
-      "produto": "WATCH001",
-      "qtd": 1,
-      "preco_unitario": 64.15
+      "quantidade": 1,
+      "preco_unitario": 64.15,
+      "produto_id": 6
     },
     {
       "data": "2025-12-14",
-      "produto": "CABO60W002",
-      "qtd": 5,
-      "preco_unitario": 12.76
+      "quantidade": 5,
+      "preco_unitario": 12.76,
+      "produto_id": 7
     },
     {
       "data": "2025-12-17",
-      "produto": "CAIXASOM001",
-      "qtd": 4,
-      "preco_unitario": 39.99
+      "quantidade": 4,
+      "preco_unitario": 39.99,
+      "produto_id": 8
     },
     {
       "data": "2025-12-17",
-      "produto": "FONE002",
-      "qtd": 2,
-      "preco_unitario": 65.55
+      "quantidade": 2,
+      "preco_unitario": 65.55,
+      "produto_id": 9
     },
     {
       "data": "2025-12-17",
-      "produto": "FONE003",
-      "qtd": 2,
-      "preco_unitario": 47.37
+      "quantidade": 2,
+      "preco_unitario": 47.37,
+      "produto_id": 10
     },
     {
       "data": "2025-12-17",
-      "produto": "SMWATCH001",
-      "qtd": 2,
-      "preco_unitario": 49.9
+      "quantidade": 2,
+      "preco_unitario": 49.9,
+      "produto_id": 1
     },
     {
       "data": "2025-12-13",
-      "produto": "MOUSE001",
-      "qtd": 2,
-      "preco_unitario": 36.35
+      "quantidade": 2,
+      "preco_unitario": 36.35,
+      "produto_id": 3
     },
     {
       "data": "2025-12-17",
-      "produto": "CABO100W001",
-      "qtd": 5,
-      "preco_unitario": 12.9
+      "quantidade": 5,
+      "preco_unitario": 12.9,
+      "produto_id": 4
     },
     {
       "data": "2025-01-28",
-      "produto": "CONTROL001",
-      "qtd": 2,
-      "preco_unitario": 105.81
+      "quantidade": 2,
+      "preco_unitario": 105.81,
+      "produto_id": 11
     },
     {
       "data": "2026-02-12",
-      "produto": "SMWATCH003",
-      "qtd": 4,
-      "preco_unitario": 65.23
+      "quantidade": 4,
+      "preco_unitario": 65.23,
+      "produto_id": 12
     },
     {
       "data": "2026-02-12",
-      "produto": "WATCH002",
-      "qtd": 1,
-      "preco_unitario": 65.27
+      "quantidade": 1,
+      "preco_unitario": 65.27,
+      "produto_id": 13
     },
     {
       "data": "2026-02-12",
-      "produto": "WATCH003",
-      "qtd": 1,
-      "preco_unitario": 65.1
+      "quantidade": 1,
+      "preco_unitario": 65.1,
+      "produto_id": 14
     },
     {
       "data": "2026-02-24",
-      "produto": "CHARGER001",
-      "qtd": 3,
-      "preco_unitario": 22.7
+      "quantidade": 3,
+      "preco_unitario": 22.7,
+      "produto_id": 15
     },
     {
       "data": "2026-03-22",
-      "produto": "CARREVEICU001",
-      "qtd": 5,
-      "preco_unitario": 12.36
+      "quantidade": 5,
+      "preco_unitario": 12.36,
+      "produto_id": 16
     },
     {
       "data": "2026-03-23",
-      "produto": "WATCH002",
-      "qtd": 1,
-      "preco_unitario": 56.19
+      "quantidade": 1,
+      "preco_unitario": 56.19,
+      "produto_id": 13
     }
   ],
   "vendas": [
     {
       "data": "2026-01-07",
-      "produto": "SMWATCH001",
-      "qtd": 1,
-      "preco_venda": 80.0
+      "quantidade": 1,
+      "preco_venda": 80.0,
+      "produto_id": 1
     },
     {
       "data": "2026-01-13",
-      "produto": "WATCH001",
-      "qtd": 1,
-      "preco_venda": 125.0
+      "quantidade": 1,
+      "preco_venda": 125.0,
+      "produto_id": 6
     },
     {
       "data": "2026-01-19",
-      "produto": "SMWATCH002",
-      "qtd": 1,
-      "preco_venda": 100.0
+      "quantidade": 1,
+      "preco_venda": 100.0,
+      "produto_id": 5
     },
     {
       "data": "2026-01-31",
-      "produto": "CABO60W002",
-      "qtd": 1,
-      "preco_venda": 35.0
+      "quantidade": 1,
+      "preco_venda": 35.0,
+      "produto_id": 7
     },
     {
       "data": "2026-02-02",
-      "produto": "SMWATCH001",
-      "qtd": 1,
-      "preco_venda": 102.0
+      "quantidade": 1,
+      "preco_venda": 102.0,
+      "produto_id": 1
     },
     {
       "data": "2026-02-08",
-      "produto": "SMWATCH001",
-      "qtd": 1,
-      "preco_venda": 90.0
+      "quantidade": 1,
+      "preco_venda": 90.0,
+      "produto_id": 1
     },
     {
       "data": "2026-02-09",
-      "produto": "FONE001",
-      "qtd": 1,
-      "preco_venda": 65.0
+      "quantidade": 1,
+      "preco_venda": 65.0,
+      "produto_id": 2
     },
     {
       "data": "2026-02-11",
-      "produto": "CABO60W002",
-      "qtd": 1,
-      "preco_venda": 30.0
+      "quantidade": 1,
+      "preco_venda": 30.0,
+      "produto_id": 7
     },
     {
       "data": "2026-02-18",
-      "produto": "CAIXASOM001",
-      "qtd": 1,
-      "preco_venda": 80.0
+      "quantidade": 1,
+      "preco_venda": 80.0,
+      "produto_id": 8
     },
     {
       "data": "2026-02-23",
-      "produto": "FONE001",
-      "qtd": 1,
-      "preco_venda": 65.0
+      "quantidade": 1,
+      "preco_venda": 65.0,
+      "produto_id": 2
     },
     {
       "data": "2026-02-23",
-      "produto": "CONTROL001",
-      "qtd": 1,
-      "preco_venda": 165.0
+      "quantidade": 1,
+      "preco_venda": 165.0,
+      "produto_id": 11
     },
     {
       "data": "2026-02-26",
-      "produto": "FONE001",
-      "qtd": 1,
-      "preco_venda": 60.0
+      "quantidade": 1,
+      "preco_venda": 60.0,
+      "produto_id": 2
     },
     {
       "data": "2026-02-27",
-      "produto": "WATCH002",
-      "qtd": 1,
-      "preco_venda": 130.0
+      "quantidade": 1,
+      "preco_venda": 130.0,
+      "produto_id": 13
     },
     {
       "data": "2026-03-02",
-      "produto": "FONE001",
-      "qtd": 1,
-      "preco_venda": 60.0
+      "quantidade": 1,
+      "preco_venda": 60.0,
+      "produto_id": 2
     },
     {
       "data": "2026-03-05",
-      "produto": "CAIXASOM001",
-      "qtd": 1,
-      "preco_venda": 85.0
+      "quantidade": 1,
+      "preco_venda": 85.0,
+      "produto_id": 8
     },
     {
       "data": "2026-03-09",
-      "produto": "SMWATCH003",
-      "qtd": 1,
-      "preco_venda": 120.0
+      "quantidade": 1,
+      "preco_venda": 120.0,
+      "produto_id": 12
     },
     {
       "data": "2026-03-09",
-      "produto": "CABO100W001",
-      "qtd": 1,
-      "preco_venda": 35.0
+      "quantidade": 1,
+      "preco_venda": 35.0,
+      "produto_id": 4
     },
     {
       "data": "2026-03-10",
-      "produto": "SMWATCH001",
-      "qtd": 1,
-      "preco_venda": 100.0
+      "quantidade": 1,
+      "preco_venda": 100.0,
+      "produto_id": 1
     },
     {
       "data": "2026-03-11",
-      "produto": "SMWATCH003",
-      "qtd": 1,
-      "preco_venda": 125.0
+      "quantidade": 1,
+      "preco_venda": 125.0,
+      "produto_id": 12
     },
     {
       "data": "2026-03-15",
-      "produto": "MOUSE001",
-      "qtd": 1,
-      "preco_venda": 75.0
+      "quantidade": 1,
+      "preco_venda": 75.0,
+      "produto_id": 3
     },
     {
       "data": "2026-03-15",
-      "produto": "CABO100W001",
-      "qtd": 1,
-      "preco_venda": 35.0
+      "quantidade": 1,
+      "preco_venda": 35.0,
+      "produto_id": 4
     }
   ],
   "despesas": []

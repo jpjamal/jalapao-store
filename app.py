@@ -17,6 +17,12 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    /* Conteúdo principal — largura total */
+    .stMainBlockContainer, [data-testid="stAppViewBlockContainer"] {
+        max-width: 100%;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
     /* Métricas */
     [data-testid="stMetric"] {
         background: var(--background-secondary, #f8f9fa);

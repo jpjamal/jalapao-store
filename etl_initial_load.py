@@ -64,34 +64,39 @@ def carregar_produtos(caminho: Path) -> list[dict]:
     return produtos
 
 
-def _montar_mapa_nome_sku(produtos: list[dict]) -> dict[str, str]:
-    """Cria mapa nome_normalizado → SKU para lookup nas compras/vendas."""
+def _montar_mapa_sku_id(produtos: list[dict]) -> dict[str, int]:
+    """Cria mapa SKU → produto_id para lookup nas compras/vendas."""
+    return {p["sku"]: p["id"] for p in produtos}
+
+
+def _montar_mapa_nome_id(produtos: list[dict]) -> dict[str, int]:
+    """Cria mapa nome_normalizado → produto_id para lookup nas compras/vendas."""
     mapa = {}
     for p in produtos:
         chave = p["nome"].strip().lower()
-        mapa[chave] = p["sku"]
+        mapa[chave] = p["id"]
     return mapa
 
 
-def _resolver_sku(nome_produto: str, mapa: dict[str, str]) -> str:
-    """Tenta encontrar o SKU pelo nome do produto."""
+def _resolver_produto_id(nome_produto: str, mapa_nome: dict[str, int]) -> int | None:
+    """Tenta encontrar o produto_id pelo nome do produto."""
     chave = nome_produto.strip().lower()
-    if chave in mapa:
-        return mapa[chave]
-    for nome_cadastrado, sku in mapa.items():
+    if chave in mapa_nome:
+        return mapa_nome[chave]
+    for nome_cadastrado, pid in mapa_nome.items():
         if chave in nome_cadastrado or nome_cadastrado in chave:
-            return sku
-    return "DESCONHECIDO"
+            return pid
+    return None
 
 
 def carregar_compras(
-    caminho: Path, mapa_sku: dict[str, str], proximo_id: int = 1
+    caminho: Path, mapa_sku_id: dict[str, int], mapa_nome_id: dict[str, int], proximo_id: int = 1
 ) -> list[dict]:
     rows = _ler_csv(caminho)
     compras = []
     for idx, row in enumerate(rows, start=proximo_id):
         nome = (row.get("produto") or row.get("Produto", "")).strip()
-        sku = row.get("sku") or row.get("SKU") or _resolver_sku(nome, mapa_sku)
+        sku = (row.get("sku") or row.get("SKU", "")).strip().upper()
         data_raw = row.get("data") or row.get("Data", "")
         quantidade = int(row.get("quantidade") or row.get("Quantidade", "0"))
         preco_raw = (
@@ -101,11 +106,14 @@ def carregar_compras(
             or "0"
         )
 
+        produto_id = mapa_sku_id.get(sku) if sku else None
+        if produto_id is None:
+            produto_id = _resolver_produto_id(nome, mapa_nome_id)
+
         compras.append({
             "id": idx,
             "data": _converter_data(data_raw),
-            "sku": sku.strip().upper() if isinstance(sku, str) else "DESCONHECIDO",
-            "produto": nome,
+            "produto_id": produto_id,
             "quantidade": quantidade,
             "preco_unitario": round(float(preco_raw.strip()), 2),
         })
@@ -113,13 +121,13 @@ def carregar_compras(
 
 
 def carregar_vendas(
-    caminho: Path, mapa_sku: dict[str, str], proximo_id: int = 1
+    caminho: Path, mapa_sku_id: dict[str, int], mapa_nome_id: dict[str, int], proximo_id: int = 1
 ) -> list[dict]:
     rows = _ler_csv(caminho)
     vendas = []
     for idx, row in enumerate(rows, start=proximo_id):
         nome = (row.get("produto") or row.get("Produto", "")).strip()
-        sku = row.get("sku") or row.get("SKU") or _resolver_sku(nome, mapa_sku)
+        sku = (row.get("sku") or row.get("SKU", "")).strip().upper()
         data_raw = row.get("data") or row.get("Data", "")
         quantidade = int(row.get("quantidade") or row.get("Quantidade", "0"))
         preco_raw = (
@@ -128,11 +136,14 @@ def carregar_vendas(
             or "0"
         )
 
+        produto_id = mapa_sku_id.get(sku) if sku else None
+        if produto_id is None:
+            produto_id = _resolver_produto_id(nome, mapa_nome_id)
+
         vendas.append({
             "id": idx,
             "data": _converter_data(data_raw),
-            "sku": sku.strip().upper() if isinstance(sku, str) else "DESCONHECIDO",
-            "produto": nome,
+            "produto_id": produto_id,
             "quantidade": quantidade,
             "preco_venda": round(float(preco_raw.strip()), 2),
         })
@@ -148,18 +159,19 @@ def main():
 
     # 1) Produtos
     produtos = carregar_produtos(produtos_path) if produtos_path.exists() else []
-    mapa_sku = _montar_mapa_nome_sku(produtos)
+    mapa_sku_id = _montar_mapa_sku_id(produtos)
+    mapa_nome_id = _montar_mapa_nome_id(produtos)
 
     # 2) Compras
     compras = (
-        carregar_compras(compras_path, mapa_sku)
+        carregar_compras(compras_path, mapa_sku_id, mapa_nome_id)
         if compras_path.exists()
         else []
     )
 
     # 3) Vendas
     vendas = (
-        carregar_vendas(vendas_path, mapa_sku)
+        carregar_vendas(vendas_path, mapa_sku_id, mapa_nome_id)
         if vendas_path.exists() and vendas_path.stat().st_size > 0
         else []
     )
@@ -186,12 +198,12 @@ def main():
     print(f"   Compras:  {len(compras)}")
     print(f"   Vendas:   {len(vendas)}")
 
-    # Verificação de SKUs não resolvidos
-    skus_problema = [
-        c["produto"] for c in compras if c["sku"] == "DESCONHECIDO"
-    ] + [v["produto"] for v in vendas if v["sku"] == "DESCONHECIDO"]
-    if skus_problema:
-        print(f"   ⚠️  SKUs não resolvidos: {set(skus_problema)}")
+    # Verificação de produtos não resolvidos
+    sem_produto = [
+        c for c in compras if c["produto_id"] is None
+    ] + [v for v in vendas if v["produto_id"] is None]
+    if sem_produto:
+        print(f"   ⚠️  {len(sem_produto)} registro(s) com produto não resolvido")
 
 
 if __name__ == "__main__":

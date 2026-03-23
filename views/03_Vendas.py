@@ -8,13 +8,13 @@ import data_manager as dm
 st.header("💰 Registro de Vendas")
 
 # ── Formulário ──────────────────────────────────────────────────────────────
-skus = dm.listar_skus()
+produtos = dm.listar_produtos_ativos()
 
-if not skus:
+if not produtos:
     st.warning("Cadastre ao menos um produto antes de registrar vendas.")
     st.stop()
 
-opcoes_produto = {f"{s['sku']} — {s['nome']}": s["sku"] for s in skus}
+opcoes_produto = {f"{p['sku']} — {p['nome']}": p["id"] for p in produtos}
 
 with st.expander("➕ Nova Venda", expanded=True):
     with st.form("form_venda", clear_on_submit=True):
@@ -28,16 +28,15 @@ with st.expander("➕ Nova Venda", expanded=True):
                 "Preço de Venda (R$)", min_value=0.01, value=1.00, step=0.01, format="%.2f"
             )
 
-        sku_selecionado = opcoes_produto[produto_label]
-        nome_produto = next(s["nome"] for s in skus if s["sku"] == sku_selecionado)
+        produto_id = opcoes_produto[produto_label]
+        nome_produto = next(p["nome"] for p in produtos if p["id"] == produto_id)
         total = quantidade * preco_venda
         st.markdown(f"**Receita da venda:** R$ {total:,.2f}")
 
         if st.form_submit_button("💾 Registrar Venda", use_container_width=True):
             dm.inserir("vendas", {
                 "data": data_venda.isoformat(),
-                "sku": sku_selecionado,
-                "produto": nome_produto,
+                "produto_id": produto_id,
                 "quantidade": quantidade,
                 "preco_venda": round(preco_venda, 2),
             })
@@ -52,6 +51,9 @@ if not vendas:
     st.stop()
 
 df = pd.DataFrame(vendas)
+mapa = dm.mapa_produtos()
+df["sku"] = df["produto_id"].map(lambda pid: mapa.get(pid, {}).get("sku", "—"))
+df["produto"] = df["produto_id"].map(lambda pid: mapa.get(pid, {}).get("nome", "—"))
 df["total"] = df["quantidade"] * df["preco_venda"]
 df = df.sort_values("data", ascending=False)
 

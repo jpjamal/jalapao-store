@@ -109,52 +109,62 @@ def remover(colecao: str, registro_id: int) -> bool:
     return False
 
 
-def listar_skus() -> list[dict]:
-    """Retorna lista simplificada de SKUs ativos para selects."""
+def listar_produtos_ativos() -> list[dict]:
+    """Retorna lista de produtos ativos para selects (id, sku, nome)."""
     produtos = listar("produtos")
     return [
-        {"sku": p["sku"], "nome": p["nome"]}
+        {"id": p["id"], "sku": p["sku"], "nome": p["nome"]}
         for p in produtos
         if p.get("ativo", True)
     ]
 
 
+def mapa_produtos() -> dict[int, dict]:
+    """Retorna dicionário {id: {sku, nome, categoria}} de todos os produtos."""
+    return {
+        p["id"]: {"sku": p["sku"], "nome": p["nome"], "categoria": p.get("categoria", "—")}
+        for p in listar("produtos")
+    }
+
+
 def calcular_estoque() -> list[dict]:
-    """Calcula saldo de estoque por SKU (compras - vendas)."""
-    produtos = {p["sku"]: p for p in listar("produtos")}
+    """Calcula saldo de estoque por produto_id (compras - vendas)."""
+    produtos = mapa_produtos()
     compras = listar("compras")
     vendas = listar("vendas")
 
-    saldo: dict[str, dict] = {}
+    saldo: dict[int, dict] = {}
 
     for c in compras:
-        sku = c["sku"]
-        if sku not in saldo:
-            info = produtos.get(sku, {})
-            saldo[sku] = {
-                "sku": sku,
-                "produto": info.get("nome", c.get("produto", sku)),
+        pid = c["produto_id"]
+        if pid not in saldo:
+            info = produtos.get(pid, {})
+            saldo[pid] = {
+                "produto_id": pid,
+                "sku": info.get("sku", "—"),
+                "produto": info.get("nome", "—"),
                 "categoria": info.get("categoria", "—"),
                 "qtd_comprada": 0,
                 "qtd_vendida": 0,
                 "custo_total": 0.0,
             }
-        saldo[sku]["qtd_comprada"] += c["quantidade"]
-        saldo[sku]["custo_total"] += c["quantidade"] * c["preco_unitario"]
+        saldo[pid]["qtd_comprada"] += c["quantidade"]
+        saldo[pid]["custo_total"] += c["quantidade"] * c["preco_unitario"]
 
     for v in vendas:
-        sku = v["sku"]
-        if sku not in saldo:
-            info = produtos.get(sku, {})
-            saldo[sku] = {
-                "sku": sku,
-                "produto": info.get("nome", v.get("produto", sku)),
+        pid = v["produto_id"]
+        if pid not in saldo:
+            info = produtos.get(pid, {})
+            saldo[pid] = {
+                "produto_id": pid,
+                "sku": info.get("sku", "—"),
+                "produto": info.get("nome", "—"),
                 "categoria": info.get("categoria", "—"),
                 "qtd_comprada": 0,
                 "qtd_vendida": 0,
                 "custo_total": 0.0,
             }
-        saldo[sku]["qtd_vendida"] += v["quantidade"]
+        saldo[pid]["qtd_vendida"] += v["quantidade"]
 
     resultado = []
     for item in saldo.values():
@@ -165,6 +175,7 @@ def calcular_estoque() -> list[dict]:
             else 0.0
         )
         resultado.append({
+            "produto_id": item["produto_id"],
             "sku": item["sku"],
             "produto": item["produto"],
             "categoria": item["categoria"],
@@ -189,9 +200,9 @@ def resumo_financeiro() -> dict:
     receita_bruta = sum(v["quantidade"] * v["preco_venda"] for v in vendas)
 
     # CMV — Custo das Mercadorias Vendidas (custo médio × qtd vendida)
-    custo_medio_map = {e["sku"]: e["custo_medio"] for e in estoque}
+    custo_medio_map = {e["produto_id"]: e["custo_medio"] for e in estoque}
     cmv = sum(
-        v["quantidade"] * custo_medio_map.get(v["sku"], 0)
+        v["quantidade"] * custo_medio_map.get(v["produto_id"], 0)
         for v in vendas
     )
 

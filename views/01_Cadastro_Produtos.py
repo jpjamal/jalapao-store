@@ -63,7 +63,7 @@ st.dataframe(
 st.subheader("Editar / Remover")
 
 ids_disponiveis = [p["id"] for p in produtos]
-produto_id = st.selectbox("Selecione o ID do produto", ids_disponiveis)
+produto_id = int(st.selectbox("Selecione o ID do produto", ids_disponiveis))
 produto_sel = dm.obter_por_id("produtos", produto_id)
 
 if produto_sel:

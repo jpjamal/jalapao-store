@@ -12,12 +12,15 @@ compras = dm.listar("compras")
 despesas = dm.listar("despesas")
 
 # ── Métricas principais ────────────────────────────────────────────────────
-col1, col2, col3, col4 = st.columns(4)
+col1, col2 = st.columns(2)
 
 with col1:
     st.metric("🏪 Estoque (Valor)", f"R$ {resumo['total_estoque_valor']:,.2f}")
 with col2:
     st.metric("💰 Receita Bruta", f"R$ {resumo['receita_bruta']:,.2f}")
+
+col3, col4 = st.columns(2)
+
 with col3:
     st.metric("📉 Despesas Totais", f"R$ {resumo['despesas_totais']:,.2f}")
 with col4:
@@ -94,6 +97,8 @@ if vendas:
     st.markdown("---")
     st.subheader("Top Produtos Vendidos")
     df_v = pd.DataFrame(vendas)
+    mapa = dm.mapa_produtos()
+    df_v["produto"] = df_v["produto_id"].map(lambda pid: mapa.get(pid, {}).get("nome", "—"))
     df_v["total"] = df_v["quantidade"] * df_v["preco_venda"]
     top = df_v.groupby("produto").agg(
         unidades=("quantidade", "sum"),
