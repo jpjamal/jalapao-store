@@ -1,0 +1,362 @@
+{
+  "produtos": [
+    {
+      "sku": "SMWATCH001",
+      "nome": "COLMI-P71 Smartwatch",
+      "descricao": "Smartwatch com monitor cardíaco e notificações",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "FONE001",
+      "nome": "Lenovo-Thinkplus XT88",
+      "descricao": "Fone Bluetooth intra-auricular",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "MOUSE001",
+      "nome": "Baseus-F01B Mouse Bluetooth sem fio, Mouse 2.4G",
+      "descricao": "Mouse sem fio Bluetooth/2.4G dual-mode",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "CABO100W001",
+      "nome": "Baseus cabo type-c 100w",
+      "descricao": "Cabo USB Type-C 100W carga rápida",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "SMWATCH002",
+      "nome": "Zeblaze-GTS 3 Voice Calling",
+      "descricao": "Smartwatch com chamadas por voz",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "WATCH001",
+      "nome": "Curren 8291",
+      "descricao": "Relógio analógico pulseira de couro",
+      "categoria": "Joias E Acessórios",
+      "ativo": true
+    },
+    {
+      "sku": "CABO60W002",
+      "nome": "Baseus Type-c 60w",
+      "descricao": "Cabo USB Type-C 60W carga rápida",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "CAIXASOM001",
+      "nome": "T&G TG-506",
+      "descricao": "Caixa de som portátil Bluetooth",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "FONE002",
+      "nome": "Baseus Bowie E19",
+      "descricao": "Fone Bluetooth over-ear",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "FONE003",
+      "nome": "Baseus Bowie E16",
+      "descricao": "Fone Bluetooth semi-intra",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "CONTROL001",
+      "nome": "GameSir Nova Lite T4",
+      "descricao": "Controle Bluetooth/USB para jogos",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "SMWATCH003",
+      "nome": "COLMI-P81 Smartwatch",
+      "descricao": "Smartwatch tela AMOLED",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "WATCH002",
+      "nome": "CURREN 8434",
+      "descricao": "Relógio analógico aço inox",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "WATCH003",
+      "nome": "CURREN 9017",
+      "descricao": "Relógio analógico feminino",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "CHARGER001",
+      "nome": "ESSAGER CARREGADOR 30W",
+      "descricao": "Carregador 30W USB-C carga rápida",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "CARREVEICU001",
+      "nome": "ESSAGER CARREFADOR 30W veicular",
+      "descricao": "Carregador veicular 30W USB-C",
+      "categoria": "Eletronicos",
+      "ativo": true
+    },
+    {
+      "sku": "WATCH004",
+      "nome": "CURREN 9092",
+      "descricao": "Relógio analógico feminino",
+      "categoria": "Eletronicos",
+      "ativo": true
+    }
+  ],
+  "compras": [
+    {
+      "data": "2025-12-13",
+      "produto": "SMWATCH001",
+      "qtd": 2,
+      "preco_unitario": 45.9
+    },
+    {
+      "data": "2025-12-13",
+      "produto": "FONE001",
+      "qtd": 4,
+      "preco_unitario": 33.96
+    },
+    {
+      "data": "2025-12-13",
+      "produto": "SMWATCH002",
+      "qtd": 1,
+      "preco_unitario": 54.6
+    },
+    {
+      "data": "2025-12-13",
+      "produto": "WATCH001",
+      "qtd": 1,
+      "preco_unitario": 64.15
+    },
+    {
+      "data": "2025-12-14",
+      "produto": "CABO60W002",
+      "qtd": 5,
+      "preco_unitario": 12.76
+    },
+    {
+      "data": "2025-12-17",
+      "produto": "CAIXASOM001",
+      "qtd": 4,
+      "preco_unitario": 39.99
+    },
+    {
+      "data": "2025-12-17",
+      "produto": "FONE002",
+      "qtd": 2,
+      "preco_unitario": 65.55
+    },
+    {
+      "data": "2025-12-17",
+      "produto": "FONE003",
+      "qtd": 2,
+      "preco_unitario": 47.37
+    },
+    {
+      "data": "2025-12-17",
+      "produto": "SMWATCH001",
+      "qtd": 2,
+      "preco_unitario": 49.9
+    },
+    {
+      "data": "2025-12-13",
+      "produto": "MOUSE001",
+      "qtd": 2,
+      "preco_unitario": 36.35
+    },
+    {
+      "data": "2025-12-17",
+      "produto": "CABO100W001",
+      "qtd": 5,
+      "preco_unitario": 12.9
+    },
+    {
+      "data": "2025-01-28",
+      "produto": "CONTROL001",
+      "qtd": 2,
+      "preco_unitario": 105.81
+    },
+    {
+      "data": "2026-02-12",
+      "produto": "SMWATCH003",
+      "qtd": 4,
+      "preco_unitario": 65.23
+    },
+    {
+      "data": "2026-02-12",
+      "produto": "WATCH002",
+      "qtd": 1,
+      "preco_unitario": 65.27
+    },
+    {
+      "data": "2026-02-12",
+      "produto": "WATCH003",
+      "qtd": 1,
+      "preco_unitario": 65.1
+    },
+    {
+      "data": "2026-02-24",
+      "produto": "CHARGER001",
+      "qtd": 3,
+      "preco_unitario": 22.7
+    },
+    {
+      "data": "2026-03-22",
+      "produto": "CARREVEICU001",
+      "qtd": 5,
+      "preco_unitario": 12.36
+    },
+    {
+      "data": "2026-03-23",
+      "produto": "WATCH002",
+      "qtd": 1,
+      "preco_unitario": 56.19
+    }
+  ],
+  "vendas": [
+    {
+      "data": "2026-01-07",
+      "produto": "SMWATCH001",
+      "qtd": 1,
+      "preco_venda": 80.0
+    },
+    {
+      "data": "2026-01-13",
+      "produto": "WATCH001",
+      "qtd": 1,
+      "preco_venda": 125.0
+    },
+    {
+      "data": "2026-01-19",
+      "produto": "SMWATCH002",
+      "qtd": 1,
+      "preco_venda": 100.0
+    },
+    {
+      "data": "2026-01-31",
+      "produto": "CABO60W002",
+      "qtd": 1,
+      "preco_venda": 35.0
+    },
+    {
+      "data": "2026-02-02",
+      "produto": "SMWATCH001",
+      "qtd": 1,
+      "preco_venda": 102.0
+    },
+    {
+      "data": "2026-02-08",
+      "produto": "SMWATCH001",
+      "qtd": 1,
+      "preco_venda": 90.0
+    },
+    {
+      "data": "2026-02-09",
+      "produto": "FONE001",
+      "qtd": 1,
+      "preco_venda": 65.0
+    },
+    {
+      "data": "2026-02-11",
+      "produto": "CABO60W002",
+      "qtd": 1,
+      "preco_venda": 30.0
+    },
+    {
+      "data": "2026-02-18",
+      "produto": "CAIXASOM001",
+      "qtd": 1,
+      "preco_venda": 80.0
+    },
+    {
+      "data": "2026-02-23",
+      "produto": "FONE001",
+      "qtd": 1,
+      "preco_venda": 65.0
+    },
+    {
+      "data": "2026-02-23",
+      "produto": "CONTROL001",
+      "qtd": 1,
+      "preco_venda": 165.0
+    },
+    {
+      "data": "2026-02-26",
+      "produto": "FONE001",
+      "qtd": 1,
+      "preco_venda": 60.0
+    },
+    {
+      "data": "2026-02-27",
+      "produto": "WATCH002",
+      "qtd": 1,
+      "preco_venda": 130.0
+    },
+    {
+      "data": "2026-03-02",
+      "produto": "FONE001",
+      "qtd": 1,
+      "preco_venda": 60.0
+    },
+    {
+      "data": "2026-03-05",
+      "produto": "CAIXASOM001",
+      "qtd": 1,
+      "preco_venda": 85.0
+    },
+    {
+      "data": "2026-03-09",
+      "produto": "SMWATCH003",
+      "qtd": 1,
+      "preco_venda": 120.0
+    },
+    {
+      "data": "2026-03-09",
+      "produto": "CABO100W001",
+      "qtd": 1,
+      "preco_venda": 35.0
+    },
+    {
+      "data": "2026-03-10",
+      "produto": "SMWATCH001",
+      "qtd": 1,
+      "preco_venda": 100.0
+    },
+    {
+      "data": "2026-03-11",
+      "produto": "SMWATCH003",
+      "qtd": 1,
+      "preco_venda": 125.0
+    },
+    {
+      "data": "2026-03-15",
+      "produto": "MOUSE001",
+      "qtd": 1,
+      "preco_venda": 75.0
+    },
+    {
+      "data": "2026-03-15",
+      "produto": "CABO100W001",
+      "qtd": 1,
+      "preco_venda": 35.0
+    }
+  ],
+  "despesas": []
+}

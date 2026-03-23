@@ -1,0 +1,13 @@
+services:
+  jalapao-store:
+    build: .
+    container_name: jalapao-store
+    ports:
+      - "8501:8501"
+    volumes:
+      - jalapao_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  jalapao_data:
+    driver: local

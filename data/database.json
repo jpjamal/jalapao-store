@@ -1,0 +1,463 @@
+{
+  "produtos": [
+    {
+      "id": 1,
+      "sku": "SMWATCH001",
+      "nome": "COLMI-P71 Smartwatch",
+      "descricao": "COLMI-P71 Smartwatch — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 2,
+      "sku": "FONE001",
+      "nome": "Lenovo-Thinkplus XT88",
+      "descricao": "Lenovo-Thinkplus XT88 — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 3,
+      "sku": "MOUSE001",
+      "nome": "Baseus-F01B Mouse Bluetooth sem fio, Mouse 2.4G",
+      "descricao": "Baseus-F01B Mouse Bluetooth sem fio, Mouse 2.4G — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 4,
+      "sku": "CABO100W001",
+      "nome": "Baseus cabo type-c 100w",
+      "descricao": "Baseus cabo type-c 100w — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 5,
+      "sku": "SMWATCH002",
+      "nome": "Zeblaze-GTS 3 Voice Calling",
+      "descricao": "Zeblaze-GTS 3 Voice Calling — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 6,
+      "sku": "WATCH001",
+      "nome": "Curren 8291",
+      "descricao": "Curren 8291 — Categoria: Joias e Acessórios",
+      "categoria": "Joias e Acessórios",
+      "ativo": true
+    },
+    {
+      "id": 7,
+      "sku": "CABO60W002",
+      "nome": "Baseus Type-c 60w",
+      "descricao": "Baseus Type-c 60w — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 8,
+      "sku": "CAIXASOM001",
+      "nome": "T&G TG-506",
+      "descricao": "T&G TG-506 — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 9,
+      "sku": "FONE002",
+      "nome": "Baseus Bowie E19",
+      "descricao": "Baseus Bowie E19 — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 10,
+      "sku": "FONE003",
+      "nome": "Baseus Bowie E16",
+      "descricao": "Baseus Bowie E16 — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 11,
+      "sku": "CONTROL001",
+      "nome": "GameSir Nova Lite T4",
+      "descricao": "GameSir Nova Lite T4 — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 12,
+      "sku": "SMWATCH003",
+      "nome": "COLMI-P81 Smartwatch",
+      "descricao": "COLMI-P81 Smartwatch — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 13,
+      "sku": "WATCH002",
+      "nome": "CURREN 8434",
+      "descricao": "CURREN 8434 — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 14,
+      "sku": "WATCH003",
+      "nome": "CURREN 9017",
+      "descricao": "CURREN 9017 — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 15,
+      "sku": "CHARGER001",
+      "nome": "ESSAGER CARREGADOR 30W",
+      "descricao": "ESSAGER CARREGADOR 30W — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 16,
+      "sku": "CARREVEICU001",
+      "nome": "ESSAGER CARREFADOR 30W veicular",
+      "descricao": "ESSAGER CARREFADOR 30W veicular — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    },
+    {
+      "id": 17,
+      "sku": "WATCH004",
+      "nome": "CURREN 9092",
+      "descricao": "CURREN 9092 — Categoria: Eletrônicos",
+      "categoria": "Eletrônicos",
+      "ativo": true
+    }
+  ],
+  "compras": [
+    {
+      "id": 1,
+      "data": "2025-12-13",
+      "sku": "SMWATCH001",
+      "produto": "COLMI-P71 Smartwatch",
+      "quantidade": 2,
+      "preco_unitario": 45.9
+    },
+    {
+      "id": 2,
+      "data": "2025-12-13",
+      "sku": "FONE001",
+      "produto": "Lenovo-Thinkplus XT88",
+      "quantidade": 4,
+      "preco_unitario": 33.96
+    },
+    {
+      "id": 3,
+      "data": "2025-12-13",
+      "sku": "SMWATCH002",
+      "produto": "Zeblaze-GTS 3 Voice Calling",
+      "quantidade": 1,
+      "preco_unitario": 54.6
+    },
+    {
+      "id": 4,
+      "data": "2025-12-13",
+      "sku": "WATCH001",
+      "produto": "Curren 8291",
+      "quantidade": 1,
+      "preco_unitario": 64.15
+    },
+    {
+      "id": 5,
+      "data": "2025-12-14",
+      "sku": "CABO60W002",
+      "produto": "Baseus Type-c 60w",
+      "quantidade": 5,
+      "preco_unitario": 12.76
+    },
+    {
+      "id": 6,
+      "data": "2025-12-17",
+      "sku": "CAIXASOM001",
+      "produto": "T&G TG-506",
+      "quantidade": 4,
+      "preco_unitario": 39.99
+    },
+    {
+      "id": 7,
+      "data": "2025-12-17",
+      "sku": "FONE002",
+      "produto": "Baseus Bowie E19",
+      "quantidade": 2,
+      "preco_unitario": 65.55
+    },
+    {
+      "id": 8,
+      "data": "2025-12-17",
+      "sku": "FONE003",
+      "produto": "Baseus Bowie E16",
+      "quantidade": 2,
+      "preco_unitario": 47.37
+    },
+    {
+      "id": 9,
+      "data": "2025-12-17",
+      "sku": "SMWATCH001",
+      "produto": "COLMI-P71 Smartwatch",
+      "quantidade": 2,
+      "preco_unitario": 49.9
+    },
+    {
+      "id": 10,
+      "data": "2025-12-13",
+      "sku": "MOUSE001",
+      "produto": "Baseus-F01B Mouse Bluetooth sem fio, Mouse 2.4G",
+      "quantidade": 2,
+      "preco_unitario": 36.35
+    },
+    {
+      "id": 11,
+      "data": "2025-12-17",
+      "sku": "CABO100W001",
+      "produto": "Baseus cabo type-c 100w",
+      "quantidade": 5,
+      "preco_unitario": 12.9
+    },
+    {
+      "id": 12,
+      "data": "2025-01-28",
+      "sku": "CONTROL001",
+      "produto": "GameSir Nova Lite T4",
+      "quantidade": 2,
+      "preco_unitario": 105.81
+    },
+    {
+      "id": 13,
+      "data": "2026-02-12",
+      "sku": "SMWATCH003",
+      "produto": "COLMI-P81 Smartwatch",
+      "quantidade": 4,
+      "preco_unitario": 65.23
+    },
+    {
+      "id": 14,
+      "data": "2026-02-12",
+      "sku": "WATCH002",
+      "produto": "CURREN 8434",
+      "quantidade": 1,
+      "preco_unitario": 65.27
+    },
+    {
+      "id": 15,
+      "data": "2026-02-12",
+      "sku": "WATCH003",
+      "produto": "CURREN 9017",
+      "quantidade": 1,
+      "preco_unitario": 65.1
+    },
+    {
+      "id": 16,
+      "data": "2026-02-24",
+      "sku": "CHARGER001",
+      "produto": "ESSAGER CARREGADOR 30W",
+      "quantidade": 3,
+      "preco_unitario": 22.7
+    },
+    {
+      "id": 17,
+      "data": "2026-03-22",
+      "sku": "CARREVEICU001",
+      "produto": "ESSAGER CARREFADOR 30W veicular",
+      "quantidade": 5,
+      "preco_unitario": 12.36
+    },
+    {
+      "id": 18,
+      "data": "2026-03-23",
+      "sku": "WATCH002",
+      "produto": "CURREN 8434",
+      "quantidade": 1,
+      "preco_unitario": 56.19
+    }
+  ],
+  "vendas": [
+    {
+      "id": 1,
+      "data": "2026-01-07",
+      "sku": "SMWATCH001",
+      "produto": "COLMI-P71 Smartwatch",
+      "quantidade": 1,
+      "preco_venda": 80.0
+    },
+    {
+      "id": 2,
+      "data": "2026-01-13",
+      "sku": "WATCH001",
+      "produto": "Curren 8291",
+      "quantidade": 1,
+      "preco_venda": 125.0
+    },
+    {
+      "id": 3,
+      "data": "2026-01-19",
+      "sku": "SMWATCH002",
+      "produto": "Zeblaze-GTS 3 Voice Calling",
+      "quantidade": 1,
+      "preco_venda": 100.0
+    },
+    {
+      "id": 4,
+      "data": "2026-01-31",
+      "sku": "CABO60W002",
+      "produto": "Baseus Type-c 60w",
+      "quantidade": 1,
+      "preco_venda": 35.0
+    },
+    {
+      "id": 5,
+      "data": "2026-02-02",
+      "sku": "SMWATCH001",
+      "produto": "COLMI-P71 Smartwatch",
+      "quantidade": 1,
+      "preco_venda": 102.0
+    },
+    {
+      "id": 6,
+      "data": "2026-02-08",
+      "sku": "SMWATCH001",
+      "produto": "COLMI-P71 Smartwatch",
+      "quantidade": 1,
+      "preco_venda": 90.0
+    },
+    {
+      "id": 7,
+      "data": "2026-02-09",
+      "sku": "FONE001",
+      "produto": "Lenovo-Thinkplus XT88",
+      "quantidade": 1,
+      "preco_venda": 65.0
+    },
+    {
+      "id": 8,
+      "data": "2026-02-11",
+      "sku": "CABO60W002",
+      "produto": "Baseus Type-c 60w",
+      "quantidade": 1,
+      "preco_venda": 30.0
+    },
+    {
+      "id": 9,
+      "data": "2026-02-18",
+      "sku": "CAIXASOM001",
+      "produto": "T&G TG-506",
+      "quantidade": 1,
+      "preco_venda": 80.0
+    },
+    {
+      "id": 10,
+      "data": "2026-02-23",
+      "sku": "FONE001",
+      "produto": "Lenovo-Thinkplus XT88",
+      "quantidade": 1,
+      "preco_venda": 65.0
+    },
+    {
+      "id": 11,
+      "data": "2026-02-23",
+      "sku": "CONTROL001",
+      "produto": "GameSir Nova Lite T4",
+      "quantidade": 1,
+      "preco_venda": 165.0
+    },
+    {
+      "id": 12,
+      "data": "2026-02-26",
+      "sku": "FONE001",
+      "produto": "Lenovo-Thinkplus XT88",
+      "quantidade": 1,
+      "preco_venda": 60.0
+    },
+    {
+      "id": 13,
+      "data": "2026-02-27",
+      "sku": "WATCH002",
+      "produto": "CURREN 8434",
+      "quantidade": 1,
+      "preco_venda": 130.0
+    },
+    {
+      "id": 14,
+      "data": "2026-03-02",
+      "sku": "FONE001",
+      "produto": "Lenovo-Thinkplus XT88",
+      "quantidade": 1,
+      "preco_venda": 60.0
+    },
+    {
+      "id": 15,
+      "data": "2026-03-05",
+      "sku": "CAIXASOM001",
+      "produto": "T&G TG-506",
+      "quantidade": 1,
+      "preco_venda": 85.0
+    },
+    {
+      "id": 16,
+      "data": "2026-03-09",
+      "sku": "SMWATCH003",
+      "produto": "COLMI-P81 Smartwatch",
+      "quantidade": 1,
+      "preco_venda": 120.0
+    },
+    {
+      "id": 17,
+      "data": "2026-03-09",
+      "sku": "CABO100W001",
+      "produto": "Baseus cabo type-c 100w",
+      "quantidade": 1,
+      "preco_venda": 35.0
+    },
+    {
+      "id": 18,
+      "data": "2026-03-10",
+      "sku": "SMWATCH001",
+      "produto": "COLMI-P71 Smartwatch",
+      "quantidade": 1,
+      "preco_venda": 100.0
+    },
+    {
+      "id": 19,
+      "data": "2026-03-11",
+      "sku": "SMWATCH003",
+      "produto": "COLMI-P81 Smartwatch",
+      "quantidade": 1,
+      "preco_venda": 125.0
+    },
+    {
+      "id": 20,
+      "data": "2026-03-15",
+      "sku": "MOUSE001",
+      "produto": "Baseus-F01B Mouse Bluetooth sem fio, Mouse 2.4G",
+      "quantidade": 1,
+      "preco_venda": 75.0
+    },
+    {
+      "id": 21,
+      "data": "2026-03-15",
+      "sku": "CABO100W001",
+      "produto": "Baseus cabo type-c 100w",
+      "quantidade": 1,
+      "preco_venda": 35.0
+    }
+  ],
+  "despesas": [],
+  "_counters": {
+    "produtos": 17,
+    "compras": 18,
+    "vendas": 21,
+    "despesas": 0
+  }
+}
