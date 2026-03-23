@@ -121,12 +121,12 @@
       "id": 15
     },
     {
-      "id": 16,
-      "sku": "CARREVEICU001",
+      "sku": "CARREG-VEICULAR-ESSAGER001",
       "nome": "ESSAGER CARREFADOR 30W veicular",
       "descricao": "ESSAGER CARREFADOR 30W veicular — Categoria: Eletrônicos",
       "categoria": "Eletrônicos",
-      "ativo": true
+      "ativo": true,
+      "id": 16
     },
     {
       "sku": "WATCH-CURREN-004",
