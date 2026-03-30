@@ -25,12 +25,12 @@
       "id": 3
     },
     {
-      "id": 4,
-      "sku": "CABO100W001",
+      "sku": "CABO-TYPE-C-BASEUS-100W-001",
       "nome": "Baseus cabo type-c 100w",
       "descricao": "Baseus cabo type-c 100w — Categoria: Eletrônicos",
       "categoria": "Eletrônicos",
-      "ativo": true
+      "ativo": true,
+      "id": 4
     },
     {
       "sku": "SMARTWATCH-ZEBLAZE-001",
@@ -49,20 +49,20 @@
       "id": 6
     },
     {
-      "id": 7,
-      "sku": "CABO60W002",
+      "sku": "CABO-TYPE-C-60W-BASEUS-002",
       "nome": "Baseus Type-c 60w",
       "descricao": "Baseus Type-c 60w — Categoria: Eletrônicos",
       "categoria": "Eletrônicos",
-      "ativo": true
+      "ativo": true,
+      "id": 7
     },
     {
-      "id": 8,
-      "sku": "CAIXASOM001",
+      "sku": "CAIXA-SOM-TG-001",
       "nome": "T&G TG-506",
       "descricao": "T&G TG-506 — Categoria: Eletrônicos",
       "categoria": "Eletrônicos",
-      "ativo": true
+      "ativo": true,
+      "id": 8
     },
     {
       "sku": "FONE-BASEUS-001",
@@ -433,13 +433,20 @@
       "quantidade": 1,
       "preco_venda": 130.0,
       "id": 22
+    },
+    {
+      "data": "2026-03-29",
+      "produto_id": 11,
+      "quantidade": 1,
+      "preco_venda": 170.0,
+      "id": 23
     }
   ],
   "despesas": [],
   "_counters": {
     "produtos": 17,
     "compras": 20,
-    "vendas": 22,
+    "vendas": 23,
     "despesas": 0
   }
 }
