@@ -440,13 +440,27 @@
       "quantidade": 1,
       "preco_venda": 170.0,
       "id": 23
+    },
+    {
+      "data": "2026-04-01",
+      "produto_id": 2,
+      "quantidade": 1,
+      "preco_venda": 65.0,
+      "id": 24
+    },
+    {
+      "data": "2026-04-07",
+      "produto_id": 2,
+      "quantidade": 1,
+      "preco_venda": 65.0,
+      "id": 25
     }
   ],
   "despesas": [],
   "_counters": {
     "produtos": 17,
     "compras": 20,
-    "vendas": 23,
+    "vendas": 25,
     "despesas": 0
   }
 }
