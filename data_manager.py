@@ -23,11 +23,13 @@ _EMPTY_DB: dict[str, Any] = {
     "compras": [],
     "vendas": [],
     "despesas": [],
+    "perdas": [],
     "_counters": {
         "produtos": 0,
         "compras": 0,
         "vendas": 0,
         "despesas": 0,
+        "perdas": 0,
     },
 }
 
@@ -41,7 +43,21 @@ def _carregar() -> dict[str, Any]:
         _salvar(_EMPTY_DB)
         return json.loads(json.dumps(_EMPTY_DB))
     with open(DATA_PATH, encoding="utf-8") as f:
-        return json.load(f)
+        db = json.load(f)
+    # Migra coleções novas que ainda não existem no arquivo
+    atualizado = False
+    for chave, valor in _EMPTY_DB.items():
+        if chave == "_counters":
+            for k, v in valor.items():
+                if k not in db.get("_counters", {}):
+                    db.setdefault("_counters", {})[k] = v
+                    atualizado = True
+        elif chave not in db:
+            db[chave] = valor
+            atualizado = True
+    if atualizado:
+        _salvar(db)
+    return db
 
 
 def _salvar(db: dict[str, Any]) -> None:
@@ -128,15 +144,15 @@ def mapa_produtos() -> dict[int, dict]:
 
 
 def calcular_estoque() -> list[dict]:
-    """Calcula saldo de estoque por produto_id (compras - vendas)."""
+    """Calcula saldo de estoque por produto_id (compras - vendas - perdas)."""
     produtos = mapa_produtos()
     compras = listar("compras")
     vendas = listar("vendas")
+    perdas = listar("perdas")
 
     saldo: dict[int, dict] = {}
 
-    for c in compras:
-        pid = c["produto_id"]
+    def _garantir_produto(pid: int) -> None:
         if pid not in saldo:
             info = produtos.get(pid, {})
             saldo[pid] = {
@@ -146,29 +162,29 @@ def calcular_estoque() -> list[dict]:
                 "categoria": info.get("categoria", "—"),
                 "qtd_comprada": 0,
                 "qtd_vendida": 0,
+                "qtd_perdida": 0,
                 "custo_total": 0.0,
             }
+
+    for c in compras:
+        pid = c["produto_id"]
+        _garantir_produto(pid)
         saldo[pid]["qtd_comprada"] += c["quantidade"]
         saldo[pid]["custo_total"] += c["quantidade"] * c["preco_unitario"]
 
     for v in vendas:
         pid = v["produto_id"]
-        if pid not in saldo:
-            info = produtos.get(pid, {})
-            saldo[pid] = {
-                "produto_id": pid,
-                "sku": info.get("sku", "—"),
-                "produto": info.get("nome", "—"),
-                "categoria": info.get("categoria", "—"),
-                "qtd_comprada": 0,
-                "qtd_vendida": 0,
-                "custo_total": 0.0,
-            }
+        _garantir_produto(pid)
         saldo[pid]["qtd_vendida"] += v["quantidade"]
+
+    for p in perdas:
+        pid = p["produto_id"]
+        _garantir_produto(pid)
+        saldo[pid]["qtd_perdida"] += p["quantidade"]
 
     resultado = []
     for item in saldo.values():
-        qtd_em_estoque = item["qtd_comprada"] - item["qtd_vendida"]
+        qtd_em_estoque = item["qtd_comprada"] - item["qtd_vendida"] - item["qtd_perdida"]
         custo_medio = (
             item["custo_total"] / item["qtd_comprada"]
             if item["qtd_comprada"] > 0
@@ -195,6 +211,7 @@ def resumo_financeiro() -> dict:
     vendas = listar("vendas")
     compras = listar("compras")
     despesas = listar("despesas")
+    perdas = listar("perdas")
 
     total_estoque_valor = sum(e["valor_estoque"] for e in estoque)
     receita_bruta = sum(v["quantidade"] * v["preco_venda"] for v in vendas)
@@ -206,11 +223,17 @@ def resumo_financeiro() -> dict:
         for v in vendas
     )
 
+    # Perdas — custo médio × qtd perdida
+    total_perdas = sum(
+        p["quantidade"] * custo_medio_map.get(p["produto_id"], 0)
+        for p in perdas
+    )
+
     total_compras = sum(c["quantidade"] * c["preco_unitario"] for c in compras)
     total_despesas_extras = sum(d["valor"] for d in despesas)
-    despesas_totais = total_compras + total_despesas_extras
+    despesas_totais = total_compras + total_despesas_extras + total_perdas
 
-    lucro_liquido = receita_bruta - cmv - total_despesas_extras
+    lucro_liquido = receita_bruta - cmv - total_despesas_extras - total_perdas
 
     return {
         "total_estoque_valor": round(total_estoque_valor, 2),
@@ -218,6 +241,7 @@ def resumo_financeiro() -> dict:
         "cmv": round(cmv, 2),
         "total_compras": round(total_compras, 2),
         "total_despesas_extras": round(total_despesas_extras, 2),
+        "total_perdas": round(total_perdas, 2),
         "despesas_totais": round(despesas_totais, 2),
         "lucro_liquido": round(lucro_liquido, 2),
     }

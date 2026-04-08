@@ -461,6 +461,17 @@
     "produtos": 17,
     "compras": 20,
     "vendas": 25,
-    "despesas": 0
-  }
+    "despesas": 0,
+    "perdas": 1
+  },
+  "perdas": [
+    {
+      "produto_id": 2,
+      "quantidade": 1,
+      "motivo": "Produto Estragado",
+      "observacao": "um lado do fone está mais baixo que o outro.",
+      "data": "2026-04-08",
+      "id": 1
+    }
+  ]
 }

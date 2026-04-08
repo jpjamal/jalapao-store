@@ -50,6 +50,7 @@ paginas = st.navigation(
         st.Page("views/03_Vendas.py",           title="Vendas",          icon="💰"),
         st.Page("views/04_Despesas_Extras.py",  title="Despesas Extras", icon="💸"),
         st.Page("views/05_Estoque.py",          title="Estoque",         icon="📋"),
+        st.Page("views/07_Perdas.py",           title="Perdas",          icon="⚠️"),
     ]
 )
 
