@@ -454,13 +454,20 @@
       "quantidade": 1,
       "preco_venda": 65.0,
       "id": 25
+    },
+    {
+      "data": "2026-04-08",
+      "produto_id": 9,
+      "quantidade": 1,
+      "preco_venda": 130.0,
+      "id": 26
     }
   ],
   "despesas": [],
   "_counters": {
     "produtos": 17,
     "compras": 20,
-    "vendas": 25,
+    "vendas": 26,
     "despesas": 0,
     "perdas": 1
   },
