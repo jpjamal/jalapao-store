@@ -1,0 +1,29 @@
+services:
+  jalapao-store:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jalapao-store
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      - STREAMLIT_SERVER_BASE_URL_PATH=/${APP_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8501/${APP_NAME}/_stcore/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.http.routers.jalapao-store.rule=PathPrefix(`/${APP_NAME}`)"
+      - "traefik.http.routers.jalapao-store.entrypoints=web"
+      - "traefik.http.services.jalapao-store.loadbalancer.server.port=8501"
+
+networks:
+  traefik_proxy:
+    external: true

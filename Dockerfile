@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # ETL no build: gera o banco-semente a partir dos CSVs
-RUN python etl_initial_load.py && \
+RUN mkdir -p /app/data && \
+    python etl_initial_load.py && \
     mkdir -p /app/data_seed && \
     cp /app/data/database.json /app/data_seed/database.json
 

@@ -461,13 +461,55 @@
       "quantidade": 1,
       "preco_venda": 130.0,
       "id": 26
+    },
+    {
+      "data": "2026-04-16",
+      "produto_id": 2,
+      "quantidade": 1,
+      "preco_venda": 65.0,
+      "id": 27
+    },
+    {
+      "data": "2026-04-28",
+      "produto_id": 4,
+      "quantidade": 1,
+      "preco_venda": 40.0,
+      "id": 28
+    },
+    {
+      "data": "2026-04-28",
+      "produto_id": 15,
+      "quantidade": 1,
+      "preco_venda": 40.0,
+      "id": 29
+    },
+    {
+      "data": "2026-04-29",
+      "produto_id": 10,
+      "quantidade": 1,
+      "preco_venda": 105.0,
+      "id": 30
+    },
+    {
+      "data": "2026-04-30",
+      "produto_id": 2,
+      "quantidade": 1,
+      "preco_venda": 65.0,
+      "id": 31
+    },
+    {
+      "data": "2026-05-04",
+      "produto_id": 2,
+      "quantidade": 1,
+      "preco_venda": 65.0,
+      "id": 32
     }
   ],
   "despesas": [],
   "_counters": {
     "produtos": 17,
     "compras": 20,
-    "vendas": 26,
+    "vendas": 32,
     "despesas": 0,
     "perdas": 1
   },
