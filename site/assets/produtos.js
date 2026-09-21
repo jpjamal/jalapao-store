@@ -135,6 +135,35 @@ window.Produtos = (function(){
     return { novos: novos, atualizados: atualizados };
   }
 
+  /* ---------- semente ----------
+     A lista mora no navegador, então não viaja junto no deploy: quem abre o
+     site numa máquina nova veria a lista vazia. O arquivo produtos-seed.js
+     traz as peças já cadastradas, e elas são plantadas uma vez por versão:
+       - item cujo id já existe é ignorado — o que é seu nunca é sobrescrito;
+       - depois de plantada, a versão fica marcada, então peça que você apagar
+         de propósito não ressuscita no próximo deploy. */
+  const MARCA_SEMENTE = CHAVE + "_semente";
+
+  function semear(){
+    const s = window.PRODUTOS_SEMENTE;
+    if (!s || !Array.isArray(s.itens) || !disponivel()) return null;
+    try {
+      if (localStorage.getItem(MARCA_SEMENTE) === String(s.versao)) return null;
+
+      const dados = ler();
+      const existentes = dados.itens.map(function(i){ return i.id; });
+      const novos = s.itens.filter(function(i){ return existentes.indexOf(i.id) < 0; });
+
+      novos.forEach(function(i){
+        dados.itens.push(migrar({ versao: VERSAO, itens: [i] }).itens[0]);
+      });
+      if (novos.length) gravar(dados);
+
+      localStorage.setItem(MARCA_SEMENTE, String(s.versao));
+      return { plantados: novos.length, versao: s.versao };
+    } catch(e){ return null; }
+  }
+
   return {
     TIPO_3D: TIPO_3D,
     disponivel: disponivel,
@@ -144,6 +173,10 @@ window.Produtos = (function(){
     remover: remover,
     duplicar: duplicar,
     exportar: exportar,
-    importar: importar
+    importar: importar,
+    semear: semear
   };
 })();
+
+// planta a semente assim que o módulo carrega, antes de qualquer tela desenhar
+if (window.Produtos) window.Produtos.semear();

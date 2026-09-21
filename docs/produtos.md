@@ -79,6 +79,27 @@ O arquivo inteiro é versionado (`versao: 1`). Quando o formato mudar, a funçã
 em `assets/produtos.js` conserta os registros antigos na hora de ler — quem já tinha
 produtos salvos não perde nada.
 
+## A semente: como os produtos viajam no deploy
+
+A lista mora no navegador, então ela **não** acompanha o site sozinha — quem abrisse o
+endereço numa máquina nova encontraria a lista vazia. Quem resolve isso é
+`site/assets/produtos-seed.js`, versionado no repositório.
+
+Ele é plantado uma vez por versão, com três garantias:
+
+- item cujo `id` já existe é ignorado — **o que você cadastrou nunca é sobrescrito**;
+- depois de plantada, a versão fica marcada no navegador, então peça apagada de propósito
+  não ressuscita no deploy seguinte;
+- quando uma versão **nova** da semente é publicada, ela planta o que estiver faltando. Como
+  a semente é gerada a partir do seu próprio backup, o que você apagou não está lá e não
+  volta.
+
+Para atualizar a semente depois de cadastrar peças novas: **Baixar backup** na página
+Produtos, e me peça para regerar — ou cole os itens no arquivo e troque a data em `versao`.
+
+É um `.js` e não um `.json` de propósito: arquivo aberto com duplo clique (`file://`) não
+consegue fazer `fetch` de JSON, o navegador bloqueia. Como script, funciona nos dois casos.
+
 ## Para crescer
 
 O trabalho já está separado em dois módulos, justamente para não precisar mexer nas telas

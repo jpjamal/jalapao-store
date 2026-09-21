@@ -11,9 +11,12 @@ services:
       - ./manuais:/usr/share/nginx/html/manuais:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/jalapao-store/ || exit 1"]
-      interval: 30s
-      timeout: 5s
+      interval: 10s
+      timeout: 3s
       retries: 3
+      # sem start_period a primeira checagem so vinha aos 30s, e o Traefik
+      # nao roteia container fora de "healthy" — o site ficava 404 nesse meio
+      start_period: 5s
     restart: unless-stopped
     networks:
       - traefik_proxy
