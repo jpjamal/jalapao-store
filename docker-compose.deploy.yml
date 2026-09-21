@@ -10,7 +10,7 @@ services:
       # exclui essa pasta, senão o --delete apagaria o PDF a cada publicação.
       - ./manuais:/usr/share/nginx/html/manuais:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/jalapao-store/ || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/jalapao-store/ || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
