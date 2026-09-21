@@ -28,24 +28,40 @@ avisa que o preço ali não vale.
 
 ## Onde os dados ficam
 
-No **localStorage do navegador**, nesta máquina. Não sobem para lugar nenhum, não são
-compartilhados entre computadores e ninguém mais enxerga.
+**No servidor**, em `~/jalapao-store/dados/produtos.json`, servido pela API em
+`/api/produtos`. É isso que faz a lista existir fora do navegador: você abre do PC, do
+celular ou de outro lugar e encontra as mesmas peças.
 
-Três consequências que valem saber:
+O navegador guarda uma **cópia**. Ela serve para dois casos: continuar funcionando sem
+internet ou com o servidor fora do ar, e abrir o site como arquivo solto (`file://`), onde
+não existe API nenhuma. Quando o servidor responde, é ele quem manda: a cópia local é
+substituída pela lista de lá.
 
-- Trocar de navegador ou de computador **não leva a lista junto**.
-- Limpar "dados de sites" do navegador apaga os produtos.
-- Abrir o site por caminhos diferentes cria listas diferentes: o arquivo aberto direto do
-  disco (`file://`) e o mesmo site servido por `http://localhost` são endereços distintos
-  para o navegador, cada um com seu armazenamento.
+### Ler é aberto, gravar pede senha
 
-Por isso existe o **backup**. Na página de produtos:
+O site é público. Se gravar fosse aberto também, qualquer um com o endereço poderia apagar
+seus produtos. Então:
 
-- **Baixar backup** gera um `.json` com tudo (o nome do arquivo já vem com a data).
-- **Restaurar backup** lê esse arquivo e junta ao que já existe — produto com o mesmo id é
-  substituído, os demais entram como novos. Nada é apagado no caminho.
+- **ler** — qualquer um, sem senha;
+- **gravar** — exige a senha, que fica em `~/jalapao-store/dados/senha.txt` no servidor.
 
-Vale baixar um backup de vez em quando e guardar junto das artes, no OneDrive.
+Na página Produtos, o botão **Entrar para editar** pede a senha uma vez e a guarda naquele
+aparelho. O indicador ao lado mostra onde você está:
+
+| Indicador | Significa |
+|---|---|
+| no servidor | tudo sincronizado |
+| no servidor (só leitura) | está vendo a lista de verdade, mas ainda não entrou para editar |
+| alteração não enviada | você mexeu em algo que ainda não subiu — entre, e sobe junto |
+| só neste navegador | sem contato com a API (offline, ou arquivo aberto do disco) |
+
+### Se algo for apagado por engano
+
+Cada gravação deixa uma cópia da versão anterior em `dados/historico/`, e ficam as 30
+últimas. O backup em `.json` da própria página continua existindo e serve para levar a
+lista para outro lugar.
+
+Trocar a senha é editar `dados/senha.txt` e reiniciar: `docker restart jalapao-api`.
 
 ## O formato
 
@@ -79,11 +95,11 @@ O arquivo inteiro é versionado (`versao: 1`). Quando o formato mudar, a funçã
 em `assets/produtos.js` conserta os registros antigos na hora de ler — quem já tinha
 produtos salvos não perde nada.
 
-## A semente: como os produtos viajam no deploy
+## A semente
 
-A lista mora no navegador, então ela **não** acompanha o site sozinha — quem abrisse o
-endereço numa máquina nova encontraria a lista vazia. Quem resolve isso é
-`site/assets/produtos-seed.js`, versionado no repositório.
+Desde que a lista passou a viver no servidor, a semente (`site/assets/produtos-seed.js`)
+tem um papel menor: ela só entra quando **não há servidor** — o site aberto como arquivo
+solto, por exemplo. Quando a API responde, quem manda é ela.
 
 Ele é plantado uma vez por versão, com três garantias:
 

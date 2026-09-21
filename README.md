@@ -53,10 +53,10 @@ deploy não apague os PDFs enviados assim.
 
 ## O que roda onde
 
-Nada de dado da loja fica no servidor. As contas rodam no navegador, a lista de produtos 3D
-fica no `localStorage` de quem abre a página, e o gerador de etiquetas conversa direto com a
-API do Labelary a partir do navegador. Trocar de máquina ou de navegador não leva a lista
-junto — use o **Baixar backup** na página de produtos.
+As contas rodam no navegador. A **lista de produtos 3D fica no servidor** (`/api/produtos`,
+dados em `~/jalapao-store/dados/`), então ela é a mesma em qualquer aparelho: ler é aberto,
+gravar pede a senha guardada em `dados/senha.txt`. O gerador de etiquetas conversa direto
+com a API do Labelary a partir do navegador — nenhum arquivo de pedido passa pelo servidor.
 
 ## Histórico
 
