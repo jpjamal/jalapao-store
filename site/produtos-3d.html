@@ -32,6 +32,24 @@
   }
   .vazio-estado b { display: block; font-family: var(--f-display); font-size: 1.15rem; color: var(--ink); margin-bottom: 0.4rem; }
 
+  .sincronia {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.78rem; color: var(--ink-soft);
+  }
+  .sincronia .bolinha { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); }
+  .sincronia.servidor .bolinha { background: var(--ok); }
+  .sincronia.local .bolinha    { background: var(--warn); }
+  .sincronia.pendente .bolinha { background: var(--bad); }
+
+  .sincronia {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.78rem; color: var(--ink-soft); white-space: nowrap;
+  }
+  .sincronia .bolinha { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); }
+  .sincronia.servidor .bolinha { background: var(--ok); }
+  .sincronia.local .bolinha    { background: var(--warn); }
+  .sincronia.pendente .bolinha { background: var(--bad); }
+
   .resumo { display: flex; gap: 1.6rem; flex-wrap: wrap; margin-top: 1.4rem; font-family: var(--f-data); font-size: 0.82rem; color: var(--ink-faint); }
 </style>
 </head>
@@ -71,6 +89,10 @@
       <option value="preco">Maior preço</option>
       <option value="custo">Maior custo</option>
     </select>
+    <span class="sincronia" id="sincronia"><span class="bolinha"></span><span id="sincroniaTexto">verificando…</span></span>
+    <button class="secundario" id="btnEntrar">Entrar para editar</button>
+    <span class="sincronia" id="sincronia"><span class="bolinha"></span><span id="sincroniaTexto">verificando…</span></span>
+    <button class="secundario" id="btnEntrar">Entrar para editar</button>
     <span class="vazio"></span>
     <a class="botao" href="impressao-3d.html">Novo produto</a>
     <button class="secundario" id="btnBackup">Baixar backup</button>
@@ -228,9 +250,31 @@ el("arquivoBackup").addEventListener("change", async function(e){
   }
 });
 
+/* ---------- sincronia com o servidor ---------- */
+function pintarEstado(e){
+  const caixa = el("sincronia"), texto = el("sincroniaTexto");
+  caixa.className = "sincronia " + (e.pendente ? "pendente" : e.modo);
+  if (e.pendente)                 texto.textContent = "alteração não enviada";
+  else if (e.modo === "servidor") texto.textContent = e.autenticado ? "no servidor" : "no servidor (só leitura)";
+  else                            texto.textContent = "só neste navegador";
+  el("btnEntrar").textContent = e.autenticado ? "Sair" : "Entrar para editar";
+  carregar();
+}
+
+el("btnEntrar").addEventListener("click", async function(){
+  if (Produtos.estado().autenticado){ Produtos.sair(); return; }
+  const senha = prompt("Senha para editar os produtos:");
+  if (!senha) return;
+  const r = await Produtos.entrar(senha);
+  if (!r.ok) alert("Não consegui entrar: " + r.motivo);
+});
+
+Produtos.aoMudar(pintarEstado);
+
 /* ---------- início ---------- */
 if (!Produtos.disponivel()) el("avisoArmazenamento").classList.remove("oculto");
 carregar();
+pintarEstado(Produtos.estado());
 </script>
 
 </body>

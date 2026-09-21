@@ -376,7 +376,11 @@ function salvarProduto(comoNovo){
   });
   modoEdicao(p);   // segue editando o que acabou de ser salvo
   atualizarContador();
-  avisar("Salvo em " + new Date().toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" }) + ".");
+  const e = Produtos.estado();
+  const onde = e.modo === "servidor" && e.autenticado ? "no servidor"
+             : e.autenticado ? "aqui, aguardando o servidor"
+             : "só neste navegador — entre na página Produtos para sincronizar";
+  avisar("Salvo em " + new Date().toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" }) + ", " + onde + ".");
 }
 
 el("btnSalvar").addEventListener("click", function(){ salvarProduto(false); });

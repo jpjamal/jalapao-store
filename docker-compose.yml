@@ -11,3 +11,14 @@ services:
     volumes:
       - ./manuais:/usr/share/nginx/html/manuais:ro
     restart: unless-stopped
+
+  jalapao-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: jalapao-api-local
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./dados:/dados
+    restart: unless-stopped

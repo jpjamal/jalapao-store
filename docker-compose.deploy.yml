@@ -36,6 +36,34 @@ services:
 
       - "traefik.http.services.jalapao-store.loadbalancer.server.port=80"
 
+  # ========== API DE PRODUTOS ==========
+  # É o que tira a lista de dentro do navegador: os produtos passam a viver no
+  # servidor e aparecem em qualquer aparelho. Leitura aberta, gravação com senha.
+  jalapao-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: jalapao-api
+    volumes:
+      # dados/ fica fora do repositório e fora do rsync --delete
+      - ./dados:/dados
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8000/api/saude || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.http.routers.jalapao-api.rule=PathPrefix(`/api/produtos`) || PathPrefix(`/api/saude`)"
+      - "traefik.http.routers.jalapao-api.entrypoints=web"
+      - "traefik.http.routers.jalapao-api.service=jalapao-api"
+      - "traefik.http.services.jalapao-api.loadbalancer.server.port=8000"
+
 networks:
   traefik_proxy:
     external: true
