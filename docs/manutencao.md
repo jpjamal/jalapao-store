@@ -109,6 +109,14 @@ Quem for mexer na fórmula ou no cadastro mexe no módulo — as duas páginas q
 (calculadora e lista) acompanham sozinhas. Detalhes do formato dos produtos em
 [Produtos](produtos.md).
 
+## Cache: js e css revalidam sempre
+
+O `nginx-site.conf` manda `Cache-Control: no-cache` para `.css` e `.js`, e um dia de cache
+só para imagem. Não é exagero: com `max-age=3600` nos scripts, um deploy deixava o HTML novo
+rodando com o módulo antigo preso no navegador por até uma hora — foi assim que a lista de
+produtos apareceu vazia depois de publicada a semente. `no-cache` não significa baixar tudo
+de novo: o navegador reusa o arquivo depois de perguntar se mudou.
+
 ## Decisões que já foram tomadas
 
 - **Nada de servidor, build ou dependência instalada.** O site abre com duplo clique. Um
