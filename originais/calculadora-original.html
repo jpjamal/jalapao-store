@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Lucro - Jalapão Store</title>
+    <style>
+        :root {
+            --primary: #ee4d2d;
+            --primary-dark: #d73211;
+            --primary-light: #fff1ef;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --success: #198754;
+            --danger: #dc3545;
+            --border: #dee2e6;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+        }
+        .app-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 550px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 24px;
+            text-align: center;
+            transition: background 0.3s ease;
+        }
+        .header h1 { margin: 0; font-size: 1.6rem; }
+        .header p { margin: 6px 0 0 0; font-size: 0.9rem; opacity: 0.9; }
+        
+        .content { padding: 24px; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(238, 77, 45, 0.15);
+        }
+
+        /* Seletor de Plataforma em Abas */
+        .market-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px;
+            border: 2px solid var(--border);
+            background: #fff;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+        }
+        .tab-btn.active {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .table-toggle {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 0;
+            margin: 10px 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .table-toggle:hover { text-decoration: underline; }
+        
+        .reference-box {
+            background-color: var(--primary-light);
+            border: 1px solid #ffd8d3;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 24px;
+            display: none;
+        }
+        .reference-box.show { display: block; }
+        .reference-box h4 { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--primary-dark); }
+        
+        .rules-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .rules-table th, .rules-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #ffd8d3;
+            text-align: left;
+        }
+        .rules-table th { color: var(--primary-dark); font-weight: 700; }
+        .rules-table td { color: #495057; }
+
+        .results {
+            background-color: #f8f9fa;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .results h3 { margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .profit {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--success);
+            margin: 0;
+            line-height: 1.2;
+        }
+        .profit.negative { color: var(--danger); }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--border);
+        }
+        .metric { text-align: left; }
+        .metric span { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; font-weight: 600; text-transform: uppercase; }
+        .metric strong { display: block; font-size: 1.05rem; color: var(--text-main); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header" id="appHeader">
+        <h1>📦 Jalapão Store</h1>
+        <p id="headerSubtitle">Calculadora Shopee</p>
+    </div>
+    
+    <div class="content">
+        <!-- Seletor de Marketplace -->
+        <div class="market-tabs">
+            <button class="tab-btn active" id="btnShopee" onclick="switchMarket('shopee')">Shopee</button>
+            <button class="tab-btn" id="btnMeli" onclick="switchMarket('meli')">Mercado Livre</button>
+        </div>
+
+        <!-- Opções Dinâmicas por Marketplace -->
+        <div class="form-group" id="shopeePlanGroup">
+            <label for="shopeePlan">Programa Shopee</label>
+            <select id="shopeePlan" onchange="calculate()">
+                <option value="14">Padrão (Comissão 14% + Faixas)</option>
+                <option value="20">Frete Grátis Extra (Comissão 20% + Faixas)</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="meliPlanGroup" style="display: none;">
+            <label for="meliPlan">Tipo de Anúncio (Mercado Livre)</label>
+            <select id="meliPlan" onchange="calculate()">
+                <option value="classico">Clássico (Comissão média ~12% - Sem juros custom)</option>
+                <option value="premium">Premium (Comissão média ~17% - Até 12x s/ juros)</option>
+            </select>
+        </div>
+
+        <button class="table-toggle" id="toggleTableBtn" onclick="toggleTable()">📋 Ver Tabela de Regras e Taxas</button>
+        
+        <!-- Tabela de Referência Dinâmica -->
+        <div class="reference-box" id="refBox">
+            <h4 id="refTitle">Tabela Shopee</h4>
+            <table class="rules-table" id="refTableContent">
+                <!-- Preenchido via JS -->
+            </table>
+        </div>
+
+        <div class="form-group">
+            <label for="cost">Custo Unitário do Produto (R$)</label>
+            <input type="number" id="cost" placeholder="Ex: 118,00" step="0.01" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+            <label for="price">Preço de Venda Desejado (R$)</label>
+            <input type="number" id="price" placeholder="Ex: 219,99" step="0.01" oninput="calculate()">
+        </div>
+
+        <div class="results">
+            <h3>Lucro Líquido no Bolso</h3>
+            <div class="profit" id="netProfit">R$ 0,00</div>
+            
+            <div class="metrics-grid">
+                <div class="metric">
+                    <span>Taxas Totais (Bruto)</span>
+                    <strong id="feeTotal">R$ 0,00</strong>
+                </div>
+                <div class="metric">
+                    <span>Margem Real</span>
+                    <strong id="marginPct">0,0%</strong>
+                </div>
+                <div class="metric">
+                    <span>Markup sobre Custo</span>
+                    <strong id="markupPct">0,0%</strong>
+                </div>
+                <div class="metric">
+                    <span>Encargo Fixo / Unidade</span>
+                    <strong id="appliedFixedFee" style="color: var(--primary);">R$ 0,00</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentMarket = 'shopee';
+
+    function switchMarket(market) {
+        currentMarket = market;
+        const btnShopee = document.getElementById('btnShopee');
+        const btnMeli = document.getElementById('btnMeli');
+        const shopeeGroup = document.getElementById('shopeePlanGroup');
+        const meliGroup = document.getElementById('meliPlanGroup');
+        const header = document.getElementById('appHeader');
+        const subtitle = document.getElementById('headerSubtitle');
+        
+        // Cores da marca
+        const shopeeColor = '#ee4d2d';
+        const meliColor = '#ffe600'; // Detalhe do ML, mantendo texto legível
+        
+        if (market === 'shopee') {
+            btnShopee.classList.add('active');
+            btnMeli.classList.remove('active');
+            shopeeGroup.style.display = 'block';
+            meliGroup.style.display = 'none';
+            header.style.background = 'linear-gradient(135deg, #ee4d2d, #d73211)';
+            header.style.color = '#ffffff';
+            subtitle.textContent = 'Calculadora Shopee';
+        } else {
+            btnMeli.classList.add('active');
+            btnShopee.classList.remove('active');
+            shopeeGroup.style.display = 'none';
+            meliGroup.style.display = 'block';
+            header.style.background = 'linear-gradient(135deg, #2d3277, #1e214d)'; // Azul estilizado do ML
+            header.style.color = '#ffe600';
+            subtitle.textContent = 'Calculadora Mercado Livre';
+        }
+        
+        updateTableContent();
+        calculate();
+    }
+
+    function toggleTable() {
+        const box = document.getElementById('refBox');
+        const btn = document.getElementById('toggleTableBtn');
+        box.classList.toggle('show');
+        btn.textContent = box.classList.contains('show') ? '📋 Ocultar Tabela de Regras e Taxas' : '📋 Ver Tabela de Regras e Taxas';
+    }
+
+    function updateTableContent() {
+        const title = document.getElementById('refTitle');
+        const table = document.getElementById('refTableContent');
+        
+        if (currentMarket === 'shopee') {
+            title.textContent = 'Tabela de Faixas Shopee (Comissão + Taxa Fixa)';
+            table.innerHTML = `
+                <thead><tr><th>Faixa de Preço</th><th>Comissão</th><th>Taxa Fixa</th></tr></thead>
+                <tbody>
+                    <tr><td>Até R$ 79,99</td><td>Variável</td><td>R$ 4,00</td></tr>
+                    <tr><td>R$ 80 a R$ 99,99</td><td>14%</td><td>R$ 16,00</td></tr>
+                    <tr><td>R$ 100 a R$ 199,99</td><td>14%</td><td>R$ 20,00</td></tr>
+                    <tr><td>Acima de R$ 200,00</td><td>14%</td><td>R$ 26,00</td></tr>
+                </tbody>`;
+        } else {
+            title.textContent = 'Tabela Mercado Livre (Clássico vs Premium)';
+            table.innerHTML = `
+                <thead><tr><th>Tipo de Anúncio</th><th>Comissão Média</th><th>Regra de Custos / Abaixo de R$ 79</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Clássico</strong></td><td>~11% a 14%</td><td>Produtos abaixo de R$ 79 pagam taxa fixa/variável adicional por unidade. Acima de R$ 79, apenas comissão.</td></tr>
+                    <tr><td><strong>Premium</strong> (12x s/ juros)</td><td>~15% a 19%</td><td>Inclui custo de parcelamento sem juros ao comprador.</td></tr>
+                </tbody>`;
+        }
+    }
+
+    function calculate() {
+        const cost = parseFloat(document.getElementById('cost').value) || 0;
+        const price = parseFloat(document.getElementById('price').value) || 0;
+        
+        const profitEl = document.getElementById('netProfit');
+        const feeTotalEl = document.getElementById('feeTotal');
+        const marginPctEl = document.getElementById('marginPct');
+        const markupPctEl = document.getElementById('markupPct');
+        const appliedFixedFeeEl = document.getElementById('appliedFixedFee');
+
+        if (price === 0) {
+            profitEl.textContent = 'R$ 0,00';
+            feeTotalEl.textContent = 'R$ 0,00';
+            marginPctEl.textContent = '0,0%';
+            markupPctEl.textContent = '0,0%';
+            appliedFixedFeeEl.textContent = 'R$ 0,00';
+            profitEl.className = 'profit';
+            return;
+        }
+
+        let totalFees = 0;
+        let fixedOrExtraText = 'R$ 0,00';
+
+        if (currentMarket === 'shopee') {
+            const planVal = parseFloat(document.getElementById('shopeePlan').value);
+            let commissionPct = planVal / 100;
+            let fixedFee = 4.00;
+
+            if (price <= 79.99) {
+                fixedFee = 4.00;
+            } else if (price <= 99.99) {
+                fixedFee = 16.00;
+            } else if (price <= 199.99) {
+                fixedFee = 20.00;
+            } else {
+                fixedFee = 26.00;
+            }
+
+            // Para faixas mais altas, a Shopee usa base de 14% independentemente do programa base ou aplica a regra específica
+            if (price > 79.99 && planVal == 14) commissionPct = 0.14;
+            if (price > 79.99 && planVal == 20) commissionPct = 0.20; // Mantém o adicional do frete grátis se escolhido
+
+            totalFees = (price * commissionPct) + fixedFee;
+            appliedFixedFeeText = fixedFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        } else {
+            // Lógica Mercado Livre
+            const meliType = document.getElementById('meliPlan').value;
+            // Média padrão de mercado para categorias gerais se o usuário não especificar a categoria exata: Clássico ~13%, Premium ~17.5%
+            let commissionPct = meliType === 'classico' ? 0.13 : 0.175; 
+            let extraFee = 0;
+
+            // Regra do Mercado Livre para produtos abaixo de R$ 79,00 (taxa fixa/variável por unidade)
+            if (price < 79.00) {
+                extraFee = 6.50; // Média da tarifa fixa vigente abaixo de 79 reais
+                appliedFixedFeeText = 'R$ 6,50 (Baixo Valor)';
+            } else {
+                appliedFixedFeeText = 'R$ 0,00 (Isento > R$ 79)';
+            }
+
+            totalFees = (price * commissionPct) + extraFee;
+            appliedFixedFeeEl.textContent = appliedFixedFeeText;
+        }
+
+        if (currentMarket === 'shopee') {
+            appliedFixedFeeEl.textContent = appliedFixedFeeText;
+        }
+
+        const netProfit = price - cost - totalFees;
+        const margin = (netProfit / price) * 100;
+        const markup = cost > 0 ? (netProfit / cost) * 100 : 0;
+
+        profitEl.textContent = netProfit.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        feeTotalEl.textContent = totalFees.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        marginPctEl.textContent = margin.toFixed(1) + '%';
+        markupPctEl.textContent = markup.toFixed(1) + '%';
+
+        profitEl.className = netProfit < 0 ? 'profit negative' : 'profit';
+    }
+
+    // Inicializa a tabela padrão
+    updateTableContent();
+</script>
+</html>

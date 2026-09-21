@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerador de Etiquetas — Jalapão Store</title>
+<style>
+  :root{
+    --laranja:#c8670f; --laranja-claro:#de8a2b; --terra:#8f210b;
+    --creme:#fff6dc; --areia:#f2e8da; --marrom:#321703; --dourado:#e7c98f;
+    --ok:#3f7d3f; --erro:#a21b1b; --cinza:#6b6257;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--creme); color:var(--marrom);
+    font:15px/1.45 "Segoe UI",system-ui,sans-serif;
+  }
+  header{
+    background:linear-gradient(120deg,var(--terra),var(--laranja));
+    color:var(--creme); padding:18px 24px; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  }
+  header h1{margin:0; font-size:21px; letter-spacing:.3px}
+  header span{opacity:.85; font-size:13px}
+  main{max-width:1180px; margin:0 auto; padding:22px}
+
+  .painel{background:#fff; border:1px solid var(--dourado); border-radius:10px; padding:16px; margin-bottom:18px}
+  .painel h2{margin:0 0 12px; font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--laranja)}
+
+  #zona{
+    border:2px dashed var(--laranja-claro); border-radius:10px; background:var(--areia);
+    padding:34px 20px; text-align:center; cursor:pointer; transition:.15s;
+  }
+  #zona:hover,#zona.ativo{background:#fdf0dd; border-color:var(--terra)}
+  #zona b{display:block; font-size:17px; margin-bottom:4px}
+  #zona small{color:var(--cinza)}
+
+  .opcoes{display:flex; flex-wrap:wrap; gap:14px}
+  .campo{display:flex; flex-direction:column; gap:4px}
+  .campo label{font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--cinza)}
+  select,input[type=text],textarea{
+    font:14px/1.3 inherit; padding:7px 9px; border:1px solid var(--dourado);
+    border-radius:6px; background:#fff; color:var(--marrom);
+  }
+  textarea{width:100%; min-height:110px; font-family:Consolas,monospace; font-size:12px}
+
+  button{
+    font:14px/1 inherit; font-weight:600; padding:10px 16px; border-radius:7px; cursor:pointer;
+    border:1px solid transparent; background:var(--laranja); color:#fff;
+  }
+  button:hover{background:var(--terra)}
+  button:disabled{opacity:.5; cursor:default}
+  button.sec{background:#fff; color:var(--terra); border-color:var(--dourado)}
+  button.sec:hover{background:var(--areia)}
+  button.mini{padding:6px 10px; font-size:12px}
+
+  .barra{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px}
+  .barra .vazio{flex:1}
+  .dica{font-size:12px; color:var(--cinza); max-width:420px}
+
+  #lista{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:16px}
+  .card{background:#fff; border:1px solid var(--dourado); border-radius:10px; overflow:hidden; display:flex; flex-direction:column}
+  .card .topo{display:flex; gap:12px; padding:12px}
+  .card img{width:104px; height:156px; object-fit:contain; background:#fff; border:1px solid #e6ddcc; border-radius:4px; cursor:zoom-in}
+  .card .dados{flex:1; min-width:0}
+  .chip{display:inline-block; font-size:11px; background:var(--areia); border:1px solid #e6ddcc;
+        border-radius:20px; padding:2px 8px; margin:0 4px 4px 0; color:var(--cinza); max-width:100%;
+        overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle}
+  .nome{font-weight:600; font-size:15px; margin-bottom:6px; word-break:break-word}
+  .arquivo{display:flex; align-items:center; gap:4px; padding:0 12px 10px}
+  .arquivo input{flex:1; min-width:0; font-family:Consolas,monospace; font-size:12px}
+  .arquivo span{font-family:Consolas,monospace; font-size:12px; color:var(--cinza)}
+  .rodape{display:flex; gap:8px; align-items:center; padding:10px 12px; border-top:1px solid #f0e7d5; background:#fffdf7}
+  .estado{font-size:12px; color:var(--cinza); flex:1}
+  .estado.ok{color:var(--ok)} .estado.erro{color:var(--erro)}
+
+  #log{font-family:Consolas,monospace; font-size:12px; color:var(--cinza); max-height:150px; overflow:auto; white-space:pre-wrap}
+  .oculto{display:none !important}
+  dialog{border:none; border-radius:10px; padding:0; background:#fff; max-width:95vw; max-height:95vh}
+  dialog img{display:block; max-width:88vw; max-height:88vh}
+  dialog .fechar{position:sticky; top:0; display:flex; justify-content:flex-end; padding:6px; background:#fff}
+  a.link{color:var(--terra)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Gerador de Etiquetas</h1>
+  <span>Jalapão Store &middot; ZPL &rarr; PDF nomeado pelo destinatário</span>
+</header>
+
+<main>
+
+  <div class="painel">
+    <div id="zona">
+      <b id="zonaTitulo">Solte aqui o arquivo .txt do ZPL</b>
+      <small id="zonaAjuda">ou clique para escolher &mdash; aceita vários arquivos e várias etiquetas por arquivo</small>
+      <input type="file" id="arquivo" accept=".txt,.zpl,.prn,text/plain" multiple class="oculto">
+    </div>
+    <div style="margin-top:10px">
+      <button class="sec mini" id="btnColar">Ou colar o código ZPL</button>
+    </div>
+    <div id="areaColar" class="oculto" style="margin-top:10px">
+      <textarea id="zplTexto" placeholder="^XA ... ^XZ"></textarea>
+      <div style="margin-top:8px"><button class="mini" id="btnGerarColado">Gerar etiqueta</button></div>
+    </div>
+  </div>
+
+  <div class="painel">
+    <h2>Configuração</h2>
+    <div class="opcoes">
+      <div class="campo">
+        <label for="tamanho">Tamanho da etiqueta</label>
+        <select id="tamanho">
+          <option value="4x6" selected>100 × 150 mm (padrão Shopee)</option>
+          <option value="4x6.5">100 × 165 mm</option>
+          <option value="4x4">100 × 100 mm</option>
+          <option value="3x5">75 × 125 mm</option>
+          <option value="2x1">50 × 25 mm</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="densidade">Densidade</label>
+        <select id="densidade">
+          <option value="8" selected>8 dpmm (203 dpi)</option>
+          <option value="6">6 dpmm (152 dpi)</option>
+          <option value="12">12 dpmm (300 dpi)</option>
+          <option value="24">24 dpmm (600 dpi)</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="pagina">Página do PDF</label>
+        <select id="pagina">
+          <option value="" selected>Do tamanho da etiqueta</option>
+          <option value="A4">A4</option>
+          <option value="A5">A5</option>
+          <option value="Letter">Letter</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="rotacao">Rotação</label>
+        <select id="rotacao">
+          <option value="0" selected>0°</option>
+          <option value="90">90°</option>
+          <option value="180">180°</option>
+          <option value="270">270°</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="padraoNome">Nome do arquivo</label>
+        <select id="padraoNome">
+          <option value="nome_cidade" selected>Nome + cidade</option>
+          <option value="nome_uf">Nome + estado</option>
+          <option value="nome_cidade_uf">Nome + cidade + estado</option>
+          <option value="curto_cidade">Primeiro e último nome + cidade</option>
+          <option value="nome">Só o nome do destinatário</option>
+          <option value="pedido">ID do pedido</option>
+          <option value="rastreio">Código de rastreio</option>
+          <option value="arquivo">Nome do arquivo + nº</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="lerNome">Ler nome da etiqueta (OCR)</label>
+        <select id="lerNome">
+          <option value="1" selected>Sim, automático</option>
+          <option value="0">Não, eu digito</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="barra">
+    <button id="btnTudo" disabled>Baixar todos os PDFs</button>
+    <button class="sec" id="btnUnico" disabled>PDF único (todas as etiquetas)</button>
+    <button class="sec oculto" id="btnPasta">Escolher pasta de destino</button>
+    <button class="sec" id="btnCelular">Usar no celular</button>
+    <span class="dica oculto" id="dicaPasta">Os PDFs vão para a pasta Downloads (este navegador não deixa escolher a pasta).</span>
+    <span class="vazio"></span>
+    <button class="sec" id="btnLimpar" disabled>Limpar</button>
+  </div>
+
+  <div id="lista"></div>
+
+  <div class="painel" style="margin-top:18px">
+    <h2>Registro</h2>
+    <div id="log">Pronto. Envie um arquivo .txt com o código ZPL.</div>
+  </div>
+
+  <p style="font-size:12px;color:var(--cinza)">
+    Renderização pela API pública do <a class="link" href="https://labelary.com/service.html" target="_blank" rel="noopener">Labelary</a>
+    (limite gratuito: 3 requisições/s, 5.000/dia). O OCR roda no seu próprio navegador.
+  </p>
+
+</main>
+
+<dialog id="lupa"><div class="fechar"><button class="sec mini" id="btnFecharLupa">Fechar</button></div><img id="lupaImg" alt=""></dialog>
+
+<dialog id="qr">
+  <div class="fechar"><button class="sec mini" id="btnFecharQr">Fechar</button></div>
+  <div style="padding:0 22px 22px; max-width:380px">
+    <div id="qrTexto"></div>
+    <div id="qrImg" style="text-align:center"></div>
+    <p style="font-family:Consolas,monospace; font-size:12px; word-break:break-all; text-align:center" id="qrUrl"></p>
+  </div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------
+   Gerador de etiquetas Shopee/Correios
+   Fluxo: .txt com ZPL -> Labelary (PNG p/ preview + OCR) -> PDF
+   O ZPL da Shopee é uma imagem (~DG/^XG), não tem texto dentro:
+   o nome do destinatário só sai lendo a etiqueta renderizada.
+----------------------------------------------------------------*/
+
+const API = "https://api.labelary.com/v1/printers";
+const el  = function(id){ return document.getElementById(id); };
+const cfg = function(){
+  return {
+    tamanho: el("tamanho").value,
+    dpmm:    el("densidade").value,
+    pagina:  el("pagina").value,
+    rotacao: el("rotacao").value,
+    padrao:  el("padraoNome").value,
+    ocr:     el("lerNome").value === "1"
+  };
+};
+
+let etiquetas = [];      // {id, arquivo, zpl, indice, campos, nome, png, estado}
+let contador  = 0;
+let pastaDest = null;    // File System Access API, quando disponível
+
+const sleep = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
+function log(txt){
+  const d = el("log");
+  d.textContent += "\n" + txt;
+  d.scrollTop = d.scrollHeight;
+}
+
+/* ---------- fila de requisições (respeita 3 req/s do plano grátis) ---------- */
+const fila = [];
+let rodando = false;
+function naFila(fn){
+  return new Promise(function(ok, erro){ fila.push({fn:fn, ok:ok, erro:erro}); puxar(); });
+}
+async function puxar(){
+  if (rodando || !fila.length) return;
+  rodando = true;
+  while (fila.length){
+    const job = fila.shift();
+    try { job.ok(await job.fn()); } catch(e){ job.erro(e); }
+    await sleep(360);
+  }
+  rodando = false;
+}
+
+/* ---------- chamada ao Labelary ---------- */
+async function labelary(zpl, indice, accept, c, tentativa){
+  tentativa = tentativa || 0;
+  const headers = {
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Accept": accept
+  };
+  if (c.rotacao !== "0") headers["X-Rotation"] = c.rotacao;
+  if (c.pagina && accept === "application/pdf") headers["X-Page-Size"] = c.pagina;
+
+  const url = API + "/" + c.dpmm + "dpmm/labels/" + c.tamanho + "/" +
+              (indice === null ? "" : indice + "/");
+
+  const r = await fetch(url, { method:"POST", headers:headers, body:zpl });
+
+  if (r.status === 429 && tentativa < 4){
+    const espera = (parseInt(r.headers.get("Retry-After") || "2", 10) + 1) * 1000;
+    log("Limite da API atingido, aguardando " + (espera/1000) + "s...");
+    await sleep(espera);
+    return labelary(zpl, indice, accept, c, tentativa + 1);
+  }
+  if (!r.ok){
+    const msg = (await r.text()).slice(0, 300) || ("HTTP " + r.status);
+    throw new Error(msg);
+  }
+  return {
+    blob:  await r.blob(),
+    total: parseInt(r.headers.get("X-Total-Count") || "1", 10)
+  };
+}
+
+/* ---------- entrada de arquivos ---------- */
+const zona = el("zona");
+zona.addEventListener("click", function(){ el("arquivo").click(); });
+zona.addEventListener("dragover", function(e){ e.preventDefault(); zona.classList.add("ativo"); });
+zona.addEventListener("dragleave", function(){ zona.classList.remove("ativo"); });
+zona.addEventListener("drop", function(e){
+  e.preventDefault(); zona.classList.remove("ativo");
+  receber(Array.prototype.slice.call(e.dataTransfer.files));
+});
+el("arquivo").addEventListener("change", function(e){
+  receber(Array.prototype.slice.call(e.target.files));
+  e.target.value = "";
+});
+
+el("btnColar").addEventListener("click", function(){ el("areaColar").classList.toggle("oculto"); });
+el("btnGerarColado").addEventListener("click", function(){
+  const txt = el("zplTexto").value.trim();
+  if (!txt){ alert("Cole o código ZPL primeiro."); return; }
+  processar(txt, "colado");
+});
+el("btnFecharLupa").addEventListener("click", function(){ el("lupa").close(); });
+el("btnFecharQr").addEventListener("click", function(){ el("qr").close(); });
+
+// no celular não existe arrastar e soltar: o texto vira instrução de toque
+if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches){
+  el("zonaTitulo").textContent = "Toque para escolher o arquivo .txt do ZPL";
+  el("zonaAjuda").textContent  = "aceita vários arquivos e várias etiquetas por arquivo";
+}
+
+/* ---------- usar no celular ---------- */
+function carregarScript(src){
+  return new Promise(function(ok, err){
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = function(){ ok(); };
+    s.onerror = function(){ err(new Error("não consegui baixar o gerador de QR")); };
+    document.head.appendChild(s);
+  });
+}
+el("btnCelular").addEventListener("click", async function(){
+  const naRede = location.protocol.indexOf("http") === 0 &&
+                 location.hostname !== "127.0.0.1" && location.hostname !== "localhost";
+  el("qrUrl").textContent = "";
+  el("qrImg").innerHTML = "";
+  el("qr").showModal();
+
+  if (!naRede){
+    // arquivo aberto direto do disco: o jeito é levar o próprio arquivo para o celular
+    el("qrTexto").innerHTML =
+      "<p><b>Esta página inteira é um arquivo só.</b> Para usar no celular, mande " +
+      "<b>gerador-etiquetas.html</b> para ele (WhatsApp, e-mail, OneDrive ou cabo) e abra o " +
+      "arquivo com o Chrome. Funciona igual, e os PDFs caem na pasta de downloads do celular.</p>" +
+      "<p style='color:var(--cinza);font-size:13px'>O celular precisa de internet: a etiqueta é " +
+      "desenhada pela API do Labelary e a leitura do nome baixa o motor de OCR na primeira vez.</p>";
+    return;
+  }
+
+  el("qrTexto").innerHTML = "<p>Aponte a câmera do celular para o código. " +
+    "<span style='color:var(--cinza)'>O celular precisa estar no mesmo wi-fi deste computador.</span></p>";
+  el("qrUrl").textContent = location.href;
+  el("qrImg").innerHTML = "gerando...";
+  try {
+    if (typeof qrcode === "undefined")
+      await carregarScript("https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js");
+    const q = qrcode(0, "M");
+    q.addData(location.href); q.make();
+    el("qrImg").innerHTML = q.createImgTag(6, 8);
+  } catch(e){
+    el("qrImg").innerHTML = "<small>Sem QR (" + escapar(e.message) + "). Digite o endereço abaixo no navegador do celular.</small>";
+  }
+});
+
+async function receber(arquivos){
+  for (const f of arquivos){
+    const txt = await f.text();
+    if (!/\^XA/i.test(txt)){
+      log("✗ " + f.name + ": não parece um arquivo ZPL (não achei ^XA).");
+      continue;
+    }
+    await processar(txt, f.name.replace(/\.[^.]+$/, ""));
+  }
+}
+
+/* ---------- processa um arquivo ZPL ---------- */
+async function processar(zpl, origem){
+  const c = cfg();
+  log("\n▶ " + origem + ": enviando para o Labelary...");
+  let primeira;
+  try {
+    primeira = await naFila(function(){ return labelary(zpl, 0, "image/png", c); });
+  } catch(e){
+    log("✗ " + origem + ": " + e.message);
+    alert("Erro ao renderizar: " + e.message);
+    return;
+  }
+  const total = primeira.total;
+  log("  " + total + " etiqueta(s) encontrada(s).");
+
+  for (let i = 0; i < total; i++){
+    const et = {
+      id: ++contador, arquivo: origem, zpl: zpl, indice: i,
+      campos: {}, nome: "", png: null, estado: "renderizando...", erro: false
+    };
+    etiquetas.push(et);
+    desenhar();
+
+    try {
+      let png;
+      if (i === 0){
+        png = primeira.blob;
+      } else {
+        const res = await naFila(function(){ return labelary(zpl, i, "image/png", c); });
+        png = res.blob;
+      }
+      et.png = URL.createObjectURL(png);
+      et.estado = c.ocr ? "lendo o nome..." : "pronta";
+      desenhar();
+
+      if (c.ocr){
+        try {
+          et.campos = await lerEtiqueta(png);
+          et.estado = et.campos.nome ? "nome lido" : "não consegui ler o nome — digite";
+          et.erro   = !et.campos.nome;
+        } catch(e){
+          et.estado = "OCR indisponível — digite o nome";
+          et.erro = true;
+          log("  ⚠ OCR falhou: " + e.message);
+        }
+      } else {
+        et.estado = "pronta";
+      }
+      et.nome = nomeArquivo(et, c.padrao);
+      desenhar();
+      log("  " + (i+1) + "/" + total + ": " + et.nome + ".pdf");
+    } catch(e){
+      et.estado = "erro: " + e.message;
+      et.erro = true;
+      desenhar();
+      log("  ✗ etiqueta " + (i+1) + ": " + e.message);
+    }
+  }
+  atualizarBotoes();
+}
+
+/* ---------- OCR: lê os campos da etiqueta renderizada ---------- */
+let workerOCR = null;
+async function pegarWorker(){
+  if (workerOCR) return workerOCR;
+  if (typeof Tesseract === "undefined")
+    throw new Error("biblioteca de OCR não carregou (sem internet?)");
+  log("  baixando motor de OCR (só na primeira vez)...");
+  const opc = {};
+  if (location.protocol === "file:") opc.cacheMethod = "none"; // evita IndexedDB em file://
+  workerOCR = await Tesseract.createWorker("por", 1, opc);
+  return workerOCR;
+}
+
+// recorta um pedaço da etiqueta (frações 0..1), amplia e binariza para o OCR
+function recortar(img, x0, y0, x1, y1, escala, binarizar){
+  if (binarizar === undefined) binarizar = true;
+  const cv = document.createElement("canvas");
+  const lx = Math.round(img.width * (x1 - x0));
+  const ly = Math.round(img.height * (y1 - y0));
+  cv.width = lx * escala; cv.height = ly * escala;
+  const ct = cv.getContext("2d");
+  ct.imageSmoothingEnabled = true; ct.imageSmoothingQuality = "high";
+  ct.fillStyle = "#fff"; ct.fillRect(0, 0, cv.width, cv.height);
+  ct.drawImage(img, Math.round(img.width*x0), Math.round(img.height*y0), lx, ly, 0, 0, cv.width, cv.height);
+  if (binarizar){
+    const d = ct.getImageData(0, 0, cv.width, cv.height);
+    for (let p = 0; p < d.data.length; p += 4){
+      const v = d.data[p] < 140 ? 0 : 255;
+      d.data[p] = d.data[p+1] = d.data[p+2] = v;
+    }
+    ct.putImageData(d, 0, 0);
+  }
+  return cv;
+}
+
+async function lerEtiqueta(pngBlob){
+  const w = await pegarWorker();
+  const url = URL.createObjectURL(pngBlob);
+  const img = await new Promise(function(ok, err){
+    const i = new Image();
+    i.onload = function(){ ok(i); };
+    i.onerror = function(){ err(new Error("preview inválido")); };
+    i.src = url;
+  });
+
+  // bloco do destinatário (abaixo da tarja DESTINATÁRIO, antes do remetente)
+  const blocoDest = recortar(img, 0.02, 0.450, 0.575, 0.665, 3);
+  const t1 = (await w.recognize(blocoDest)).data.text;
+
+  // faixa do topo: ID do pedido e código de rastreio
+  const blocoTopo = recortar(img, 0.02, 0.180, 0.99, 0.240, 3);
+  const t2 = (await w.recognize(blocoTopo)).data.text;
+
+  // o ID do pedido é curto e sem espaço: lê de novo só ele, ampliado e
+  // com o alfabeto travado em maiúsculas + números (evita trocar J por I)
+  let t3 = "";
+  try {
+    await w.setParameters({
+      tessedit_char_whitelist: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      tessedit_pageseg_mode: "7"
+    });
+    t3 = (await w.recognize(recortar(img, 0.04, 0.203, 0.30, 0.232, 6, false))).data.text;
+  } catch(e){ /* segue com a leitura da faixa larga */ }
+  finally {
+    await w.setParameters({ tessedit_char_whitelist: "", tessedit_pageseg_mode: "3" });
+  }
+
+  URL.revokeObjectURL(url);
+  return interpretar(t1, t2, t3);
+}
+
+function interpretar(textoDest, textoTopo, textoPedido){
+  const linhas = (textoDest || "").split("\n")
+    .map(function(s){ return s.trim(); })
+    .filter(function(s){ return s && !/destinat/i.test(s) && /[A-Za-zÀ-ÿ0-9]/.test(s); });
+
+  const campos = { nome:"", cidade:"", uf:"", cep:"", pedido:"", rastreio:"" };
+
+  // nome = primeira linha com cara de nome (só letras, pelo menos duas palavras)
+  for (const l of linhas){
+    const limpo = l.replace(/[^A-Za-zÀ-ÿ' .-]/g, "").replace(/\s{2,}/g, " ").trim();
+    if (limpo.length >= 5 &&
+        limpo.split(/\s+/).length >= 2 &&
+        !/^(rua|av|avenida|travessa|alameda|rodovia|estrada|quadra|qd|lote|casa|apto|apt)\b/i.test(limpo)){
+      campos.nome = limpo;
+      break;
+    }
+  }
+  // o CEP ancora cidade (linha de cima) e estado (linha de baixo)
+  const iCep = linhas.findIndex(function(l){ return /^\d{5}-?\d{3}$/.test(l.replace(/\s/g, "")); });
+  if (iCep > 0){
+    campos.cep    = linhas[iCep].replace(/\D/g, "");
+    campos.cidade = linhas[iCep - 1] || "";
+    campos.uf     = linhas[iCep + 1] || "";
+  }
+  const topo = (textoTopo || "").replace(/\s+/g, " ");
+  const r = topo.match(/\b[A-Z]{2}\s?\d{9}\s?[A-Z]{2}\b/);
+  if (r) campos.rastreio = r[0].replace(/\s/g, "");
+  const p = topo.match(/\b\d{7}[A-Z0-9]{5,10}\b/);
+  if (p) campos.pedido = p[0];
+
+  // leitura dedicada do ID do pedido tem prioridade sobre a da faixa larga
+  const so = String(textoPedido || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const p2 = so.match(/\d{7}[A-Z0-9]{5,10}/);
+  if (p2) campos.pedido = p2[0];
+  return campos;
+}
+
+/* ---------- nome do arquivo ---------- */
+function slug(s){
+  return String(s || "")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "").slice(0, 70);
+}
+// estado por extenso na etiqueta -> sigla no nome do arquivo
+const UF = {
+  acre:"AC", alagoas:"AL", amapa:"AP", amazonas:"AM", bahia:"BA", ceara:"CE",
+  "distrito federal":"DF", "espirito santo":"ES", goias:"GO", maranhao:"MA",
+  "mato grosso":"MT", "mato grosso do sul":"MS", "minas gerais":"MG", para:"PA",
+  paraiba:"PB", parana:"PR", pernambuco:"PE", piaui:"PI", "rio de janeiro":"RJ",
+  "rio grande do norte":"RN", "rio grande do sul":"RS", rondonia:"RO", roraima:"RR",
+  "santa catarina":"SC", "sao paulo":"SP", sergipe:"SE", tocantins:"TO"
+};
+function sigla(estado){
+  const chave = slug(estado).replace(/_/g, " ");
+  if (UF[chave]) return UF[chave];
+  const s = String(estado || "").trim();
+  return s.length === 2 ? s.toUpperCase() : s;   // já veio como sigla, ou não reconheci
+}
+
+function nomeArquivo(et, padrao){
+  const c = et.campos || {};
+  const partes = String(c.nome || "").trim().split(/\s+/).filter(Boolean);
+  const curto  = partes.length > 1 ? partes[0] + " " + partes[partes.length-1] : (c.nome || "");
+  const uf     = sigla(c.uf);
+  let base = "";
+  if (padrao === "nome_cidade")         base = [c.nome, c.cidade].filter(Boolean).join(" ");
+  else if (padrao === "nome_uf")        base = [c.nome, uf].filter(Boolean).join(" ");
+  else if (padrao === "nome_cidade_uf") base = [c.nome, c.cidade, uf].filter(Boolean).join(" ");
+  else if (padrao === "curto_cidade")   base = [curto, c.cidade].filter(Boolean).join(" ");
+  else if (padrao === "pedido")         base = c.pedido;
+  else if (padrao === "rastreio")       base = c.rastreio;
+  else if (padrao === "arquivo")        base = et.arquivo + " " + (et.indice + 1);
+  else                                  base = c.nome;
+  return slug(base) || slug(et.arquivo + "_" + (et.indice + 1)) || ("etiqueta_" + et.id);
+}
+function nomeUnico(nome, id){
+  let n = nome, i = 2;
+  while (etiquetas.some(function(e){ return e.id !== id && e.nome === n; })) n = nome + "_" + (i++);
+  return n;
+}
+
+/* ---------- interface ---------- */
+function desenhar(){
+  const lista = el("lista");
+  lista.innerHTML = "";
+  for (const et of etiquetas){
+    const card = document.createElement("div");
+    card.className = "card";
+    const c = et.campos || {};
+    const chips = [
+      c.cidade ? (c.cidade + (c.uf ? " / " + c.uf : "")) : "",
+      c.cep ? "CEP " + c.cep : "",
+      c.pedido ? "Pedido " + c.pedido : "",
+      c.rastreio || ""
+    ].filter(Boolean).map(function(t){ return '<span class="chip">' + escapar(t) + "</span>"; }).join("");
+
+    card.innerHTML =
+      '<div class="topo">' +
+        (et.png ? '<img src="' + et.png + '" alt="etiqueta ' + et.id + '" data-lupa="' + et.png + '">'
+                : '<div style="width:104px;height:156px;background:var(--areia);border-radius:4px"></div>') +
+        '<div class="dados">' +
+          '<div class="nome">' + escapar(c.nome || "(sem nome lido)") + "</div>" +
+          (chips || '<span class="chip">etiqueta ' + (et.indice + 1) + " de " + escapar(et.arquivo) + "</span>") +
+        "</div>" +
+      "</div>" +
+      '<div class="arquivo">' +
+        '<input type="text" value="' + escapar(et.nome) + '" data-nome="' + et.id + '" spellcheck="false">' +
+        "<span>.pdf</span>" +
+      "</div>" +
+      '<div class="rodape">' +
+        '<span class="estado ' + (et.erro ? "erro" : (et.png ? "ok" : "")) + '">' + escapar(et.estado) + "</span>" +
+        '<button class="mini" data-baixar="' + et.id + '" ' + (et.png ? "" : "disabled") + ">Baixar PDF</button>" +
+      "</div>";
+    lista.appendChild(card);
+  }
+  atualizarBotoes();
+}
+function escapar(s){
+  return String(s == null ? "" : s).replace(/[&<>"]/g, function(m){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];
+  });
+}
+function atualizarBotoes(){
+  const prontas = etiquetas.filter(function(e){ return e.png; }).length;
+  el("btnTudo").disabled   = !prontas;
+  el("btnUnico").disabled  = !prontas;
+  el("btnLimpar").disabled = !etiquetas.length;
+}
+
+el("lista").addEventListener("input", function(e){
+  const id = e.target.dataset.nome;
+  if (!id) return;
+  const et = etiquetas.find(function(x){ return x.id === +id; });
+  if (et) et.nome = e.target.value.trim();
+});
+el("lista").addEventListener("click", async function(e){
+  if (e.target.dataset.lupa){
+    el("lupaImg").src = e.target.dataset.lupa;
+    el("lupa").showModal();
+    return;
+  }
+  const id = e.target.dataset.baixar;
+  if (!id) return;
+  const et = etiquetas.find(function(x){ return x.id === +id; });
+  e.target.disabled = true;
+  await baixarUma(et);
+});
+
+// recalcula os nomes quando o padrão muda
+el("padraoNome").addEventListener("change", function(){
+  const p = el("padraoNome").value;
+  etiquetas.forEach(function(et){ if (et.campos) et.nome = nomeArquivo(et, p); });
+  desenhar();
+});
+
+el("btnLimpar").addEventListener("click", function(){
+  etiquetas.forEach(function(e){ if (e.png) URL.revokeObjectURL(e.png); });
+  etiquetas = [];
+  desenhar();
+  el("log").textContent = "Lista limpa.";
+});
+
+/* ---------- download ---------- */
+async function pdfDa(et){
+  const c = cfg();
+  const res = await naFila(function(){ return labelary(et.zpl, et.indice, "application/pdf", c); });
+  return res.blob;
+}
+async function baixarUma(et){
+  if (!et) return;
+  try {
+    et.estado = "gerando PDF..."; desenhar();
+    const blob = await pdfDa(et);
+    const nome = nomeUnico(et.nome || ("etiqueta_" + et.id), et.id);
+    et.nome = nome;
+    await salvar(blob, nome + ".pdf");
+    et.estado = "salva como " + nome + ".pdf"; et.erro = false;
+    log("  ✓ " + nome + ".pdf");
+  } catch(err){
+    et.estado = "erro ao gerar PDF: " + err.message; et.erro = true;
+    log("  ✗ " + err.message);
+  }
+  desenhar();
+}
+el("btnTudo").addEventListener("click", async function(){
+  el("btnTudo").disabled = true;
+  const prontas = etiquetas.filter(function(e){ return e.png; });
+  for (const et of prontas) await baixarUma(et);
+  el("btnTudo").disabled = false;
+  log("Concluído.");
+});
+el("btnUnico").addEventListener("click", async function(){
+  const et = etiquetas.find(function(e){ return e.png; });
+  if (!et) return;
+  try {
+    log("Gerando PDF único...");
+    const res = await naFila(function(){ return labelary(et.zpl, null, "application/pdf", cfg()); });
+    await salvar(res.blob, slug(et.arquivo) + "_todas.pdf");
+    log("  ✓ " + slug(et.arquivo) + "_todas.pdf");
+  } catch(e){ log("  ✗ " + e.message); }
+});
+
+// se o navegador permitir, salva direto numa pasta escolhida
+if (window.showDirectoryPicker) el("btnPasta").classList.remove("oculto");
+else el("dicaPasta").classList.remove("oculto");
+el("btnPasta").addEventListener("click", async function(){
+  try {
+    pastaDest = await window.showDirectoryPicker({ mode:"readwrite" });
+    el("btnPasta").textContent = "Pasta: " + pastaDest.name;
+    log("Os PDFs serão salvos em: " + pastaDest.name);
+  } catch(e){
+    if (e.name !== "AbortError"){
+      el("btnPasta").classList.add("oculto");
+      log("Escolha de pasta indisponível aqui; os PDFs vão para a pasta de Downloads.");
+    }
+  }
+});
+async function salvar(blob, nome){
+  if (pastaDest){
+    try {
+      const fh = await pastaDest.getFileHandle(nome, { create:true });
+      const w  = await fh.createWritable();
+      await w.write(blob); await w.close();
+      return;
+    } catch(e){ log("  ⚠ não deu para salvar na pasta (" + e.message + "), baixando normal."); }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 20000);
+  await sleep(250);
+}
+
+// gancho para teste/automação
+window.__processar = processar;
+window.__interpretar = interpretar;
+</script>
+</body>
+</html>
