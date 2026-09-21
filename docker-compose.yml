@@ -1,9 +1,13 @@
+# Para rodar na sua máquina, sem Traefik: docker compose up
+# Depois abra http://localhost:8080/jalapao-store/
 services:
   jalapao-store:
-    build: .
-    container_name: jalapao-store
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jalapao-store-local
     ports:
-      - "8502:8501"
+      - "8080:80"
     volumes:
-      - ./data:/app/data
+      - ./manuais:/usr/share/nginx/html/manuais:ro
     restart: unless-stopped

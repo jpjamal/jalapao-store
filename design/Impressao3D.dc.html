@@ -1,0 +1,179 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #f7f2ea; color: #2a1a0f;
+           font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+           font-size: 17px; line-height: 1.6; }
+    a { color: #8f210b; } a:hover { color: #a54d0b; }
+    .display { font-family: "Bahnschrift", "Franklin Gothic Medium", "Archivo", "Helvetica Neue", Arial, sans-serif; }
+    .mono { font-family: "Consolas", "SF Mono", "Menlo", ui-monospace, monospace; }
+    .rotulo { font-family: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif;
+              font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.14em;
+              font-weight: 700; color: #6d5947; }
+    .campo { display: flex; flex-direction: column; gap: 6px; }
+    .entrada { font-family: "Consolas", ui-monospace, monospace; font-size: 16px; color: #2a1a0f;
+               background: #fffdf9; border: 1px solid #c9b79e; border-radius: 3px;
+               padding: 11px 12px; min-height: 44px; display: flex; align-items: center; }
+    .vazia { color: #9b8873; }
+    .sugestao { font-family: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif; font-size: 11px;
+                text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: #6d5947;
+                background: #fffdf9; border: 1px solid #e2d6c4; border-radius: 3px; padding: 7px 11px; }
+    .ajuda { font-size: 12.5px; color: #9b8873; margin: 2px 0 0; }
+    .secao { font-family: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif; font-size: 15px;
+             text-transform: uppercase; letter-spacing: 0.11em; color: #6d5947; font-weight: 700; margin: 0 0 14px; }
+    .linha { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; font-size: 16px; }
+    .linha + .linha { border-top: 1px solid #e2d6c4; }
+    .linha .pontilhado { flex-grow: 1; border-bottom: 1px dotted #c9b79e; }
+    .linha .valor { font-family: "Consolas", ui-monospace, monospace; }
+  </style>
+</helmet>
+
+<div style="width: 1280px; min-height: 1120px; background: #f7f2ea; display: flex; flex-direction: column;">
+
+  <div style="background: #fffdf9; border-bottom: 3px solid #2a1a0f;">
+    <div style="max-width: 1080px; margin: 0 auto; padding: 18px 40px; display: flex; align-items: center; gap: 18px;">
+      <div style="width: 54px; height: 54px; border-radius: 50%; background: #fff6dc; border: 1px solid #c9b79e; display: flex; align-items: center; justify-content: center;">
+        <img src="logo-jalapao.svg" alt="Selo Jalapão Store" style="width: 46px; height: 46px;">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px; margin-right: auto;">
+        <b class="display" style="font-size: 17px; letter-spacing: 0.02em;">Sistema Jalapão Store</b>
+        <span class="display" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: #9b8873;">Ferramentas da loja</span>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Início</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #8f210b; background: #f1e9dc; border: 1px solid #c9b79e; border-radius: 3px; padding: 8px 13px;">Impressão 3D</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Produtos</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Marketplace</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Etiquetas</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width: 1080px; width: 100%; margin: 0 auto; padding: 0 40px 56px;">
+
+    <div style="padding: 48px 0 26px; border-bottom: 1px solid #e2d6c4; margin-bottom: 34px;">
+      <p class="display" style="margin: 0 0 11px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.18em; color: #a54d0b; font-weight: 700;">Ferramenta · produção</p>
+      <h1 class="display" style="margin: 0 0 8px; font-size: 44px; line-height: 1; letter-spacing: -0.02em; font-weight: 700;">Custo de impressão 3D</h1>
+      <p style="margin: 0; font-size: 19px; color: #6d5947; max-width: 58ch;">O que a peça custou de filamento, energia e trabalho — e por quanto sai com a margem que você quiser.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start;">
+
+      <!-- entradas -->
+      <div style="background: #fffdf9; border: 1px solid #e2d6c4; border-radius: 4px; padding: 24px 26px;">
+
+        <h3 class="secao">A peça</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+          <div class="campo">
+            <span class="rotulo">Preço do filamento (R$/kg)</span>
+            <div class="entrada">115,00</div>
+          </div>
+          <div class="campo">
+            <span class="rotulo">Filamento usado (g)</span>
+            <div class="entrada">45</div>
+            <p class="ajuda">o fatiador informa a gramagem da peça</p>
+          </div>
+        </div>
+
+        <h3 class="secao" style="margin-top: 26px;">A impressão</h3>
+        <div class="campo">
+          <span class="rotulo">Consumo da impressora (W)</span>
+          <div class="entrada">200</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+            <span class="sugestao">Ender 3 · 120 W</span>
+            <span class="sugestao">Bambu A1 · 200 W</span>
+            <span class="sugestao">Bambu X1C · 350 W</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px;">
+          <div class="campo">
+            <span class="rotulo">Tempo — horas</span>
+            <div class="entrada">5</div>
+          </div>
+          <div class="campo">
+            <span class="rotulo">Tempo — minutos</span>
+            <div class="entrada">18</div>
+          </div>
+        </div>
+
+        <div class="campo" style="margin-top: 16px;">
+          <span class="rotulo">Valor do kWh (R$)</span>
+          <div class="entrada">1,56</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+            <span class="sugestao">Bandeira verde</span>
+            <span class="sugestao">Bandeira amarela</span>
+            <span class="sugestao">Bandeira vermelha</span>
+          </div>
+        </div>
+
+        <h3 class="secao" style="margin-top: 26px;">O resto (opcional)</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+          <div class="campo">
+            <span class="rotulo">Mão de obra (R$)</span>
+            <div class="entrada vazia">15,00</div>
+            <p class="ajuda">valor fixo por peça — preparação, acabamento</p>
+          </div>
+          <div class="campo">
+            <span class="rotulo">Custos fixos (R$)</span>
+            <div class="entrada vazia">0,00</div>
+            <p class="ajuda">desgaste da impressora, bico, lixa, cola</p>
+          </div>
+        </div>
+
+        <div class="campo" style="margin-top: 16px;">
+          <span class="rotulo">Margem de lucro (%)</span>
+          <div class="entrada">100</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+            <span class="sugestao">30%</span>
+            <span class="sugestao">50%</span>
+            <span class="sugestao">80%</span>
+            <span class="sugestao">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- resultado -->
+      <div style="background: #fffdf9; border: 1px solid #c9b79e; border-top: 4px solid #c8670f; border-radius: 4px; padding: 26px 28px;">
+        <h3 class="display" style="margin: 0 0 6px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.11em; color: #6d5947; font-weight: 700;">Preço final sugerido</h3>
+        <p class="display" style="margin: 4px 0 0; font-size: 58px; line-height: 1; letter-spacing: -0.02em; font-weight: 700; color: #4d6b2f;">R$ 13,66</p>
+
+        <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #e2d6c4;">
+          <div class="linha">
+            <span style="color: #6d5947;">Filamento</span><span class="pontilhado"></span><span class="valor">R$ 5,18</span>
+          </div>
+          <div class="linha">
+            <span style="color: #6d5947;">Energia</span><span class="pontilhado"></span><span class="valor">R$ 1,65</span>
+          </div>
+          <div class="linha" style="border-top: 2px solid #2a1a0f; margin-top: 5px; padding-top: 12px;">
+            <b>Custo total</b><span class="pontilhado"></span><b class="valor">R$ 6,83</b>
+          </div>
+          <div class="linha">
+            <span style="color: #6d5947;">Lucro estimado</span><span class="pontilhado"></span><span class="valor" style="color: #4d6b2f;">R$ 6,83</span>
+          </div>
+        </div>
+
+        <p style="margin: 20px 0 0; font-size: 14px; color: #6d5947;">A impressão gasta 1,06 kWh em 5,3 h.</p>
+      </div>
+
+    </div>
+
+    <p style="margin: 26px 0 0; font-size: 16px; color: #6d5947; max-width: 68ch;">O consumo em watts é o da impressora no bico e na mesa quentes — é uma média, não uma medição. Quem quiser o número certo mede com um wattímetro de tomada e guarda esse valor aqui.</p>
+
+    <div class="mono" style="margin-top: 44px; padding-top: 18px; border-top: 1px solid #e2d6c4; font-size: 13px; color: #9b8873; display: flex; gap: 26px;">
+      <span>Jalapão Store · Palmas, Tocantins</span>
+      <span>a conta roda no navegador, nada é enviado para fora</span>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

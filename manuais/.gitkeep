@@ -1,0 +1,2 @@
+Os PDFs de manual são enviados por SSH direto para ~/jalapao-store/manuais no
+servidor, fora do Git. Esta pasta existe para o volume do container ter onde montar.

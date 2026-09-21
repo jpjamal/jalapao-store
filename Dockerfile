@@ -1,39 +1,15 @@
-FROM python:3.11-slim
+# Sistema Jalapão Store — site estático servido por nginx.
+# O Traefik entrega em /jalapao-store sem remover o prefixo, por isso o site
+# mora numa pasta com esse nome dentro da raiz do nginx: assim os links
+# relativos (assets/jalapao.css) continuam resolvendo.
 
-WORKDIR /app
+FROM nginx:1.27-alpine
 
-# Dependências do sistema
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
+COPY nginx-site.conf /etc/nginx/conf.d/default.conf
+COPY site/ /usr/share/nginx/html/jalapao-store/
 
-# Dependências Python
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# /usr/share/nginx/html/manuais vem de volume do host — o PDF é enviado por SSH,
+# fora do repositório, e por isso não entra na imagem.
+RUN mkdir -p /usr/share/nginx/html/manuais
 
-# Código da aplicação
-COPY . .
-
-# ETL no build: gera o banco-semente a partir dos CSVs
-RUN mkdir -p /app/data && \
-    python etl_initial_load.py && \
-    mkdir -p /app/data_seed && \
-    cp /app/data/database.json /app/data_seed/database.json
-
-EXPOSE 8501
-
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1
-
-# No startup: se o volume estiver vazio, copia o banco-semente.
-# Para forçar reset, basta rodar: docker compose down -v && docker compose up --build
-ENTRYPOINT ["sh", "-c", "\
-    if [ ! -f /app/data/database.json ]; then \
-        echo '📦 Primeira execução: copiando banco-semente para o volume...'; \
-        cp /app/data_seed/database.json /app/data/database.json; \
-    fi && \
-    streamlit run app.py \
-        --server.port=8501 \
-        --server.address=0.0.0.0 \
-        --server.headless=true \
-        --browser.gatherUsageStats=false \
-"]
+EXPOSE 80

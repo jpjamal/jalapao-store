@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #f7f2ea; color: #2a1a0f;
+           font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+           font-size: 17px; line-height: 1.6; }
+    a { color: #8f210b; } a:hover { color: #a54d0b; }
+    .display { font-family: "Bahnschrift", "Franklin Gothic Medium", "Archivo", "Helvetica Neue", Arial, sans-serif; }
+    .mono { font-family: "Consolas", "SF Mono", "Menlo", ui-monospace, monospace; }
+    .rotulo { font-family: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif;
+              font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.14em;
+              font-weight: 700; color: #6d5947; }
+    .campo { display: flex; flex-direction: column; gap: 6px; }
+    .entrada { font-family: "Consolas", ui-monospace, monospace; font-size: 16px; color: #2a1a0f;
+               background: #fffdf9; border: 1px solid #c9b79e; border-radius: 3px;
+               padding: 11px 12px; min-height: 44px; display: flex; align-items: center; }
+    .sugestao { font-family: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif; font-size: 11px;
+                text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: #6d5947;
+                background: #fffdf9; border: 1px solid #e2d6c4; border-radius: 3px; padding: 7px 11px; }
+    .ajuda { font-size: 12.5px; color: #9b8873; margin: 2px 0 0; }
+  </style>
+</helmet>
+
+<div style="width: 1280px; min-height: 900px; background: #f7f2ea; display: flex; flex-direction: column;">
+
+  <div style="background: #fffdf9; border-bottom: 3px solid #2a1a0f;">
+    <div style="max-width: 1080px; margin: 0 auto; padding: 18px 40px; display: flex; align-items: center; gap: 18px;">
+      <div style="width: 54px; height: 54px; border-radius: 50%; background: #fff6dc; border: 1px solid #c9b79e; display: flex; align-items: center; justify-content: center;">
+        <img src="logo-jalapao.svg" alt="Selo Jalapão Store" style="width: 46px; height: 46px;">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px; margin-right: auto;">
+        <b class="display" style="font-size: 17px; letter-spacing: 0.02em;">Sistema Jalapão Store</b>
+        <span class="display" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: #9b8873;">Ferramentas da loja</span>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Início</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Impressão 3D</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Produtos</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #8f210b; background: #f1e9dc; border: 1px solid #c9b79e; border-radius: 3px; padding: 8px 13px;">Marketplace</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Etiquetas</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width: 1080px; width: 100%; margin: 0 auto; padding: 0 40px 56px;">
+
+    <div style="padding: 48px 0 26px; border-bottom: 1px solid #e2d6c4; margin-bottom: 34px;">
+      <p class="display" style="margin: 0 0 11px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.18em; color: #a54d0b; font-weight: 700;">Ferramenta · preço e margem</p>
+      <h1 class="display" style="margin: 0 0 8px; font-size: 44px; line-height: 1; letter-spacing: -0.02em; font-weight: 700;">Calculadora de lucro</h1>
+      <p style="margin: 0; font-size: 19px; color: #6d5947;">Quanto sobra no bolso depois da comissão e da taxa fixa do marketplace.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start;">
+
+      <!-- entradas -->
+      <div style="background: #fffdf9; border: 1px solid #e2d6c4; border-radius: 4px; padding: 24px 26px;">
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-bottom: 22px;">
+          <div class="display" style="background: #c8670f; border: 1px solid #c8670f; border-radius: 3px; color: #fff6dc; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; min-height: 44px; display: flex; align-items: center; justify-content: center;">Shopee</div>
+          <div class="display" style="background: #fffdf9; border: 1px solid #c9b79e; border-radius: 3px; color: #6d5947; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; min-height: 44px; display: flex; align-items: center; justify-content: center;">Mercado Livre</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div class="campo">
+            <span class="rotulo">Recarga automática de Ads (%)</span>
+            <div class="entrada">3</div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+              <span class="sugestao">Desligada</span>
+              <span class="sugestao">2%</span>
+              <span class="sugestao">3%</span>
+            </div>
+            <p class="ajuda">desconto no pedido que a Shopee converte em saldo de Ads</p>
+          </div>
+          <div class="campo">
+            <span class="rotulo">Vendedor CPF · pedidos em 90 dias</span>
+            <div class="entrada display" style="font-size: 15px; justify-content: space-between;">
+              <span>Abaixo de 450 — isento</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6d5947" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+            </div>
+            <p class="ajuda">taxa extra só para vendedor CPF que passa de 450 pedidos em 90 dias</p>
+          </div>
+          <div class="campo">
+            <span class="rotulo">Custo unitário do produto (R$)</span>
+            <div class="entrada">118,00</div>
+          </div>
+          <div class="campo">
+            <span class="rotulo">Preço de venda desejado (R$)</span>
+            <div class="entrada">219,99</div>
+          </div>
+        </div>
+
+        <div class="display" style="margin-top: 20px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; color: #8f210b; display: flex; align-items: center; gap: 7px;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="#8f210b"><path d="M8 5l8 7-8 7z"></path></svg>
+          <span>Ver tabela de regras e taxas</span>
+        </div>
+      </div>
+
+      <!-- resultado -->
+      <div style="background: #fffdf9; border: 1px solid #c9b79e; border-top: 4px solid #c8670f; border-radius: 4px; padding: 26px 28px;">
+        <h3 class="display" style="margin: 0 0 6px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.11em; color: #6d5947; font-weight: 700;">Lucro líquido no bolso · Shopee</h3>
+        <p class="display" style="margin: 4px 0 0; font-size: 58px; line-height: 1; letter-spacing: -0.02em; font-weight: 700; color: #4d6b2f;">R$ 38,59</p>
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 18px; padding-top: 15px; border-top: 1px dashed #e2d6c4;">
+          <span style="font-size: 16px; color: #6d5947;">Renda estimada do pedido</span>
+          <span style="flex-grow: 1; border-bottom: 1px dotted #c9b79e;"></span>
+          <b class="mono" style="font-size: 20px; color: #8f210b;">R$ 156,59</b>
+        </div>
+        <p class="ajuda">o que a Shopee deposita, antes de você tirar o custo do produto</p>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 22px; margin-top: 28px; padding-top: 22px; border-top: 1px solid #e2d6c4;">
+          <div>
+            <span class="display" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #9b8873; margin-bottom: 3px;">Taxas totais</span>
+            <strong class="mono" style="display: block; font-size: 18px; font-weight: 400;">R$ 56,80</strong>
+          </div>
+          <div>
+            <span class="display" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #9b8873; margin-bottom: 3px;">Comissão da faixa</span>
+            <strong class="mono" style="display: block; font-size: 18px; font-weight: 400;">14% · R$ 200 a R$ 499,99</strong>
+          </div>
+          <div>
+            <span class="display" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #9b8873; margin-bottom: 3px;">Margem real</span>
+            <strong class="mono" style="display: block; font-size: 18px; font-weight: 400;">17,5%</strong>
+          </div>
+          <div>
+            <span class="display" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #9b8873; margin-bottom: 3px;">Markup sobre custo</span>
+            <strong class="mono" style="display: block; font-size: 18px; font-weight: 400;">32,7%</strong>
+          </div>
+          <div>
+            <span class="display" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #9b8873; margin-bottom: 3px;">Encargo fixo por unidade</span>
+            <strong class="mono" style="display: block; font-size: 18px; font-weight: 400;">R$ 26,00</strong>
+          </div>
+          <div>
+            <span class="display" style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: #9b8873; margin-bottom: 3px;">Recarga de Ads</span>
+            <strong class="mono" style="display: block; font-size: 18px; font-weight: 400;">R$ 6,60</strong>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p style="margin: 26px 0 0; font-size: 16px; color: #6d5947; max-width: 68ch;">A comissão da Shopee sai da faixa de preço sozinha — desde março de 2026 não se escolhe mais programa, o frete grátis é obrigatório e já está embutido.</p>
+
+    <div class="mono" style="margin-top: 50px; padding-top: 18px; border-top: 1px solid #e2d6c4; font-size: 13px; color: #9b8873; display: flex; gap: 26px;">
+      <span>Jalapão Store · Palmas, Tocantins</span>
+      <span>a conta roda no navegador, nada é enviado para fora</span>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

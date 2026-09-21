@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #f7f2ea; color: #2a1a0f;
+           font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+           font-size: 17px; line-height: 1.6; }
+    a { color: #8f210b; } a:hover { color: #a54d0b; }
+    .display { font-family: "Bahnschrift", "Franklin Gothic Medium", "Archivo", "Helvetica Neue", Arial, sans-serif; }
+    .mono { font-family: "Consolas", "SF Mono", "Menlo", ui-monospace, monospace; }
+    .campo-busca { font-family: "Consolas", ui-monospace, monospace; font-size: 15px; color: #9b8873;
+                   background: #fffdf9; border: 1px solid #c9b79e; border-radius: 3px;
+                   padding: 11px 12px; min-height: 44px; display: flex; align-items: center; }
+    .botao { font-family: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif; font-size: 13px;
+             text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; min-height: 44px;
+             padding: 11px 18px; border-radius: 3px; display: flex; align-items: center; justify-content: center; }
+    .primario { background: #a54d0b; border: 1px solid #a54d0b; color: #fff6dc; }
+    .secundario { background: #fffdf9; border: 1px solid #c9b79e; color: #8f210b; }
+    .mini { min-height: 34px; padding: 7px 11px; font-size: 11px; }
+    th { font-family: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif;
+         text-align: left; text-transform: uppercase; letter-spacing: 0.09em; font-size: 11px;
+         color: #6d5947; font-weight: 700; padding: 0 14px 9px 0; border-bottom: 2px solid #2a1a0f; }
+    td { padding: 13px 14px 13px 0; border-bottom: 1px solid #e2d6c4; vertical-align: middle; }
+    .nome { font-family: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif; font-weight: 700; font-size: 17px; }
+    .quando { font-size: 12.5px; color: #9b8873; }
+    .num { font-family: "Consolas", ui-monospace, monospace; white-space: nowrap; }
+    .preco { color: #4d6b2f; font-weight: 700; }
+    .chip { font-family: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif; font-size: 10.5px;
+            text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; padding: 3px 9px;
+            border-radius: 2px; border: 1px solid #9a5a08; color: #9a5a08; }
+  </style>
+</helmet>
+
+<div style="width: 1280px; min-height: 900px; background: #f7f2ea; display: flex; flex-direction: column;">
+
+  <div style="background: #fffdf9; border-bottom: 3px solid #2a1a0f;">
+    <div style="max-width: 1080px; margin: 0 auto; padding: 18px 40px; display: flex; align-items: center; gap: 18px;">
+      <div style="width: 54px; height: 54px; border-radius: 50%; background: #fff6dc; border: 1px solid #c9b79e; display: flex; align-items: center; justify-content: center;">
+        <img src="logo-jalapao.svg" alt="Selo Jalapão Store" style="width: 46px; height: 46px;">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px; margin-right: auto;">
+        <b class="display" style="font-size: 17px; letter-spacing: 0.02em;">Sistema Jalapão Store</b>
+        <span class="display" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: #9b8873;">Ferramentas da loja</span>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Início</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Impressão 3D</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #8f210b; background: #f1e9dc; border: 1px solid #c9b79e; border-radius: 3px; padding: 8px 13px;">Produtos</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Marketplace</span>
+        <span class="display" style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: #6d5947; padding: 8px 13px;">Etiquetas</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width: 1080px; width: 100%; margin: 0 auto; padding: 0 40px 56px;">
+
+    <div style="padding: 48px 0 26px; border-bottom: 1px solid #e2d6c4; margin-bottom: 28px;">
+      <p class="display" style="margin: 0 0 11px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.18em; color: #a54d0b; font-weight: 700;">Registro · produção</p>
+      <h1 class="display" style="margin: 0 0 8px; font-size: 44px; line-height: 1; letter-spacing: -0.02em; font-weight: 700;">Produtos impressos em 3D</h1>
+      <p style="margin: 0; font-size: 19px; color: #6d5947; max-width: 58ch;">O que já teve o custo calculado, com o preço sugerido de cada um. Clique em editar para abrir a peça na calculadora e refazer a conta.</p>
+    </div>
+
+    <!-- barra -->
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+      <div class="campo-busca" style="width: 300px;">Procurar pelo nome</div>
+      <div class="campo-busca display" style="width: 220px; color: #2a1a0f; justify-content: space-between;">
+        <span>Mais recentes primeiro</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6d5947" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+      </div>
+      <span style="flex-grow: 1;"></span>
+      <span class="botao primario">Novo produto</span>
+      <span class="botao secundario">Baixar backup</span>
+      <span class="botao secundario">Restaurar backup</span>
+    </div>
+
+    <!-- lista -->
+    <div style="background: #fffdf9; border: 1px solid #e2d6c4; border-radius: 4px; padding: 8px 22px 12px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+        <thead>
+          <tr>
+            <th>Produto</th><th>Filamento</th><th>Tempo</th><th>Custo</th><th>Preço sugerido</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="nome">Luminária capim dourado</span><div class="quando">atualizado em 14/09/26</div></td>
+            <td class="num">45 g</td>
+            <td class="num">5 h 18 min</td>
+            <td class="num">R$ 6,83</td>
+            <td class="num preco">R$ 13,66</td>
+            <td style="text-align: right; white-space: nowrap;">
+              <span class="botao secundario mini" style="display: inline-flex;">Editar</span>
+              <span class="botao secundario mini" style="display: inline-flex;">Duplicar</span>
+              <span class="botao secundario mini" style="display: inline-flex;">Excluir</span>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="nome">Suporte de celular</span><div class="quando">atualizado em 12/09/26</div></td>
+            <td class="num">28 g</td>
+            <td class="num">1 h 45 min</td>
+            <td class="num">R$ 8,77</td>
+            <td class="num preco">R$ 15,78</td>
+            <td style="text-align: right; white-space: nowrap;">
+              <span class="botao secundario mini" style="display: inline-flex;">Editar</span>
+              <span class="botao secundario mini" style="display: inline-flex;">Duplicar</span>
+              <span class="botao secundario mini" style="display: inline-flex;">Excluir</span>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="nome">Porta-caneta cerrado</span><div class="quando">atualizado em 09/09/26</div></td>
+            <td class="num">62 g</td>
+            <td class="num">3 h</td>
+            <td class="num">R$ 9,04</td>
+            <td class="num preco">R$ 16,27 <span class="chip">incompleto</span></td>
+            <td style="text-align: right; white-space: nowrap;">
+              <span class="botao secundario mini" style="display: inline-flex;">Editar</span>
+              <span class="botao secundario mini" style="display: inline-flex;">Duplicar</span>
+              <span class="botao secundario mini" style="display: inline-flex;">Excluir</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mono" style="display: flex; gap: 26px; flex-wrap: wrap; margin-top: 20px; font-size: 13px; color: #9b8873;">
+      <span>3 produto(s) na lista</span>
+      <span>custo somado: R$ 24,64</span>
+      <span>filamento: 135 g</span>
+      <span>impressora: 10 h 3 min</span>
+    </div>
+
+    <p style="margin: 22px 0 0; font-size: 16px; color: #6d5947; max-width: 68ch;">Os produtos ficam guardados neste navegador, nesta máquina — não sobem para lugar nenhum. Troca de computador, navegador ou limpeza de dados do site levam a lista junto, por isso vale baixar o backup de vez em quando.</p>
+
+    <div class="mono" style="margin-top: 44px; padding-top: 18px; border-top: 1px solid #e2d6c4; font-size: 13px; color: #9b8873; display: flex; gap: 26px;">
+      <span>Jalapão Store · Palmas, Tocantins</span>
+      <span>custo por peça · preço sugerido</span>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

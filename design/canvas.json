@@ -1,0 +1,84 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 1320,
+      "title": "Início"
+    },
+    {
+      "file": "Impressao3D.dc.html",
+      "x": 1380,
+      "y": 0,
+      "w": 1280,
+      "h": 1420,
+      "title": "Custo de impressão 3D"
+    },
+    {
+      "file": "Produtos.dc.html",
+      "x": 2760,
+      "y": 0,
+      "w": 1280,
+      "h": 1020,
+      "title": "Produtos impressos em 3D"
+    },
+    {
+      "file": "Calculadora.dc.html",
+      "x": 4140,
+      "y": 0,
+      "w": 1280,
+      "h": 1380,
+      "title": "Lucro no marketplace"
+    },
+    {
+      "file": "Etiquetas.dc.html",
+      "x": 5520,
+      "y": 0,
+      "w": 1280,
+      "h": 1620,
+      "title": "Gerador de etiquetas"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "nota-sistema",
+      "x": 0,
+      "y": -150,
+      "w": 420,
+      "text": "Sistema Jalapão Store — as telas do site interno.\nCores, tipografia e regras vêm da Paleta Jalapão: laranja cerrado em bloco, terracota em título, tinta marrom no texto."
+    },
+    {
+      "id": "nota-3d",
+      "x": 1380,
+      "y": -150,
+      "w": 420,
+      "text": "Conta igual à da calculadora da 3D Prime: filamento = preço/kg ÷ 1000 × gramas; energia = watts × horas ÷ 1000 × kWh. Sem a parte de gerar orçamento."
+    },
+    {
+      "id": "nota-produtos",
+      "x": 2760,
+      "y": -150,
+      "w": 420,
+      "text": "A peça salva guarda só as entradas; custo e preço são recalculados a cada abertura. Os nomes aqui são exemplos."
+    },
+    {
+      "id": "nota-dados",
+      "x": 5520,
+      "y": -150,
+      "w": 420,
+      "text": "Os nomes e endereços nos cartões são exemplos inventados — a etiqueta real é lida do arquivo do pedido."
+    },
+    {
+      "id": "nota-taxas",
+      "x": 4140,
+      "y": -150,
+      "w": 420,
+      "text": "Tabela oficial da Shopee. Em 01/10/2026 a taxa fixa da primeira faixa passa de R$ 4,00 para R$ 4,50 — a calculadora troca sozinha na data."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}
