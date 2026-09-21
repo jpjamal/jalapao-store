@@ -34,15 +34,6 @@
 
   .sincronia {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    font-size: 0.78rem; color: var(--ink-soft);
-  }
-  .sincronia .bolinha { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); }
-  .sincronia.servidor .bolinha { background: var(--ok); }
-  .sincronia.local .bolinha    { background: var(--warn); }
-  .sincronia.pendente .bolinha { background: var(--bad); }
-
-  .sincronia {
-    display: inline-flex; align-items: center; gap: 0.4rem;
     font-size: 0.78rem; color: var(--ink-soft); white-space: nowrap;
   }
   .sincronia .bolinha { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); }
@@ -89,8 +80,6 @@
       <option value="preco">Maior preço</option>
       <option value="custo">Maior custo</option>
     </select>
-    <span class="sincronia" id="sincronia"><span class="bolinha"></span><span id="sincroniaTexto">verificando…</span></span>
-    <button class="secundario" id="btnEntrar">Entrar para editar</button>
     <span class="sincronia" id="sincronia"><span class="bolinha"></span><span id="sincroniaTexto">verificando…</span></span>
     <button class="secundario" id="btnEntrar">Entrar para editar</button>
     <span class="vazio"></span>
