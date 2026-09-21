@@ -152,7 +152,7 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-/site
+# /site  <- era do mkdocs; aqui site/ e o conteudo publicado, nao pode ser ignorado
 
 # mypy
 .mypy_cache/
@@ -205,3 +205,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# gerado pelo Claude Design, pesado e reconstruivel a partir dos .dc.html
+design/sistema-jalapao-store.html

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Produtos impressos em 3D — Sistema Jalapão Store</title>
+<link rel="icon" href="assets/logo-jalapao.png">
+<link rel="stylesheet" href="assets/jalapao.css">
+<style>
+  .barra-lista { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.2rem; }
+  .barra-lista input[type="text"] { max-width: 300px; }
+  .barra-lista .vazio { flex: 1; }
+  .ajuda { font-size: 0.78rem; color: var(--ink-faint); margin: 0.1rem 0 0; }
+
+  table.produtos td { vertical-align: middle; }
+  table.produtos .nome { font-family: var(--f-display); font-weight: 700; font-size: 1rem; }
+  table.produtos .quando { font-size: 0.78rem; color: var(--ink-faint); }
+  table.produtos .acoes { white-space: nowrap; text-align: right; }
+  table.produtos .acoes button, table.produtos .acoes .botao {
+    min-height: 34px; padding: 0.35rem 0.6rem; font-size: 0.68rem; margin-left: 0.3rem;
+  }
+  table.produtos .preco { color: var(--ok); font-weight: 700; }
+  table.produtos tr.incompleto .preco { color: var(--warn); }
+
+  .vazio-estado {
+    background: var(--surface);
+    border: 1px dashed var(--rule-strong);
+    border-radius: 4px;
+    padding: 2.4rem 1.6rem;
+    text-align: center;
+    color: var(--ink-soft);
+  }
+  .vazio-estado b { display: block; font-family: var(--f-display); font-size: 1.15rem; color: var(--ink); margin-bottom: 0.4rem; }
+
+  .resumo { display: flex; gap: 1.6rem; flex-wrap: wrap; margin-top: 1.4rem; font-family: var(--f-data); font-size: 0.82rem; color: var(--ink-faint); }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-conteudo">
+    <span class="selo"><img src="assets/logo-jalapao.svg" alt="Selo Jalapão Store"></span>
+    <span class="marca">
+      <b>Sistema Jalapão Store</b>
+      <span>Ferramentas da loja</span>
+    </span>
+    <nav class="menu">
+      <a href="index.html">Início</a>
+      <a href="impressao-3d.html">Impressão 3D</a>
+      <a href="produtos-3d.html" aria-current="page">Produtos</a>
+      <a href="calculadora.html">Marketplace</a>
+      <a href="etiquetas.html">Etiquetas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="pagina-topo">
+    <p class="eyebrow">Registro · produção</p>
+    <h1>Produtos impressos em 3D</h1>
+    <p class="lead">O que já teve o custo calculado, com o preço sugerido de cada um.
+      Clique em editar para abrir a peça na calculadora e refazer a conta.</p>
+  </div>
+
+  <div class="barra-lista">
+    <input type="text" id="busca" placeholder="Procurar pelo nome" autocomplete="off" spellcheck="false">
+    <select id="ordem" style="max-width:220px">
+      <option value="recente" selected>Mais recentes primeiro</option>
+      <option value="nome">Nome (A a Z)</option>
+      <option value="preco">Maior preço</option>
+      <option value="custo">Maior custo</option>
+    </select>
+    <span class="vazio"></span>
+    <a class="botao" href="impressao-3d.html">Novo produto</a>
+    <button class="secundario" id="btnBackup">Baixar backup</button>
+    <button class="secundario" id="btnRestaurar">Restaurar backup</button>
+    <input type="file" id="arquivoBackup" accept="application/json,.json" class="oculto">
+  </div>
+
+  <p class="aviso oculto" id="avisoArmazenamento" style="color:var(--bad)">Este navegador não
+    está deixando guardar dados nesta página, então a lista fica vazia.</p>
+
+  <div id="lista"></div>
+
+  <div class="resumo" id="resumo"></div>
+
+  <p class="note" style="margin-top:1.6rem">Os produtos ficam guardados neste navegador,
+    nesta máquina — não sobem para lugar nenhum. Troca de computador, navegador ou limpeza
+    de dados do site levam a lista junto, por isso vale baixar o backup de vez em quando.</p>
+
+  <footer class="rodape">
+    <span>Jalapão Store · Palmas, Tocantins</span>
+    <span>custo por peça · preço sugerido</span>
+  </footer>
+
+</div>
+
+<script src="assets/custo-3d.js"></script>
+<script src="assets/produtos.js"></script>
+<script>
+"use strict";
+
+const el = function(id){ return document.getElementById(id); };
+
+function escapar(s){
+  return String(s == null ? "" : s).replace(/[&<>"]/g, function(m){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];
+  });
+}
+function dataCurta(iso){
+  const d = new Date(iso);
+  return isNaN(d) ? "" : d.toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit", year:"2-digit" });
+}
+
+function carregar(){
+  const termo = el("busca").value.trim().toLowerCase();
+  const ordem = el("ordem").value;
+
+  let itens = Produtos.listar(Produtos.TIPO_3D).map(function(p){
+    const r = Custo3D.calcular(p.entradas);
+    return { produto: p, conta: r };
+  });
+
+  if (termo) itens = itens.filter(function(i){ return i.produto.nome.toLowerCase().indexOf(termo) >= 0; });
+
+  itens.sort(function(a, b){
+    if (ordem === "nome")  return a.produto.nome.localeCompare(b.produto.nome, "pt-BR");
+    if (ordem === "preco") return b.conta.precoFinal - a.conta.precoFinal;
+    if (ordem === "custo") return b.conta.custoTotal - a.conta.custoTotal;
+    return String(b.produto.atualizadoEm).localeCompare(String(a.produto.atualizadoEm));
+  });
+
+  desenhar(itens, termo);
+  resumir(itens);
+}
+
+function desenhar(itens, termo){
+  const alvo = el("lista");
+
+  if (!itens.length){
+    alvo.innerHTML = termo
+      ? '<div class="vazio-estado"><b>Nenhum produto com esse nome</b>Tente outro termo ou limpe a busca.</div>'
+      : '<div class="vazio-estado"><b>Nenhum produto salvo ainda</b>' +
+        'Faça a conta de uma peça na calculadora de impressão 3D, dê um nome e clique em salvar — ' +
+        'ela aparece aqui.<br><br><a class="botao" href="impressao-3d.html">Calcular a primeira peça</a></div>';
+    return;
+  }
+
+  let linhas = "";
+  itens.forEach(function(i){
+    const p = i.produto, c = i.conta;
+    linhas +=
+      '<tr class="' + (c.completo ? "" : "incompleto") + '">' +
+        '<td><span class="nome">' + escapar(p.nome) + "</span>" +
+            '<div class="quando">atualizado em ' + dataCurta(p.atualizadoEm) + "</div></td>" +
+        '<td class="num">' + Custo3D.num(p.entradas.gramas).toLocaleString("pt-BR") + " g</td>" +
+        '<td class="num">' + Custo3D.horasTexto(c.tempoHoras) + "</td>" +
+        '<td class="num">' + Custo3D.brl(c.custoTotal) + "</td>" +
+        '<td class="num preco">' + Custo3D.brl(c.precoFinal) +
+            (c.completo ? "" : ' <span class="chip">incompleto</span>') + "</td>" +
+        '<td class="acoes">' +
+          '<a class="botao secundario" href="impressao-3d.html?produto=' + encodeURIComponent(p.id) + '">Editar</a>' +
+          '<button class="secundario" data-duplicar="' + p.id + '">Duplicar</button>' +
+          '<button class="secundario" data-remover="' + p.id + '">Excluir</button>' +
+        "</td>" +
+      "</tr>";
+  });
+
+  alvo.innerHTML =
+    '<div class="painel" style="padding:0.4rem 1.2rem 0.6rem"><div class="rolagem">' +
+    '<table class="produtos"><thead><tr>' +
+      "<th>Produto</th><th>Filamento</th><th>Tempo</th><th>Custo</th><th>Preço sugerido</th><th></th>" +
+    "</tr></thead><tbody>" + linhas + "</tbody></table></div></div>";
+}
+
+function resumir(itens){
+  if (!itens.length){ el("resumo").innerHTML = ""; return; }
+  const custo = itens.reduce(function(s, i){ return s + i.conta.custoTotal; }, 0);
+  const gramas = itens.reduce(function(s, i){ return s + Custo3D.num(i.produto.entradas.gramas); }, 0);
+  const horas = itens.reduce(function(s, i){ return s + i.conta.tempoHoras; }, 0);
+  el("resumo").innerHTML =
+    "<span>" + itens.length + " produto(s) na lista</span>" +
+    "<span>custo somado: " + Custo3D.brl(custo) + "</span>" +
+    "<span>filamento: " + gramas.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + " g</span>" +
+    "<span>impressora: " + Custo3D.horasTexto(horas) + "</span>";
+}
+
+/* ---------- ações da lista ---------- */
+el("lista").addEventListener("click", function(e){
+  const dup = e.target.dataset.duplicar;
+  if (dup){ Produtos.duplicar(dup); carregar(); return; }
+
+  const rem = e.target.dataset.remover;
+  if (rem){
+    const p = Produtos.obter(rem);
+    if (p && confirm('Excluir "' + p.nome + '"? Isso não tem como desfazer.')){
+      Produtos.remover(rem);
+      carregar();
+    }
+  }
+});
+
+el("busca").addEventListener("input", carregar);
+el("ordem").addEventListener("change", carregar);
+
+/* ---------- backup ---------- */
+el("btnBackup").addEventListener("click", function(){
+  const blob = new Blob([Produtos.exportar()], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "produtos-jalapao-" + new Date().toISOString().slice(0, 10) + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 20000);
+});
+el("btnRestaurar").addEventListener("click", function(){ el("arquivoBackup").click(); });
+el("arquivoBackup").addEventListener("change", async function(e){
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try {
+    const r = Produtos.importar(await f.text());
+    carregar();
+    alert("Backup restaurado: " + r.novos + " novo(s) e " + r.atualizados + " atualizado(s).");
+  } catch(err){
+    alert("Não consegui ler esse arquivo: " + err.message);
+  }
+});
+
+/* ---------- início ---------- */
+if (!Produtos.disponivel()) el("avisoArmazenamento").classList.remove("oculto");
+carregar();
+</script>
+
+</body>
+</html>

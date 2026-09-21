@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de lucro — Sistema Jalapão Store</title>
+<link rel="icon" href="assets/logo-jalapao.png">
+<link rel="stylesheet" href="assets/jalapao.css">
+<style>
+  .grade-calc {
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) minmax(300px, 1.05fr);
+    gap: 1.2rem;
+    align-items: start;
+  }
+  @media (max-width: 780px) { .grade-calc { grid-template-columns: 1fr; } }
+
+  .abas { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1.2rem; }
+  .abas button {
+    background: var(--surface);
+    color: var(--ink-soft);
+    border: 1px solid var(--rule-strong);
+  }
+  .abas button[aria-pressed="true"] {
+    background: var(--cerrado);
+    border-color: var(--cerrado);
+    color: #fff6dc;
+  }
+  .abas button:hover { background: var(--surface-alt); color: var(--ink); }
+  .abas button[aria-pressed="true"]:hover { background: var(--accent-deep); border-color: var(--accent-deep); color: #fff6dc; }
+
+  .resultado {
+    background: var(--surface);
+    border: 1px solid var(--rule-strong);
+    border-top: 4px solid var(--cerrado);
+    border-radius: 4px;
+    padding: 1.5rem 1.6rem;
+  }
+  .lucro {
+    font-family: var(--f-display);
+    font-size: clamp(2.4rem, 7vw, 3.4rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    color: var(--ok);
+    font-variant-numeric: tabular-nums;
+    margin: 0.2rem 0 0;
+  }
+  .lucro.negativo { color: var(--bad); }
+
+  .deposito {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 1.1rem 0 0;
+    padding-top: 0.9rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .deposito span:first-child { font-size: 0.95rem; color: var(--ink-soft); }
+  .deposito .pontilhado { flex: 1; border-bottom: 1px dotted var(--rule-strong); }
+  .deposito strong {
+    font-family: var(--f-data);
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-deep);
+  }
+
+  .metricas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.2rem;
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--rule);
+  }
+  .metrica span {
+    display: block;
+    font-family: var(--f-display);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    margin-bottom: 0.15rem;
+  }
+  .metrica strong {
+    display: block;
+    font-family: var(--f-data);
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+  }
+
+  .sugestoes { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.4rem; }
+  .sugestoes button {
+    min-height: 32px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    background: var(--surface);
+    color: var(--ink-soft);
+    border-color: var(--rule);
+  }
+  .sugestoes button:hover { background: var(--surface-alt); color: var(--accent-deep); border-color: var(--rule-strong); }
+  .ajuda { font-size: 0.78rem; color: var(--ink-faint); margin: 0.1rem 0 0; }
+
+  details.tabela { margin-top: 1.2rem; }
+  details.tabela summary {
+    font-family: var(--f-display);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: var(--accent-deep);
+    cursor: pointer;
+    padding: 0.5rem 0;
+  }
+  details.tabela[open] summary { margin-bottom: 0.6rem; }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-conteudo">
+    <span class="selo"><img src="assets/logo-jalapao.svg" alt="Selo Jalapão Store"></span>
+    <span class="marca">
+      <b>Sistema Jalapão Store</b>
+      <span>Ferramentas da loja</span>
+    </span>
+    <nav class="menu">
+      <a href="index.html">Início</a>
+      <a href="impressao-3d.html">Impressão 3D</a>
+      <a href="produtos-3d.html">Produtos</a>
+      <a href="calculadora.html" aria-current="page">Marketplace</a>
+      <a href="etiquetas.html">Etiquetas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="pagina-topo">
+    <p class="eyebrow">Ferramenta · preço e margem</p>
+    <h1>Calculadora de lucro</h1>
+    <p class="lead">Quanto sobra no bolso depois da comissão e da taxa fixa do marketplace.</p>
+  </div>
+
+  <div class="grade-calc">
+
+    <div class="painel">
+      <div class="abas">
+        <button id="btnShopee" aria-pressed="true" onclick="trocarMarket('shopee')">Shopee</button>
+        <button id="btnMeli" aria-pressed="false" onclick="trocarMarket('meli')">Mercado Livre</button>
+      </div>
+
+      <div class="campo" id="grupoRecarga">
+        <label class="rotulo" for="recarga">Recarga automática de Ads (%)</label>
+        <input type="number" id="recarga" value="0" step="0.1" min="0" max="100" inputmode="decimal" oninput="calcular()">
+        <div class="sugestoes">
+          <button type="button" data-alvo="recarga" data-valor="0">Desligada</button>
+          <button type="button" data-alvo="recarga" data-valor="2">2%</button>
+          <button type="button" data-alvo="recarga" data-valor="3">3%</button>
+        </div>
+        <p class="ajuda">desconto no pedido que a Shopee converte em saldo de Ads</p>
+      </div>
+
+      <div class="campo" id="grupoCpf">
+        <label class="rotulo" for="taxaCpf">Vendedor CPF · pedidos em 90 dias</label>
+        <select id="taxaCpf" onchange="calcular()">
+          <option value="0" selected>Abaixo de 450 — isento</option>
+          <option value="3">Acima de 450 — R$ 3,00 por item</option>
+        </select>
+        <p class="ajuda">taxa extra só para vendedor CPF que passa de 450 pedidos em 90 dias</p>
+      </div>
+
+      <div class="campo oculto" id="grupoMeli">
+        <label class="rotulo" for="planoMeli">Tipo de anúncio</label>
+        <select id="planoMeli" onchange="calcular()">
+          <option value="classico">Clássico — comissão média ~13%</option>
+          <option value="premium">Premium — comissão média ~17,5%, até 12× sem juros</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label class="rotulo" for="custo">Custo unitário do produto (R$)</label>
+        <input type="number" id="custo" placeholder="118,00" step="0.01" inputmode="decimal" oninput="calcular()">
+      </div>
+
+      <div class="campo">
+        <label class="rotulo" for="preco">Preço de venda desejado (R$)</label>
+        <input type="number" id="preco" placeholder="219,99" step="0.01" inputmode="decimal" oninput="calcular()">
+      </div>
+
+      <details class="tabela">
+        <summary id="tituloTabela">Ver tabela de regras e taxas</summary>
+        <div class="rolagem"><table id="conteudoTabela"></table></div>
+        <p class="ajuda" id="notaTabela" style="margin-top:0.8rem; line-height:1.5"></p>
+      </details>
+    </div>
+
+    <div class="resultado">
+      <h3 id="tituloResultado">Lucro líquido no bolso · Shopee</h3>
+      <p class="lucro" id="lucro">R$ 0,00</p>
+
+      <p class="deposito">
+        <span id="rotuloDeposito">Renda estimada do pedido</span>
+        <span class="pontilhado"></span>
+        <strong id="deposito">R$ 0,00</strong>
+      </p>
+      <p class="ajuda" id="notaDeposito">o que a Shopee deposita, antes de você tirar o custo do produto</p>
+
+      <div class="metricas">
+        <div class="metrica">
+          <span>Taxas totais</span>
+          <strong id="taxas">R$ 0,00</strong>
+        </div>
+        <div class="metrica" id="metricaComissao">
+          <span>Comissão da faixa</span>
+          <strong id="comissaoFaixa">—</strong>
+        </div>
+        <div class="metrica">
+          <span>Margem real</span>
+          <strong id="margem">0,0%</strong>
+        </div>
+        <div class="metrica">
+          <span>Markup sobre custo</span>
+          <strong id="markup">0,0%</strong>
+        </div>
+        <div class="metrica">
+          <span>Encargo fixo por unidade</span>
+          <strong id="encargo">R$ 0,00</strong>
+        </div>
+        <div class="metrica" id="metricaRecarga">
+          <span>Recarga de Ads</span>
+          <strong id="valorRecarga">R$ 0,00</strong>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="note" style="margin-top:1.5rem">A comissão da Shopee sai da faixa de preço
+    sozinha — desde março de 2026 não se escolhe mais programa, o frete grátis é obrigatório
+    e já está embutido. Confira a tabela quando o marketplace anunciar mudança.</p>
+
+  <footer class="rodape">
+    <span>Jalapão Store · Palmas, Tocantins</span>
+    <span>a conta roda no navegador, nada é enviado para fora</span>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+
+let marketAtual = "shopee";
+
+const brl = function(v){ return v.toLocaleString("pt-BR", { style:"currency", currency:"BRL" }); };
+const el  = function(id){ return document.getElementById(id); };
+
+/* Faixas da Shopee — política oficial de comissão, vendedor CNPJ.
+
+   Em 01/10/2026 a taxa fixa da primeira faixa passa de R$ 4,00 para R$ 4,50, e com
+   ela o teto do "metade do preço" (que é sempre o dobro da taxa fixa) vai de R$ 8
+   para R$ 9. O resto da tabela não muda.
+
+   Esses valores estão ANTECIPADOS por decisão do dono da loja: a calculadora já usa
+   R$ 4,50 antes da data. Até 01/10 o extrato da Shopee ainda vem com R$ 4,00, então
+   nessa faixa a conta fica R$ 0,50 mais conservadora por item. */
+const AJUSTE_OUTUBRO = new Date(2026, 9, 1);   // 1º de outubro de 2026
+
+function tabelaVigente(hoje){
+  const jaValendo = (hoje || new Date()) >= AJUSTE_OUTUBRO;
+  return { taxaPrimeira: 4.50, limiteMetade: 9, jaValendo: jaValendo };
+}
+
+function faixaShopee(preco, hoje){
+  const t = tabelaVigente(hoje);
+  if (preco < t.limiteMetade) return { comissao: 0.20, taxaFixa: preco * 0.5,   nome: "abaixo de R$ " + t.limiteMetade };
+  if (preco <= 79.99)         return { comissao: 0.20, taxaFixa: t.taxaPrimeira, nome: "até R$ 79,99" };
+  if (preco <= 99.99)         return { comissao: 0.14, taxaFixa: 16.00, nome: "R$ 80 a R$ 99,99" };
+  if (preco <= 199.99)        return { comissao: 0.14, taxaFixa: 20.00, nome: "R$ 100 a R$ 199,99" };
+  if (preco <= 499.99)        return { comissao: 0.14, taxaFixa: 26.00, nome: "R$ 200 a R$ 499,99" };
+  return                             { comissao: 0.14, taxaFixa: 26.00, nome: "acima de R$ 500" };
+}
+
+function trocarMarket(market){
+  marketAtual = market;
+  const shopee = market === "shopee";
+  el("btnShopee").setAttribute("aria-pressed", shopee ? "true" : "false");
+  el("btnMeli").setAttribute("aria-pressed", shopee ? "false" : "true");
+  el("grupoRecarga").classList.toggle("oculto", !shopee);   // recarga de Ads só existe na Shopee
+  el("grupoCpf").classList.toggle("oculto", !shopee);
+  el("metricaRecarga").classList.toggle("oculto", !shopee);
+  el("metricaComissao").classList.toggle("oculto", !shopee);
+  el("grupoMeli").classList.toggle("oculto", shopee);
+  el("tituloResultado").textContent = "Lucro líquido no bolso · " + (shopee ? "Shopee" : "Mercado Livre");
+  el("notaDeposito").textContent = "o que " + (shopee ? "a Shopee" : "o Mercado Livre") +
+    " deposita, antes de você tirar o custo do produto";
+  atualizarTabela();
+  calcular();
+}
+
+function atualizarTabela(){
+  const tabela = el("conteudoTabela");
+  if (marketAtual === "shopee"){
+    const t = tabelaVigente();
+    // enquanto o ajuste não vira oficial, marca que o valor da tabela é o de outubro
+    const futuro = function(texto){
+      return t.jaValendo ? "" : ' <span style="color:var(--ink-faint); font-size:0.85em">' + texto + "</span>";
+    };
+    const destaque = function(texto){ return '<b style="color:var(--accent-deep)">' + texto + "</b>"; };
+    tabela.innerHTML =
+      "<thead><tr><th>Faixa de preço</th><th>Comissão</th><th>Taxa fixa</th><th>Subsídio Pix</th></tr></thead>" +
+      "<tbody>" +
+        '<tr><td>Abaixo de R$ ' + t.limiteMetade + ',00' + futuro("vale a partir de 1º/10") +
+            '</td><td class="num">20%</td><td>metade do preço</td><td>—</td></tr>' +
+        '<tr><td>Até R$ 79,99</td><td class="num">20%</td><td class="num">' +
+            destaque(brl(t.taxaPrimeira)) + futuro("vale a partir de 1º/10") + "</td><td>—</td></tr>" +
+        '<tr><td>R$ 80 a R$ 99,99</td><td class="num">14%</td><td class="num">R$ 16,00</td><td class="num">5%</td></tr>' +
+        '<tr><td>R$ 100 a R$ 199,99</td><td class="num">14%</td><td class="num">R$ 20,00</td><td class="num">5%</td></tr>' +
+        '<tr><td>R$ 200 a R$ 499,99</td><td class="num">14%</td><td class="num">R$ 26,00</td><td class="num">5%</td></tr>' +
+        '<tr><td>Acima de R$ 500</td><td class="num">14%</td><td class="num">R$ 26,00</td><td class="num">até 8%</td></tr>' +
+      "</tbody>";
+
+    const aviso = t.jaValendo
+      ? "Tabela com o ajuste de 1º de outubro de 2026 aplicado."
+      : "<b>Atenção ao período de transição:</b> a taxa fixa da primeira faixa já está aqui com " +
+        "o ajuste que só passa a valer em <b>1º de outubro de 2026</b> (R$ 4,00 → R$ 4,50, e o " +
+        "teto do meio-preço de R$ 8 para R$ 9). Até lá o extrato da Shopee ainda vem com " +
+        "R$ 4,00, então nessa faixa a calculadora mostra R$ 0,50 a menos de lucro por item do " +
+        "que você realmente recebe — erra para o lado seguro.";
+
+    el("notaTabela").innerHTML =
+      aviso + " Vendedor CNPJ; o vendedor CPF paga R$ 3,00 por item a mais depois de 450 " +
+      "pedidos em 90 dias (o seletor acima). O programa de frete grátis é obrigatório e os 6% " +
+      "dele já estão embutidos na comissão — por isso o extrato mostra duas linhas, comissão e " +
+      "taxa de serviço, que somam o valor da tabela; a taxa de transação também já está dentro. " +
+      "<b>O subsídio Pix não muda o que você recebe:</b> a Shopee desconta do comprador e abate " +
+      "o mesmo valor da própria comissão — só o valor da nota fiscal fica menor. " +
+      "<b>Não entram nesta conta:</b> os 2,5% de campanha de destaque, a taxa de até R$ 10,00 " +
+      "por devolução com culpa do vendedor e o cupom que você oferece — a Shopee desconta o " +
+      "cupom antes de aplicar a comissão.";
+  } else {
+    tabela.innerHTML =
+      "<thead><tr><th>Tipo de anúncio</th><th>Comissão média</th><th>Regra abaixo de R$ 79</th></tr></thead>" +
+      "<tbody>" +
+        '<tr><td>Clássico</td><td class="num">~11% a 14%</td><td>Abaixo de R$ 79 paga taxa fixa por unidade; acima, só comissão.</td></tr>' +
+        '<tr><td>Premium (12× sem juros)</td><td class="num">~15% a 19%</td><td>Inclui o custo do parcelamento sem juros ao comprador.</td></tr>' +
+      "</tbody>";
+    el("notaTabela").textContent =
+      "Médias de mercado para categorias gerais — a comissão do Mercado Livre muda por " +
+      "categoria, confira a sua no anúncio antes de fechar o preço.";
+  }
+}
+
+function calcular(){
+  const custo = parseFloat(el("custo").value) || 0;
+  const preco = parseFloat(el("preco").value) || 0;
+
+  const lucroEl   = el("lucro");
+  const taxasEl   = el("taxas");
+  const margemEl  = el("margem");
+  const markupEl  = el("markup");
+  const encargoEl = el("encargo");
+
+  if (preco === 0){
+    lucroEl.textContent = "R$ 0,00";
+    lucroEl.className = "lucro";
+    taxasEl.textContent = "R$ 0,00";
+    margemEl.textContent = "0,0%";
+    markupEl.textContent = "0,0%";
+    encargoEl.textContent = "R$ 0,00";
+    el("valorRecarga").textContent = "R$ 0,00";
+    el("comissaoFaixa").textContent = "—";
+    el("deposito").textContent = "R$ 0,00";
+    return;
+  }
+
+  let taxasTotais = 0;
+  let textoEncargo = "R$ 0,00";
+
+  if (marketAtual === "shopee"){
+    // Tabela oficial vigente desde 01/03/2026: a alíquota vem da faixa de preço,
+    // não é mais escolha do vendedor — o programa de frete grátis virou obrigatório
+    // e os 6% dele já estão embutidos.
+    const faixa = faixaShopee(preco);
+    const extraCpf = parseFloat(el("taxaCpf").value) || 0;   // vendedor CPF acima de 450 pedidos
+    taxasTotais  = (preco * faixa.comissao) + faixa.taxaFixa + extraCpf;
+    textoEncargo = brl(faixa.taxaFixa) + (extraCpf ? " + " + brl(extraCpf) + " CPF" : "");
+    el("comissaoFaixa").textContent =
+      (faixa.comissao * 100).toFixed(0) + "% · " + faixa.nome;
+
+  } else {
+    const tipo = el("planoMeli").value;
+    const comissao = tipo === "classico" ? 0.13 : 0.175;
+    let extra = 0;
+
+    if (preco < 79.00){
+      extra = 6.50;                                // tarifa média de baixo valor
+      textoEncargo = "R$ 6,50 · baixo valor";
+    } else {
+      textoEncargo = "R$ 0,00 · isento acima de R$ 79";
+    }
+
+    taxasTotais = (preco * comissao) + extra;
+  }
+
+  // recarga automática: percentual do pedido que a Shopee retém e converte em saldo de Ads.
+  // Sai do que você recebe, então desconta do lucro como qualquer outra dedução.
+  const pctRecarga = marketAtual === "shopee" ? (parseFloat(el("recarga").value) || 0) : 0;
+  const recarga = preco * (pctRecarga / 100);
+  el("valorRecarga").textContent = brl(recarga);
+
+  // o que o marketplace deposita: preço menos tudo que ele retém, ainda sem o custo do produto
+  const deposito = preco - taxasTotais - recarga;
+  el("deposito").textContent = brl(deposito);
+
+  const lucro  = preco - custo - taxasTotais - recarga;
+  const margem = (lucro / preco) * 100;
+  const markup = custo > 0 ? (lucro / custo) * 100 : 0;
+
+  lucroEl.textContent   = brl(lucro);
+  lucroEl.className     = lucro < 0 ? "lucro negativo" : "lucro";
+  taxasEl.textContent   = brl(taxasTotais);
+  margemEl.textContent  = margem.toFixed(1).replace(".", ",") + "%";
+  markupEl.textContent  = markup.toFixed(1).replace(".", ",") + "%";
+  encargoEl.textContent = textoEncargo;
+}
+
+document.querySelectorAll(".sugestoes button").forEach(function(b){
+  b.addEventListener("click", function(){
+    el(b.dataset.alvo).value = b.dataset.valor;
+    calcular();
+  });
+});
+
+atualizarTabela();
+calcular();
+</script>
+
+</body>
+</html>

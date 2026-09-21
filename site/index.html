@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistema Jalapão Store</title>
+<link rel="icon" href="assets/logo-jalapao.png">
+<link rel="stylesheet" href="assets/jalapao.css">
+<style>
+  .ferramentas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.2rem;
+    margin-top: 0.5rem;
+  }
+  .ferramenta {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--cerrado);
+    border-radius: 4px;
+    padding: 1.5rem 1.6rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    text-decoration: none;
+    color: inherit;
+  }
+  .ferramenta:hover { border-color: var(--rule-strong); border-left-color: var(--accent-deep); background: var(--surface-alt); }
+  .ferramenta svg { color: var(--accent); }
+  .ferramenta h2 { color: var(--accent-deep); }
+  .ferramenta p { font-size: 0.95rem; color: var(--ink-soft); margin: 0; }
+  .ferramenta .passo {
+    font-family: var(--f-data);
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--rule);
+    padding-top: 0.7rem;
+    margin-top: auto;
+  }
+  .faixa {
+    display: flex;
+    height: 10px;
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 2.6rem 0 0.6rem;
+  }
+  .faixa span { display: block; }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-conteudo">
+    <span class="selo"><img src="assets/logo-jalapao.svg" alt="Selo Jalapão Store"></span>
+    <span class="marca">
+      <b>Sistema Jalapão Store</b>
+      <span>Ferramentas da loja</span>
+    </span>
+    <nav class="menu">
+      <a href="index.html" aria-current="page">Início</a>
+      <a href="impressao-3d.html">Impressão 3D</a>
+      <a href="produtos-3d.html">Produtos</a>
+      <a href="calculadora.html">Marketplace</a>
+      <a href="etiquetas.html">Etiquetas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="pagina-topo">
+    <p class="eyebrow">Uso interno · roda no navegador</p>
+    <h1>As ferramentas do dia a dia da loja</h1>
+    <p class="lead">As contas que antes eram feitas na mão: quanto custou imprimir a peça,
+      se o preço fecha depois das taxas do marketplace, e o arquivo de etiqueta do pedido
+      virando PDF já com o nome do cliente.</p>
+  </div>
+
+  <div class="ferramentas">
+
+    <a class="ferramenta" href="impressao-3d.html">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 3h16v6H4z"></path>
+        <path d="M12 9v3"></path>
+        <path d="M10.4 12h3.2l-1.6 2.4z"></path>
+        <path d="M4 21h16"></path>
+        <path d="M7.5 21v-3.2h9V21"></path>
+      </svg>
+      <h2>Custo de impressão 3D</h2>
+      <p>Filamento, energia da impressora, mão de obra e desgaste somados — e o preço de
+        venda da peça com a margem que você escolher.</p>
+      <span class="passo">Custo por peça · preço sugerido</span>
+    </a>
+
+    <a class="ferramenta" href="produtos-3d.html">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3.5 7.2 12 3l8.5 4.2v9.6L12 21l-8.5-4.2z"></path>
+        <path d="M3.5 7.2 12 11.5l8.5-4.3"></path>
+        <path d="M12 11.5V21"></path>
+      </svg>
+      <h2>Produtos 3D</h2>
+      <p>A lista do que já teve o custo calculado, com o preço sugerido de cada peça —
+        dá para procurar pelo nome e reabrir a conta para editar.</p>
+      <span class="passo">Registro · custo e preço por peça</span>
+    </a>
+
+    <a class="ferramenta" href="calculadora.html">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="2.5" width="16" height="19" rx="2"></rect>
+        <rect x="7" y="5.5" width="10" height="3.5" rx="0.5"></rect>
+        <path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01"></path>
+      </svg>
+      <h2>Lucro no marketplace</h2>
+      <p>Custo do produto e preço de venda de um lado, lucro líquido no bolso do outro —
+        com as taxas da Shopee e do Mercado Livre já descontadas, margem e markup.</p>
+      <span class="passo">Shopee · Mercado Livre</span>
+    </a>
+
+    <a class="ferramenta" href="etiquetas.html">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H13l8 8-7.5 7.5L5.5 11V5.5Z"></path>
+        <circle cx="7.8" cy="7.8" r="1.2"></circle>
+        <path d="M10.5 12.2l1.8 1.8M13 9.7l1.8 1.8M15.5 12.2l1.8 1.8"></path>
+      </svg>
+      <h2>Gerador de etiquetas</h2>
+      <p>Sobe o .txt de ZPL que a Shopee gera e sai um PDF por etiqueta, no tamanho
+        100 × 150 mm, com o nome do destinatário e a cidade já no nome do arquivo.</p>
+      <span class="passo">ZPL → PDF · leitura por OCR</span>
+    </a>
+
+  </div>
+
+  <div class="faixa" role="img" aria-label="Proporção da marca: laranja cerrado, areia, terras de apoio e oliva">
+    <span style="background:#c8670f; width:45%"></span>
+    <span style="background:#d1a563; width:13%"></span>
+    <span style="background:#e7c98f; width:12%"></span>
+    <span style="background:#8f370b; width:12%"></span>
+    <span style="background:#8f210b; width:10%"></span>
+    <span style="background:#5c6033; width:8%"></span>
+  </div>
+  <p class="note">Cores e tipografia seguem a
+    <b>Paleta Jalapão</b>.</p>
+
+  <footer class="rodape">
+    <span>Jalapão Store · Palmas, Tocantins</span>
+    <span>tudo roda no navegador — nada é enviado para servidor da loja</span>
+  </footer>
+
+</div>
+
+</body>
+</html>
