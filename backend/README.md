@@ -18,6 +18,8 @@ Rodar `uv run ruff check . --exclude migrations` e `uv run python manage.py make
 - accounts: usuário Django extensível, grupos/permissões, JWT e bootstrap explícito.
 - catalog: Product e PrintingProfile 1:1; cálculos em domain.py.
 - inventory: saldo 1:1, histórico N:1, serviços atômicos com bloqueio do produto.
+- inventory.Receipt: compras/produções por produto com custo congelado; Stock.value mantém
+  avaliação pelo custo médio móvel. Product.cost_price é apenas referência de novas entradas.
 - sales: Sale 1:N SaleItem; snapshots, chave idempotente e cancelamento reversível.
 - finance: entradas/saídas imutáveis. Recebimento e estorno por venda são únicos.
 - integrations: Listing relaciona produto interno a item/user_product/family; outbox transacional.
@@ -29,6 +31,12 @@ API interna `/api/v1/`; pública via `/jalapao-store/backend-api/`.
 Autenticação Bearer JWT. Frontend usa BFF `/jalapao-store/api/` com cookies HttpOnly.
 `products/` GET/POST/PATCH, `movements/` GET/POST, `sales/` GET/POST,
 `sales/{uuid}/receive/` e `cancel/` POST, `cash/` GET/POST, `dashboard/` GET.
+`receipts/` GET/POST, `receipts/{uuid}/` GET e `receipts/{uuid}/pay/` POST (occurred_on).
+Criar entrada exige add_receipt e add_movement; pagar exige add_receipt, change_receipt e
+add_cashentry. Produção não gera caixa. Compra paga cria CashEntry com vínculo único.
+Movimento de ajuste positivo exige unit_cost; negativo usa a média. Campos stock_value e
+average_cost são somente leitura no produto. SaleItem.cost_total é o custo exato da baixa;
+unit_cost é arredondado para apresentação e pode não reproduzir o total multiplicado.
 Paginação padrão 100; pesquisar produto com `?search=`, filtrar kind/active, vendas channel/status.
 Respostas inválidas: `{"errors":{"campo":["mensagem"]}}`. HTTP 400 validação, 401 login,
 403 permissão, 404 recurso. Valores monetários em strings decimais.

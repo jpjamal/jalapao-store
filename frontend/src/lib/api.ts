@@ -1,15 +1,42 @@
 export const BASE = "/jalapao-store";
 const labels: Record<string, string> = {
-  quantity: "Quantidade", product: "Produto", product_id: "Produto", name: "Nome",
-  sku: "Código", kind: "Tipo", description: "Descrição", cost_price: "Custo",
-  sale_price: "Preço", printing: "Impressão 3D", filament_price_kg: "Filamento",
-  weight_g: "Peso", power_w: "Potência", hours: "Horas", minutes: "Minutos",
-  energy_price_kwh: "Energia", labor_cost: "Mão de obra", fixed_cost: "Custo fixo",
-  markup_percent: "Acréscimo", items: "Itens", discount: "Desconto",
-  platform_fee: "Taxas", shipping_cost: "Frete", status: "Situação",
-  amount: "Valor", direction: "Tipo", occurred_on: "Data", reason: "Motivo",
-  delta: "Quantidade", username: "Usuário", password: "Senha", channel: "Canal",
-  reference: "Referência", idempotency_key: "Identificação da tentativa",
+  quantity: "Quantidade",
+  product: "Produto",
+  product_id: "Produto",
+  name: "Nome",
+  sku: "Código",
+  kind: "Tipo",
+  description: "Descrição",
+  cost_price: "Custo",
+  sale_price: "Preço",
+  printing: "Impressão 3D",
+  filament_price_kg: "Filamento",
+  weight_g: "Peso",
+  power_w: "Potência",
+  hours: "Horas",
+  minutes: "Minutos",
+  energy_price_kwh: "Energia",
+  labor_cost: "Mão de obra",
+  fixed_cost: "Custo fixo",
+  markup_percent: "Acréscimo",
+  items: "Itens",
+  discount: "Desconto",
+  platform_fee: "Taxas",
+  shipping_cost: "Frete",
+  status: "Situação",
+  amount: "Valor",
+  direction: "Tipo",
+  occurred_on: "Data",
+  reason: "Motivo",
+  delta: "Quantidade",
+  username: "Usuário",
+  password: "Senha",
+  channel: "Canal",
+  reference: "Referência",
+  idempotency_key: "Identificação da tentativa",
+  unit_cost: "Custo unitário",
+  supplier: "Fornecedor",
+  notes: "Observação",
 };
 function flatten(value: unknown, prefix = ""): string[] {
   if (Array.isArray(value)) return value.flatMap((v) => flatten(v, prefix));
@@ -64,6 +91,8 @@ export type Product = {
   name: string;
   kind: string;
   cost_price: string;
+  stock_value: string;
+  average_cost: string;
   sale_price: string;
   description: string;
   active: boolean;

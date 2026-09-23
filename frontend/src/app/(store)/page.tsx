@@ -39,7 +39,7 @@ export default function Dashboard() {
               [
                 "Estoque a custo",
                 brl(data.stock_value),
-                "Quantidade em estoque × custo atual",
+                "Valor das unidades pelo custo médio",
               ],
               [
                 "Faturamento",

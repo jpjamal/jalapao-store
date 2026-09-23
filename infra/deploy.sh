@@ -8,6 +8,9 @@ mkdir -p "$HOME/backups/jalapao-store"
 chmod 700 "$HOME/backups/jalapao-store"
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 dc build
+# Freeze commercial writes before the backup and valuation migrations.
+# On failure leave the API stopped for inspection; never serve old valuation logic.
+dc stop backend
 if dc ps --status running --services | grep -qx db; then
     dc exec -T db pg_dump -U jalapao -d jalapao -Fc > "$HOME/backups/jalapao-store/db-$stamp.dump"
     test -s "$HOME/backups/jalapao-store/db-$stamp.dump"

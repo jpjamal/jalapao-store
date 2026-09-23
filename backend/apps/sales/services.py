@@ -7,6 +7,8 @@ from django.utils import timezone
 from apps.catalog.models import Product
 from apps.catalog.domain import money
 from apps.inventory.services import adjust_stock
+from apps.inventory.models import Stock
+from apps.inventory.services import outgoing_cost
 from apps.finance.models import CashEntry
 from .models import Sale, SaleItem
 
@@ -35,7 +37,11 @@ def create_sale(*, data, actor):
     if len(products) != len(ids) or any(not p.active for p in products.values()):
         raise ValidationError({"items": "Produto inexistente ou inativo."})
     gross = money(sum(row["unit_price"] * row["quantity"] for row in rows))
-    costs = money(sum(products[row["product_id"]].cost_price * row["quantity"] for row in rows))
+    item_costs = {
+        row["product_id"]: outgoing_cost(Stock.objects.get(product_id=row["product_id"]), row["quantity"])
+        for row in rows
+    }
+    costs = sum(item_costs.values(), Decimal(0))
     discount, fee, shipping = (
         data.get(key, Decimal(0)) for key in ("discount", "platform_fee", "shipping_cost")
     )
@@ -64,7 +70,8 @@ def create_sale(*, data, actor):
             product_name=product.name,
             quantity=row["quantity"],
             unit_price=row["unit_price"],
-            unit_cost=product.cost_price,
+            unit_cost=money(item_costs[product.id] / row["quantity"]),
+            cost_total=item_costs[product.id],
         )
         adjust_stock(
             product_id=product.id, delta=-row["quantity"], reason="Venda confirmada", actor=actor, sale=sale
@@ -104,6 +111,7 @@ def cancel_sale(*, sale_id, actor):
             reason="Cancelamento de venda",
             actor=actor,
             sale=sale,
+            total_cost=item.cost_total,
         )
     if sale.received_at and sale.net > 0:
         CashEntry.objects.create(

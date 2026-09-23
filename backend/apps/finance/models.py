@@ -17,10 +17,17 @@ class CashEntry(Entity):
         "sales.Sale", null=True, blank=True, on_delete=models.PROTECT, related_name="cash_entries"
     )
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    receipt = models.OneToOneField(
+        "inventory.Receipt", null=True, blank=True, on_delete=models.PROTECT, related_name="payment"
+    )
 
     class Meta:
         ordering = ["-occurred_on", "-created_at"]
         constraints = [
             models.CheckConstraint(condition=models.Q(amount__gt=0), name="cash_amount_positive"),
             models.UniqueConstraint(fields=["sale", "direction"], name="cash_sale_direction_unique"),
+            models.CheckConstraint(
+                condition=models.Q(sale__isnull=True) | models.Q(receipt__isnull=True),
+                name="cash_single_origin",
+            ),
         ]

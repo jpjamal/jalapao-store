@@ -13,6 +13,12 @@ class PrintingSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     printing = PrintingSerializer(required=False, allow_null=True)
     quantity = serializers.IntegerField(source="stock.quantity", read_only=True, default=0)
+    stock_value = serializers.DecimalField(
+        source="stock.value", max_digits=14, decimal_places=2, read_only=True, default=0
+    )
+    average_cost = serializers.DecimalField(
+        source="stock.average_cost", max_digits=18, decimal_places=6, read_only=True, default=0
+    )
 
     class Meta:
         model = Product
@@ -27,6 +33,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "active",
             "printing",
             "quantity",
+            "stock_value",
+            "average_cost",
             "created_at",
             "updated_at",
         ]

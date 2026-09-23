@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/fields";
 import { ErrorMessage, Empty } from "@/components/feedback";
+import Link from "next/link";
 type Movement = {
   id: string;
   product_name: string;
@@ -13,6 +14,7 @@ type Movement = {
   balance_after: number;
   reason: string;
   created_at: string;
+  value_delta: string | null;
 };
 export default function Inventory() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -21,6 +23,7 @@ export default function Inventory() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [delta, setDelta] = useState(0);
   const load = useCallback(() => {
     Promise.all([allProducts(), api<Page<Movement>>(`movements?page=${page}`)])
       .then(([p, m]) => {
@@ -34,7 +37,12 @@ export default function Inventory() {
     <>
       <h1>Estoque</h1>
       <p className="text-muted-foreground mb-7">
-        Registre entradas e ajustes. As vendas baixam o estoque automaticamente.
+        Para reposição, use{" "}
+        <Link href="/entradas" className="underline">
+          Compras / produção
+        </Link>
+        . Aqui ficam os ajustes de inventário. Vendas baixam o estoque
+        automaticamente.
       </p>
       <ErrorMessage message={error} />
       {notice && (
@@ -44,7 +52,7 @@ export default function Inventory() {
       )}
       <div className="grid xl:grid-cols-[1fr_2fr] gap-5">
         <Card>
-          <h2>Movimentar produto</h2>
+          <h2>Ajustar inventário</h2>
           <form
             className="space-y-4"
             onSubmit={async (e) => {
@@ -61,10 +69,12 @@ export default function Inventory() {
                     product: f.get("product"),
                     delta: Number(f.get("delta")),
                     reason: f.get("reason"),
+                    ...(delta > 0 ? { unit_cost: f.get("unit_cost") } : {}),
                   }),
                 });
                 setNotice("Movimentação registrada.");
                 form.reset();
+                setDelta(0);
                 load();
               } catch (err) {
                 setError((err as Error).message);
@@ -90,7 +100,22 @@ export default function Inventory() {
               type="number"
               step="1"
               required
+              onChange={(e) => setDelta(Number(e.target.value))}
             />
+            {delta > 0 && (
+              <Field
+                name="unit_cost"
+                label="Custo unitário da entrada (R$)"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+              />
+            )}
+            <p className="text-sm text-muted-foreground">
+              Ajustes não movimentam caixa. Saídas usam o custo médio; entradas
+              exigem o custo conhecido.
+            </p>
             <Field name="reason" label="Motivo" required maxLength={240} />
             <Button disabled={busy || !products.length}>
               {busy ? "Registrando…" : "Registrar movimento"}
@@ -106,6 +131,7 @@ export default function Inventory() {
                   <th>Produto</th>
                   <th>Unidades</th>
                   <th>Valor a custo</th>
+                  <th>Custo médio / un.</th>
                 </tr>
               </thead>
               <tbody>
@@ -113,8 +139,9 @@ export default function Inventory() {
                   <tr key={p.id}>
                     <td>{p.name}</td>
                     <td>{p.quantity}</td>
+                    <td className="money">{brl(p.stock_value)}</td>
                     <td className="money">
-                      {brl(p.quantity * Number(p.cost_price))}
+                      {p.quantity ? brl(p.average_cost) : "—"}
                     </td>
                   </tr>
                 ))}
@@ -140,6 +167,7 @@ export default function Inventory() {
                   <th>Variação</th>
                   <th>Saldo após</th>
                   <th>Motivo</th>
+                  <th>Variação em R$</th>
                 </tr>
               </thead>
               <tbody>
@@ -153,6 +181,11 @@ export default function Inventory() {
                     </td>
                     <td>{m.balance_after}</td>
                     <td>{m.reason}</td>
+                    <td className="money">
+                      {m.value_delta === null
+                        ? "Anterior ao controle de custos"
+                        : brl(m.value_delta)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

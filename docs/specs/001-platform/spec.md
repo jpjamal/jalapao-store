@@ -2,6 +2,9 @@
 
 Status: implementação autorizada em 2026-09-23. Monorepositório, uma loja, BRL.
 
+Evolução: a spec 002-stock-cost substitui a avaliação por custo corrente abaixo por
+custo médio móvel e acrescenta compras/produção. As demais regras permanecem válidas.
+
 ## Objetivo e limites
 Substituir o armazenamento JSON por PostgreSQL e oferecer uma interface Next.js com
 autenticação Django/JWT. Preservar calculadoras, etiquetas, manuais e identidade visual.

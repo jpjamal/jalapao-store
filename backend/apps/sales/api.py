@@ -26,7 +26,7 @@ class SaleInput(serializers.Serializer):
 class ItemOutput(serializers.ModelSerializer):
     class Meta:
         model = SaleItem
-        fields = ["id", "product", "product_name", "quantity", "unit_price", "unit_cost"]
+        fields = ["id", "product", "product_name", "quantity", "unit_price", "unit_cost", "cost_total"]
 
 
 class SaleSerializer(serializers.ModelSerializer):

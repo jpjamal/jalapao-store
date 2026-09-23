@@ -12,6 +12,7 @@ type Entry = {
   description: string;
   occurred_on: string;
   sale: string | null;
+  receipt: string | null;
 };
 export default function Cash() {
   const [rows, setRows] = useState<Page<Entry> | null>(null);
@@ -115,7 +116,7 @@ export default function Cash() {
                   <tr key={r.id}>
                     <td>{r.occurred_on.split("-").reverse().join("/")}</td>
                     <td>{r.description}</td>
-                    <td>{r.sale ? "Venda" : "Manual"}</td>
+                    <td>{r.sale ? "Venda" : r.receipt ? "Compra de estoque" : "Manual"}</td>
                     <td
                       className={`money ${r.direction === "in" ? "text-success" : "text-destructive"}`}
                     >

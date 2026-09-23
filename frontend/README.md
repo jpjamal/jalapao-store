@@ -13,6 +13,9 @@ Produção standalone: Dockerfile copia `.next/standalone`, `.next/static` e pub
 - /: estoque a custo, faturamento, lucro estimado, caixa, a receber, produtos ativos.
 - /produtos: busca, paginação, cadastro/edição, parâmetros 3D e desativação.
 - /estoque: entradas/saídas justificadas, valor e histórico.
+- /entradas: compra/produção por produto, custo do lote, histórico e pagamento de compra.
+  Cadastro sugere custo; usuário confirma o valor real. Compra só gera caixa ao pagar;
+  produção nunca gera despesa automática. Ajustes positivos exigem custo explícito.
 - /vendas: múltiplos itens, canal, descontos/taxas/frete, receber e cancelar.
 - /caixa: entradas/saídas, origem automática/manual e histórico preservado.
 - /ferramentas: calculadoras e etiquetas existentes.

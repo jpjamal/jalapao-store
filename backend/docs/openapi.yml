@@ -384,6 +384,129 @@ paths:
               schema:
                 $ref: '#/components/schemas/Product'
           description: ''
+  /receipts/:
+    get:
+      operationId: receipts_list
+      parameters:
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - production
+          - purchase
+        description: |-
+          * `purchase` - Compra
+          * `production` - Produção
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: string
+          format: uuid
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - receipts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReceiptList'
+          description: ''
+    post:
+      operationId: receipts_create
+      tags:
+      - receipts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceiptInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReceiptInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReceiptInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+          description: ''
+  /receipts/{id}/:
+    get:
+      operationId: receipts_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este receipt.
+        required: true
+      tags:
+      - receipts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+          description: ''
+  /receipts/{id}/pay/:
+    post:
+      operationId: receipts_pay_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este receipt.
+        required: true
+      tags:
+      - receipts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+          description: ''
   /sales/:
     get:
       operationId: sales_list
@@ -552,6 +675,11 @@ components:
           format: uuid
           readOnly: true
           nullable: true
+        receipt:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
         actor:
           type: integer
           readOnly: true
@@ -566,6 +694,7 @@ components:
       - direction
       - id
       - occurred_on
+      - receipt
       - sale
     ChannelEnum:
       enum:
@@ -668,19 +797,15 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        cost_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
       required:
       - id
       - product
       - product_name
       - quantity
-    KindEnum:
-      enum:
-      - printing
-      - resale
-      type: string
-      description: |-
-        * `printing` - Impressão 3D
-        * `resale` - Revenda
     Movement:
       type: object
       properties:
@@ -717,6 +842,28 @@ components:
           type: string
           format: date-time
           readOnly: true
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          writeOnly: true
+        receipt:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        value_delta:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        value_after:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
       required:
       - actor
       - balance_after
@@ -726,7 +873,10 @@ components:
       - product
       - product_name
       - reason
+      - receipt
       - sale
+      - value_after
+      - value_delta
     PaginatedCashList:
       type: object
       required:
@@ -796,6 +946,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Product'
+    PaginatedReceiptList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Receipt'
     PaginatedSaleList:
       type: object
       required:
@@ -833,7 +1006,7 @@ components:
           type: string
           maxLength: 200
         kind:
-          $ref: '#/components/schemas/KindEnum'
+          $ref: '#/components/schemas/ProductKindEnum'
         description:
           type: string
         cost_price:
@@ -854,6 +1027,18 @@ components:
           type: integer
           readOnly: true
           default: 0
+        stock_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          default: '0.00'
+        average_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+          readOnly: true
+          default: '0.000000'
         created_at:
           type: string
           format: date-time
@@ -862,6 +1047,14 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PaymentInput:
+      type: object
+      properties:
+        occurred_on:
+          type: string
+          format: date
+      required:
+      - occurred_on
     Printing:
       type: object
       properties:
@@ -918,7 +1111,7 @@ components:
           type: string
           maxLength: 200
         kind:
-          $ref: '#/components/schemas/KindEnum'
+          $ref: '#/components/schemas/ProductKindEnum'
         description:
           type: string
         cost_price:
@@ -939,6 +1132,18 @@ components:
           type: integer
           readOnly: true
           default: 0
+        stock_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          default: '0.00'
+        average_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+          readOnly: true
+          default: '0.000000'
         created_at:
           type: string
           format: date-time
@@ -948,12 +1153,139 @@ components:
           format: date-time
           readOnly: true
       required:
+      - average_cost
       - created_at
       - id
       - name
       - quantity
       - sku
+      - stock_value
       - updated_at
+    ProductKindEnum:
+      enum:
+      - printing
+      - resale
+      type: string
+      description: |-
+        * `printing` - Impressão 3D
+        * `resale` - Revenda
+    Receipt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        product_name:
+          type: string
+          maxLength: 200
+        kind:
+          $ref: '#/components/schemas/ReceiptKindEnum'
+        quantity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        occurred_on:
+          type: string
+          format: date
+        supplier:
+          type: string
+          maxLength: 200
+        reference:
+          type: string
+          maxLength: 100
+        notes:
+          type: string
+          maxLength: 500
+        idempotency_key:
+          type: string
+          format: uuid
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        product:
+          type: string
+          format: uuid
+        actor:
+          type: integer
+      required:
+      - actor
+      - created_at
+      - id
+      - idempotency_key
+      - kind
+      - occurred_on
+      - product
+      - product_name
+      - quantity
+      - updated_at
+    ReceiptInput:
+      type: object
+      properties:
+        idempotency_key:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/ReceiptKindEnum'
+        quantity:
+          type: integer
+          maximum: 1000000
+          minimum: 1
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        occurred_on:
+          type: string
+          format: date
+        supplier:
+          type: string
+          default: ''
+          maxLength: 200
+        reference:
+          type: string
+          default: ''
+          maxLength: 100
+        notes:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - idempotency_key
+      - kind
+      - occurred_on
+      - product_id
+      - quantity
+      - unit_cost
+    ReceiptKindEnum:
+      enum:
+      - purchase
+      - production
+      type: string
+      description: |-
+        * `purchase` - Compra
+        * `production` - Produção
     Sale:
       type: object
       properties:

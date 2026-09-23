@@ -1,6 +1,7 @@
 import { Input } from "./ui/input";
 export function Field({
   name,
+  id = name,
   label,
   type = "text",
   value,
@@ -13,9 +14,9 @@ export function Field({
 } & Omit<React.ComponentProps<"input">, "value">) {
   return (
     <div>
-      <label htmlFor={name}>{label}</label>
+      <label htmlFor={id}>{label}</label>
       <Input
-        id={name}
+        id={id}
         name={name}
         type={type}
         defaultValue={value}

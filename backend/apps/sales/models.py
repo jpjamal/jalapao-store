@@ -40,6 +40,7 @@ class SaleItem(Entity):
     quantity = models.PositiveIntegerField()
     unit_price = amount()
     unit_cost = amount()
+    cost_total = amount()
 
     class Meta:
         constraints = [

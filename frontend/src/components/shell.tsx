@@ -9,6 +9,7 @@ import {
   Package,
   Boxes,
   ShoppingBag,
+  PackagePlus,
   Wallet,
   Calculator,
   LogOut,
@@ -17,6 +18,7 @@ const navigation = [
   ["/", "Visão geral", LayoutDashboard],
   ["/produtos", "Produtos", Package],
   ["/estoque", "Estoque", Boxes],
+  ["/entradas", "Compras / produção", PackagePlus],
   ["/vendas", "Vendas", ShoppingBag],
   ["/caixa", "Caixa", Wallet],
   ["/ferramentas", "Ferramentas", Calculator],
@@ -49,9 +51,9 @@ export function Shell({
               key={href}
               href={href}
               aria-current={path === href ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-md px-3 py-3 whitespace-nowrap ${path === href ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              className={`flex items-center gap-2 rounded-md px-3 py-3 text-sm whitespace-nowrap ${path === href ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
             >
-              <Icon size={18} />
+              <Icon size={18} className="shrink-0" />
               {label}
             </Link>
           ))}

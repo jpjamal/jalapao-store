@@ -178,7 +178,7 @@ function ProductForm({
           <div className="grid md:grid-cols-2 gap-4 mt-4">
             <MoneyField
               name="cost_price"
-              label="Custo unitário (R$)"
+              label="Custo de referência (R$)"
               value={product?.cost_price}
             />
             <MoneyField
@@ -234,7 +234,7 @@ export default function Products() {
         <div>
           <h1>Produtos</h1>
           <p className="text-muted-foreground mb-7">
-            Seu catálogo, com custos e preços sempre à mão.
+            O custo de referência sugere novas compras ou produções. Alterá-lo não muda o estoque já adquirido.
           </p>
         </div>
         <Button onClick={() => setEditing(null)}>Novo produto</Button>
@@ -273,7 +273,7 @@ export default function Products() {
                 <tr>
                   <th>Produto</th>
                   <th>Tipo</th>
-                  <th>Custo</th>
+                  <th>Custo de referência</th>
                   <th>Preço</th>
                   <th>Estoque</th>
                   <th>Status</th>

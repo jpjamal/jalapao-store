@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.db import connection
-from django.db.models import Sum, F, DecimalField
+from django.db.models import Sum
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -39,12 +39,7 @@ class DashboardView(APIView):
             raise PermissionDenied()
         sales = Sale.objects.filter(status="confirmed")
         totals = sales.aggregate(gross=Sum("gross"), profit=Sum("profit"))
-        stock = (
-            Product.objects.aggregate(
-                value=Sum(F("stock__quantity") * F("cost_price"), output_field=DecimalField())
-            )["value"]
-            or 0
-        )
+        stock = Product.objects.aggregate(value=Sum("stock__value"))["value"] or 0
         cash = dict(CashEntry.objects.values_list("direction").annotate(total=Sum("amount")))
         return Response(
             {

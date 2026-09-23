@@ -5,8 +5,18 @@ from .models import CashEntry
 class CashSerializer(serializers.ModelSerializer):
     class Meta:
         model = CashEntry
-        fields = ["id", "direction", "amount", "description", "occurred_on", "sale", "actor", "created_at"]
-        read_only_fields = ["id", "sale", "actor", "created_at"]
+        fields = [
+            "id",
+            "direction",
+            "amount",
+            "description",
+            "occurred_on",
+            "sale",
+            "receipt",
+            "actor",
+            "created_at",
+        ]
+        read_only_fields = ["id", "sale", "receipt", "actor", "created_at"]
 
     def validate_amount(self, value):
         if value <= 0:

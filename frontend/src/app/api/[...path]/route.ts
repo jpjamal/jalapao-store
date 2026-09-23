@@ -50,7 +50,7 @@ async function handle(
       );
   }
   if (
-    !/^(auth\/(login|logout|me)|dashboard|products(?:\/[a-f0-9-]+)?|movements|cash|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel))?)?)$/.test(
+    !/^(auth\/(login|logout|me)|dashboard|products(?:\/[a-f0-9-]+)?|movements|cash|receipts(?:\/[a-f0-9-]+(?:\/pay)?)?|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel))?)?)$/.test(
       path,
     )
   )

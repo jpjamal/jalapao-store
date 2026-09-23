@@ -41,7 +41,13 @@ class StoreTests(TestCase):
         }
 
     def stock(self, quantity=5):
-        adjust_stock(product_id=self.product.id, delta=quantity, reason="Entrada", actor=self.user)
+        adjust_stock(
+            product_id=self.product.id,
+            delta=quantity,
+            reason="Entrada",
+            actor=self.user,
+            unit_cost=self.product.cost_price,
+        )
 
     def test_3d_formula_and_decimal_time(self):
         cost, price = printing_cost(
@@ -219,7 +225,7 @@ class ConcurrencyTests(TransactionTestCase):
 
         user = get_user_model().objects.create_user("same-operator")
         product = Product.objects.create(sku="IDEMPOTENT", name="Peça", cost_price=1)
-        Stock.objects.create(product=product, quantity=5)
+        Stock.objects.create(product=product, quantity=5, value=5)
         data = {
             "idempotency_key": uuid.uuid4(),
             "channel": "direct",
@@ -246,7 +252,7 @@ class ConcurrencyTests(TransactionTestCase):
 
         users = [get_user_model().objects.create_user(f"operator{i}") for i in range(2)]
         product = Product.objects.create(sku="LAST", name="Última unidade", cost_price=1)
-        Stock.objects.create(product=product, quantity=1)
+        Stock.objects.create(product=product, quantity=1, value=1)
 
         def buy(user):
             close_old_connections()

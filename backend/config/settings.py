@@ -104,6 +104,10 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Jalapão Store API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "ENUM_NAME_OVERRIDES": {
+        "ProductKindEnum": [("printing", "Impressão 3D"), ("resale", "Revenda")],
+        "ReceiptKindEnum": [("purchase", "Compra"), ("production", "Produção")],
+    },
     "SCHEMA_PATH_PREFIX": "/api/v1",
     "SCHEMA_PATH_PREFIX_TRIM": True,
     "SERVERS": [
