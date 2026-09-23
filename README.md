@@ -33,6 +33,7 @@ Comece por [constituição](docs/constitution.md), [especificação](docs/specs/
 Cada mudança futura deve declarar comportamento, aceitação, plano e evidência de validação.
 Documentação própria: [backend](backend/README.md) e [frontend](frontend/README.md).
 [Operação e recuperação](docs/operations.md). [Decisão monorepo](docs/adr/001-monorepo-modular.md).
+[Arquitetura e relações do banco](docs/architecture.md).
 
 ## Escopo
 Preço/custo decimal, histórico de estoque, venda por canal, descontos/taxas/frete reais,

@@ -47,3 +47,9 @@ Interface Django Admin em `/jalapao-store/admin/`; estoque/caixa/vendas são ape
 no Admin para não contornar os serviços. Usuários e grupos continuam administráveis.
 
 Specs específicas em docs/specs; especificação compartilhada em ../docs/specs/001-platform.
+
+Contrato OpenAPI versionado: docs/openapi.yml. Validar com
+`uv run python manage.py spectacular --validate --fail-on-warn --file docs/openapi.yml`.
+Documentação interativa em `/jalapao-store/backend-api/docs/` após entrar no Django Admin
+ou com autenticação JWT. A sessão Django é aceita somente nas telas de documentação;
+as operações comerciais da API continuam usando JWT.
