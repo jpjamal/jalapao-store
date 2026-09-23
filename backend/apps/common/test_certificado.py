@@ -48,6 +48,23 @@ class CertificadoTests(TestCase):
     def test_certificado_ausente_nao_quebra_o_painel(self):
         self.assertIsNone(certificado.estado("/nao/existe/fullchain.pem"))
 
+    def test_tenta_a_copia_legivel_antes_do_caminho_do_certbot(self):
+        # o certbot cria live/ como 0700 de root; a cópia pública é a primeira tentativa
+        self.assertEqual(
+            certificado.caminhos_do_certificado()[0], "/certs/publico/cert.pem"
+        )
+        self.assertEqual(len(certificado.caminhos_do_certificado()), 2)
+
+    def test_cai_para_o_segundo_caminho_quando_o_primeiro_falha(self):
+        with tempfile.TemporaryDirectory() as pasta:
+            caminho = gerar_certificado(pasta, 30)
+            original = certificado.CAMINHOS_PADRAO
+            certificado.CAMINHOS_PADRAO = ("/nao/existe/cert.pem", str(caminho))
+            try:
+                self.assertIsNotNone(certificado.estado())
+            finally:
+                certificado.CAMINHOS_PADRAO = original
+
     def test_dashboard_responde_mesmo_sem_certificado(self):
         from django.contrib.auth import get_user_model
         from django.contrib.auth.models import Permission

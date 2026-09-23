@@ -19,12 +19,21 @@ import os
 import ssl
 from datetime import datetime, timezone
 
-CAMINHO_PADRAO = "/certs/live/jalapao-ip/fullchain.pem"
+# O certbot cria live/ e archive/ com permissão 0700 de root, e este container roda
+# como usuário sem privilégio: ler de lá dá "Permission denied". Por isso o próprio
+# certbot mantém uma cópia legível do certificado — que é informação pública, servida
+# a qualquer visitante — e é dela que a leitura sai. O caminho original fica como
+# segunda tentativa, para quem rodar com permissão para alcançá-lo.
+CAMINHOS_PADRAO = (
+    "/certs/publico/cert.pem",
+    "/certs/live/jalapao-ip/fullchain.pem",
+)
 DIAS_DE_ALERTA_PADRAO = 2
 
 
-def caminho_do_certificado():
-    return os.getenv("TLS_CERT_PATH", CAMINHO_PADRAO)
+def caminhos_do_certificado():
+    escolhido = os.getenv("TLS_CERT_PATH")
+    return (escolhido,) if escolhido else CAMINHOS_PADRAO
 
 
 def dias_de_alerta():
@@ -36,15 +45,16 @@ def dias_de_alerta():
 
 def vencimento(caminho=None):
     """Data de expiração do certificado, ou None quando não dá para ler."""
-    caminho = caminho or caminho_do_certificado()
-    try:
-        dados = ssl._ssl._test_decode_cert(caminho)
-        return datetime.strptime(dados["notAfter"], "%b %d %H:%M:%S %Y %Z").replace(
-            tzinfo=timezone.utc
-        )
-    except Exception:
-        # sem certificado (desenvolvimento), sem permissão, formato inesperado
-        return None
+    for tentativa in (caminho,) if caminho else caminhos_do_certificado():
+        try:
+            dados = ssl._ssl._test_decode_cert(tentativa)
+            return datetime.strptime(dados["notAfter"], "%b %d %H:%M:%S %Y %Z").replace(
+                tzinfo=timezone.utc
+            )
+        except Exception:
+            # sem certificado (desenvolvimento), sem permissão, formato inesperado
+            continue
+    return None
 
 
 def estado(caminho=None, agora=None):
