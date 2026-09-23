@@ -36,7 +36,11 @@ if ! dc run --rm --no-deps --entrypoint sh certbot -c 'test -s /etc/letsencrypt/
       --agree-tos --register-unsafely-without-email
 fi
 dc --profile https up -d --wait --remove-orphans
+# Bind-mounted config files can keep an old inode after rsync replaces the host file.
+# Recreate only this project's proxies, also refreshing upstream DNS after app replacement.
+dc --profile https up -d --wait --force-recreate --no-deps gateway tls
 curl --fail --silent --show-error --retry 6 --retry-delay 3 https://217.216.82.25/health
 dc run --rm --no-deps --entrypoint sh certbot -c 'touch /var/www/certbot/.https-ready'
 curl --fail --silent --show-error --output /dev/null https://217.216.82.25/jalapao-store/login
+test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://217.216.82.25/jalapao-store/login)" = 308
 dc --profile https ps
