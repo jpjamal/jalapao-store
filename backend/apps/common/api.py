@@ -11,6 +11,7 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 from apps.catalog.models import Product
 from apps.sales.models import Sale
 from apps.finance.models import CashEntry
+from .certificado import estado as estado_do_certificado
 
 
 def health(request):
@@ -31,6 +32,15 @@ class DashboardView(APIView):
                     for key in ("stock_value", "gross", "profit", "receivable", "cash_balance")
                 },
                 "product_count": serializers.IntegerField(),
+                "certificate": inline_serializer(
+                    name="CertificateStatus",
+                    fields={
+                        "expires_at": serializers.CharField(),
+                        "days_left": serializers.IntegerField(),
+                        "alert": serializers.BooleanField(),
+                    },
+                    allow_null=True,
+                ),
             },
         )
     )
@@ -51,5 +61,7 @@ class DashboardView(APIView):
                 ),
                 "cash_balance": str(cash.get("in", Decimal(0)) - cash.get("out", Decimal(0))),
                 "product_count": Product.objects.filter(active=True).count(),
+                # None em desenvolvimento, onde não existe certificado montado
+                "certificate": estado_do_certificado(),
             }
         )

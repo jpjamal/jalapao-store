@@ -23,7 +23,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_HOST: db
       CSRF_TRUSTED_ORIGINS: https://217.216.82.25
-    volumes: ['./dados:/legacy:ro']
+    volumes:
+      - './dados:/legacy:ro'
+      # somente leitura, só para avisar no painel antes do certificado vencer
+      - 'certificates:/certs:ro'
     depends_on:
       db: {condition: service_healthy}
     healthcheck:

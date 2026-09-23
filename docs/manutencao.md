@@ -1,129 +1,152 @@
 # Manutenção
 
-Como o projeto é montado e onde mexer.
+Como o projeto é montado e onde mexer. Para publicar, escalar e recuperar, veja
+[operação](operations.md); para o desenho do banco, [arquitetura](architecture.md).
+
+> Reescrito em 23/09/2026. Antes disso este documento descrevia um site estático sem
+> build, sem framework e sem banco. Esse sistema virou `site/` e `api/` — ficam no
+> repositório para consulta e rollback, e não são mais servidos.
 
 ## Estrutura
 
 ```
-sistema jalapao store/
-├── index.html            hub com as ferramentas
-├── impressao-3d.html     custo da peça impressa
-├── produtos-3d.html      lista das peças salvas
-├── calculadora.html      lucro no marketplace
-├── etiquetas.html        ZPL → PDF
-├── LEIA-ME.md
-├── assets/
-│   ├── jalapao.css       tokens + componentes, usado por todas as páginas
-│   ├── custo-3d.js       a conta do custo de impressão, sem tocar em tela
-│   ├── produtos.js       guarda os produtos no navegador (CRUD + backup)
-│   ├── logo-jalapao.svg  selo do cabeçalho
-│   ├── logo-jalapao.png  ícone da aba
-│   └── selo-jalapao.jpg  logo original com fundo creme
-├── docs/                 esta documentação
-├── design/               telas .dc.html + canvas do Claude Design
-└── originais/            versões anteriores, antes do site
+jalapao-store/
+├── backend/            Django 5.2 + DRF, PostgreSQL, uv
+│   ├── apps/
+│   │   ├── accounts/     usuário e login JWT
+│   │   ├── catalog/      produtos e perfil de impressão 3D
+│   │   │   └── domain.py   a conta do custo 3D, pura
+│   │   ├── inventory/    estoque, entradas (compra/produção) e movimentos
+│   │   │   └── services.py casos de uso transacionais
+│   │   ├── sales/        vendas, itens e cancelamento
+│   │   ├── finance/      caixa
+│   │   ├── integrations/ outbox do Mercado Livre (ainda sem worker)
+│   │   └── common/       dashboard, permissões, certificado e TESTES
+│   └── config/settings.py
+├── frontend/           Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui
+│   └── src/
+│       ├── app/(store)/  as telas, incluindo ferramentas/
+│       ├── app/api/      BFF: troca cookie por JWT e fala com o Django
+│       ├── components/   shell, campos, feedback e ui/
+│       └── lib/ferramentas/  as contas das três ferramentas
+├── infra/              nginx (http/https), deploy.sh e renovação de certificado
+├── docs/               constituição, specs, decisões, operação e por ferramenta
+├── site/, api/         o sistema anterior, preservado para rollback
+└── manuais/            PDFs públicos, fora do repositório no servidor
 ```
-
-Não há build, framework nem dependência instalada. As páginas são HTML e JavaScript puro;
-só duas coisas vêm de CDN, e só na página de etiquetas: o motor de OCR (Tesseract.js) e o
-gerador de QR code.
-
-## Design system
-
-Tudo vem de `Jalapao Midia/Paleta_Jalapao_design_system.html`. Os tokens estão no topo de
-`assets/jalapao.css` e são o **único** lugar para mexer em cor — nada de hex solto no meio
-das páginas.
-
-| Token | Uso |
-|---|---|
-| `--ground` `--surface` `--surface-alt` | fundos |
-| `--ink` `--ink-soft` `--ink-faint` | texto |
-| `--rule` `--rule-strong` | filetes e bordas |
-| `--cerrado` `#c8670f` | dominante, **só em bloco** — nunca texto pequeno |
-| `--accent` `#a54d0b` | botões e rótulo de seção |
-| `--accent-deep` `#8f210b` | títulos e links |
-| `--ok` `--bad` `--warn` | valores positivos, negativos e avisos |
-
-Tipografia: Bahnschrift nos títulos e rótulos, serifada no corpo, Consolas em número e
-código. O tema escuro acompanha o sistema operacional e usa os mesmos tokens — se você
-acrescentar uma cor, acrescente nos dois blocos.
-
-A regra de contraste da paleta vale aqui: texto branco sobre o laranja cerrado só passa em
-tamanho grande. Para texto pequeno sobre bloco colorido, use o laranja queimado.
-
-## Acrescentar uma ferramenta nova
-
-1. Copie uma página existente — `impressao-3d.html` é a mais simples — e troque o miolo.
-2. Ponha o link no menu de **todas** as páginas (o `<nav class="menu">` é repetido em cada
-   uma; não existe include).
-3. Marque a página atual com `aria-current="page"` no próprio menu dela.
-4. Acrescente o cartão em `index.html`, com um ícone em SVG traçado — nunca emoji.
-5. Atualize a tabela de páginas no `LEIA-ME.md` e escreva um documento em `docs/`.
-6. Se quiser manter o canvas de design em dia, veja abaixo.
-
-## O canvas de design
-
-As telas existem como desenho editável em
-<https://claude.ai/artifact/1ThGkYiqa72SKVSkZL69Ln>.
-
-Os arquivos-fonte são os `.dc.html` de `design/`, mais o `canvas.json` que posiciona os
-quadros. Para regerar e republicar depois de editar um deles, é preciso o Node instalado e
-a skill do Claude Design — o comando monta um arquivo único a partir dos quatro desenhos e
-do logo:
-
-```
-node seed-canvas.mjs --template payload.template.html --out sistema-jalapao-store.html \
-  --title "Sistema Jalapão Store" \
-  --artboard Main.dc.html --artboard Impressao3D.dc.html \
-  --artboard Calculadora.dc.html --artboard Etiquetas.dc.html \
-  --image ../assets/logo-jalapao.svg --canvas canvas.json
-```
-
-O canvas é desenho, não é o site: mudar lá não muda as páginas.
-
-## Testar antes de dar por pronto
-
-Abrir o arquivo com duplo clique já serve para quase tudo. Para testar como página servida
-— o que o celular na mesma rede enxerga —, na pasta do projeto:
-
-```bash
-python -m http.server 8765 --bind 127.0.0.1
-```
-
-e abra `http://127.0.0.1:8765/index.html`. O que vale conferir a cada mudança:
-
-- todas as páginas abrem e o menu leva a todas;
-- o logo aparece (é sinal de que a pasta `assets/` está sendo achada);
-- tema claro e escuro;
-- largura de celular — 375 px basta;
-- nas calculadoras, um caso com resposta conhecida (os pedidos reais documentados em
-  [calculadora de marketplace](calculadora-marketplace.md) e
-  [custo de impressão 3D](custo-impressao-3d.md));
-- salvar um produto e reabrir pela lista, se mexeu em `produtos.js` ou no formulário.
 
 ## Onde mora cada responsabilidade
 
-A conta e o armazenamento vivem fora das páginas, em `assets/custo-3d.js` e
-`assets/produtos.js`. As telas só leem campo, chamam essas funções e desenham o resultado.
-Quem for mexer na fórmula ou no cadastro mexe no módulo — as duas páginas que dependem dele
-(calculadora e lista) acompanham sozinhas. Detalhes do formato dos produtos em
-[Produtos](produtos.md).
+A regra que vale para o backend inteiro:
 
-## Cache: js e css revalidam sempre
+| Camada | Arquivo | O que pode ter |
+|---|---|---|
+| domínio | `domain.py` | conta pura, sem ORM e sem request |
+| caso de uso | `services.py` | transação, trava, validação de regra |
+| borda | `api.py` | serialização, permissão, formato da resposta |
 
-O `nginx-site.conf` manda `Cache-Control: no-cache` para `.css` e `.js`, e um dia de cache
-só para imagem. Não é exagero: com `max-age=3600` nos scripts, um deploy deixava o HTML novo
-rodando com o módulo antigo preso no navegador por até uma hora — foi assim que a lista de
-produtos apareceu vazia depois de publicada a semente. `no-cache` não significa baixar tudo
-de novo: o navegador reusa o arquivo depois de perguntar se mudou.
+Serviço só roda dentro de `transaction.atomic`, e toda escrita de estoque passa por
+`adjust_stock` — é lá que moram a trava de concorrência e o razão de movimentos.
 
-## Decisões que já foram tomadas
+No frontend a ideia é a mesma: as contas das ferramentas vivem em `src/lib/ferramentas/`
+e não tocam em DOM. As telas leem campo, chamam a função e desenham.
 
-- **Nada de servidor, build ou dependência instalada.** O site abre com duplo clique. Um
-  `.bat` que subia servidor local foi feito e descartado quando ficou provado que `file://`
-  dá conta de tudo, inclusive do OCR e da escolha de pasta.
-- **`originais/` guarda o passado.** A calculadora como estava antes do site e o gerador de
-  etiquetas em arquivo único. O de etiquetas ainda tem uso: é a versão que vai para o
-  celular sem precisar da pasta `assets/`.
-- **Regra de negócio não se muda sozinha.** As taxas de marketplace só mudam com pedido
+## As ferramentas
+
+As três são páginas do app desde 23/09/2026, em `/ferramentas/*`. As contas foram
+portadas linha a linha dos arquivos antigos, **sem alterar nenhuma fórmula**:
+
+| Módulo | Veio de | Cuidado |
+|---|---|---|
+| `lib/ferramentas/custo3d.ts` | `site/assets/custo-3d.js` | precisa dar o mesmo número que `apps/catalog/domain.py` |
+| `lib/ferramentas/marketplace.ts` | o miolo de `site/calculadora.html` | as faixas de taxa são regra de negócio do dono |
+| `lib/ferramentas/etiquetas.ts` | o miolo de `site/etiquetas.html` | os recortes do OCR são calibrados; mexer quebra a leitura |
+
+O Tesseract continua vindo de CDN, carregado sob demanda na primeira leitura. A etiqueta é
+desenhada pela API pública do Labelary, limitada a 3 requisições por segundo — daí a fila
+com 360 ms de espaçamento e o retry no HTTP 429.
+
+## Design system
+
+Os tokens saem de `Jalapao Midia/Paleta_Jalapao_design_system.html` e estão em
+`frontend/src/app/globals.css`, como variáveis em `:root` e no bloco de tema escuro.
+São o **único** lugar para mexer em cor — nada de hex solto em componente.
+
+| Token | Uso |
+|---|---|
+| `--background` `--card` `--muted` | fundos |
+| `--foreground` `--muted-foreground` | texto |
+| `--border` `--input` | filetes e campos |
+| `--primary` `#a54d0b` | botões e links |
+| `--cerrado` `#c8670f` | dominante, **só em bloco** — nunca texto pequeno |
+| `--destructive` `--success` | valores negativos e positivos |
+
+Tipografia: Bahnschrift nos títulos e rótulos, serifada no corpo, Consolas em número
+(classe `.money`). O tema escuro acompanha o sistema operacional; cor nova entra nos dois
+blocos. Texto branco sobre o laranja cerrado só passa em tamanho grande — para texto
+pequeno sobre bloco colorido, use o laranja queimado.
+
+## Acrescentar uma tela
+
+1. Escreva a spec antes: `docs/specs/<numero>-<nome>/spec.md`, depois plan, tasks e
+   validation. É o que a [constituição](constitution.md) exige, e vale também para mudança
+   pequena.
+2. Backend: modelo → migration → serviço → api → rota em `config/urls.py`.
+3. Frontend: página em `src/app/(store)/`, link em `src/components/shell.tsx`.
+4. Teste em `backend/apps/common/` — a suíte inteira mora lá.
+5. Atualize o README da pasta e o documento da ferramenta em `docs/`.
+
+## Testar antes de dar por pronto
+
+Tudo junto, como em produção:
+
+```bash
+docker compose up --build
+```
+
+e abra <http://localhost:8080/jalapao-store>.
+
+Backend isolado, exatamente o que o CI roda:
+
+```bash
+cd backend
+uv sync --frozen
+uv run ruff check . --exclude migrations
+uv run python manage.py check
+uv run python manage.py makemigrations --check --dry-run
+uv run python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi.yml
+uv run python manage.py test apps.common --noinput
+```
+
+Sem PostgreSQL à mão, `TEST_SQLITE=1` roda a suíte em SQLite — mas os quatro testes de
+concorrência se marcam como pulados, e são justamente os que já esconderam um problema.
+**Antes de publicar, rode ao menos uma vez contra PostgreSQL de verdade.**
+
+Frontend: `npm ci && npm run build` (o build valida TypeScript).
+
+A cada mudança, confira: login, as telas do menu, tema claro e escuro, largura de celular
+(375 px basta) e, nas ferramentas, um caso com resposta conhecida — os pedidos reais
+documentados em [calculadora de marketplace](calculadora-marketplace.md) e
+[custo de impressão 3D](custo-impressao-3d.md).
+
+## Armadilhas já pagas
+
+- **Thread de teste precisa fechar a própria conexão.** `close_old_connections()` não fecha
+  conexão recente enquanto o `CONN_MAX_AGE` de 60s a considera viva; as threads morriam com
+  a conexão aberta e o `destroy_test_db` falhava com *"database is being accessed by other
+  users"*. Os 22 testes passavam e o job voltava com exit 1 mesmo assim — e o deploy nunca
+  rodava. Use `connection.close()` no `finally`.
+- **O Traefik não roteia container fora de `healthy`.** Ele some da tabela sem erro no log;
+  o sintoma é 404 com `"-"` na coluna de router do access log.
+- **`localhost` em healthcheck de Alpine** resolve `::1` primeiro. Use `127.0.0.1`.
+- **Arquivo em bind mount troca de inode no rsync.** Por isso o `deploy.sh` recria
+  `gateway` e `tls` com `--force-recreate` depois de publicar.
+- **Regra de negócio não muda sozinha.** As taxas de marketplace só mudam com pedido
   explícito e, de preferência, conferidas contra um pedido real do painel.
+
+## O canvas de design
+
+As telas do sistema anterior existem como desenho editável em
+<https://claude.ai/artifact/1ThGkYiqa72SKVSkZL69Ln>, com fontes em `design/*.dc.html` e
+`canvas.json`. É desenho, não é o site: mudar lá não muda as telas — e ele ainda retrata o
+site antigo.

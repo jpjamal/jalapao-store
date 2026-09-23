@@ -18,13 +18,20 @@ Produção standalone: Dockerfile copia `.next/standalone`, `.next/static` e pub
   produção nunca gera despesa automática. Ajustes positivos exigem custo explícito.
 - /vendas: múltiplos itens, canal, descontos/taxas/frete, receber e cancelar.
 - /caixa: entradas/saídas, origem automática/manual e histórico preservado.
-- /ferramentas: calculadoras e etiquetas existentes.
+- /ferramentas: índice das três ferramentas.
+- /ferramentas/impressao-3d: custo da peça e botão de salvar no catálogo.
+- /ferramentas/calculadora: taxas de Shopee e Mercado Livre, com a tabela de regras.
+- /ferramentas/etiquetas: ZPL → Labelary → PDF nomeado pelo destinatário, com OCR.
 - /callback: endereço futuro do Mercado Livre; integração ainda não ativada.
 
-Todos os caminhos têm basePath /jalapao-store. Login protege dados comerciais; calculadoras
-estáticas continuam acessíveis. Salvar produto da calculadora exige autenticação e usa a API.
-Os arquivos originais ficam em ../site para rollback, as versões servidas em public/ferramentas.
-`python ../scripts/preserve_tools.py` reconstrói essas cópias e adapta a persistência 3D.
+Todos os caminhos têm basePath /jalapao-store. Login protege tudo, ferramentas inclusive.
+As contas ficam em `src/lib/ferramentas/`, portadas linha a linha do site anterior e sem
+nenhuma alteração de fórmula: `custo3d.ts` (a mesma conta de apps/catalog/domain.py),
+`marketplace.ts` (faixas da Shopee e médias do Mercado Livre) e `etiquetas.ts` (fila do
+Labelary, recortes do OCR e regras de nome de arquivo). Os HTML originais seguem em ../site
+só para consulta e rollback — não são mais servidos nem copiados por script. Os endereços
+antigos (`/calculadora.html`, `/ferramentas/calculadora.html` e afins) redirecionam para as
+páginas novas, em next.config.ts.
 
 ## Segurança e componentes
 BFF valida Origin nas mutações, limita corpo e usa destinos de API permitidos. JWT em cookies

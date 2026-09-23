@@ -16,10 +16,9 @@ Frontend: `npm ci` dentro de frontend. Consulte os READMEs de cada pasta para co
 | Pasta | Finalidade |
 |---|---|
 | backend/ | Django, apps por domínio, migrations, uv.lock, testes, Dockerfile e compose com DB |
-| frontend/ | Next.js, componentes, ferramentas preservadas, package-lock e Dockerfile |
+| frontend/ | Next.js, componentes, as três ferramentas, package-lock e Dockerfile |
 | docs/ | Constituição SDD, decisões, specs, validação e operação |
 | infra/ | Proxy, HTTPS e publicação |
-| scripts/ | Migração das ferramentas existentes |
 | site/, api/ | Fontes legadas preservadas para consulta/rollback; fora da nova stack |
 | manuais/ | PDFs públicos da loja, fora do rsync de código |
 
