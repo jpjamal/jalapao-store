@@ -212,6 +212,33 @@ class StoreTests(TestCase):
 
 
 class ConcurrencyTests(TransactionTestCase):
+    def test_postgres_deduplicates_simultaneous_sale_requests(self):
+        if connection.vendor != "postgresql":
+            self.skipTest("Concorrência exige PostgreSQL real; executada no CI.")
+        from concurrent.futures import ThreadPoolExecutor
+
+        user = get_user_model().objects.create_user("same-operator")
+        product = Product.objects.create(sku="IDEMPOTENT", name="Peça", cost_price=1)
+        Stock.objects.create(product=product, quantity=5)
+        data = {
+            "idempotency_key": uuid.uuid4(),
+            "channel": "direct",
+            "items": [{"product_id": product.id, "quantity": 1, "unit_price": Decimal("10")}],
+        }
+
+        def submit(_):
+            close_old_connections()
+            try:
+                return create_sale(data=data, actor=user).id
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(submit, range(2)))
+        self.assertEqual(results[0], results[1])
+        self.assertEqual(Sale.objects.count(), 1)
+        self.assertEqual(Stock.objects.get(product=product).quantity, 4)
+
     def test_postgres_prevents_overselling(self):
         if connection.vendor != "postgresql":
             self.skipTest("Concorrência exige PostgreSQL real; executada no CI.")

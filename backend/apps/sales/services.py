@@ -2,7 +2,6 @@ import hashlib
 import json
 from decimal import Decimal
 from django.db import transaction, connection
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from apps.catalog.models import Product
@@ -20,8 +19,8 @@ def create_sale(*, data, actor):
         )
         with connection.cursor() as cursor:
             cursor.execute("SELECT pg_advisory_xact_lock(%s)", [lock_key])
-    # Serialize repeated submissions by this operator, then lock products in stable order.
-    get_user_model().objects.select_for_update().get(pk=actor.pk)
+    # The advisory lock serializes this request key without locking the user row.
+    # Locking an actor would contend with ledger foreign keys during cancellation.
     digest = hashlib.sha256(json.dumps(data, sort_keys=True, default=str).encode()).hexdigest()
     existing = Sale.objects.filter(idempotency_key=data["idempotency_key"]).first()
     if existing:
