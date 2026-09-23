@@ -179,7 +179,7 @@ class ReceiptConcurrencyTests(TransactionTestCase):
             try:
                 return create_receipt(data=data, actor=user).id
             finally:
-                close_old_connections()
+                connection.close()
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             ids = list(pool.map(submit, range(2)))
@@ -191,7 +191,7 @@ class ReceiptConcurrencyTests(TransactionTestCase):
             try:
                 pay_receipt(receipt_id=ids[0], occurred_on=timezone.localdate(), actor=user)
             finally:
-                close_old_connections()
+                connection.close()
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             list(pool.map(pay, range(2)))
@@ -230,7 +230,7 @@ class ReceiptConcurrencyTests(TransactionTestCase):
                 )
                 return sale.cost_total
             finally:
-                close_old_connections()
+                connection.close()
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             costs = list(pool.map(operate, [True, False]))

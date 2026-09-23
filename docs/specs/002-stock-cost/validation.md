@@ -10,3 +10,16 @@ Em 2026-09-23:
 - Teste de migração: estoque anterior recebe avaliação inicial e venda mantém lucro e snapshot.
 
 Publicação e testes concorrentes em PostgreSQL ainda pendentes nesta revisão.
+
+Segunda revisão, ainda em 2026-09-23 — a publicação havia falhado:
+- O job `quality` terminou com exit 1, então `build` e `deploy` nem chegaram a rodar. A produção
+  permaneceu em `inventory.0001_initial`, sem a tabela de entradas.
+- Causa: as threads dos testes de concorrência encerravam com `close_old_connections()`, que não
+  fecha conexão recente enquanto o `CONN_MAX_AGE` de 60s a considera viva. As threads morriam com
+  a conexão aberta e o `destroy_test_db` do fim da suíte esbarrava em
+  `database "test_jalapao" is being accessed by other users`. Os 22 testes passavam; quem
+  devolvia erro era o encerramento.
+- Correção: cada thread fecha a própria conexão com `connection.close()` no `finally`.
+- Reprodução em PostgreSQL 17 real: antes da correção, 22 testes OK e falha no teardown; depois,
+  o job inteiro passa — ruff, check, makemigrations, contrato OpenAPI e os 22 testes, incluindo
+  os 4 de concorrência que só rodam em PostgreSQL.

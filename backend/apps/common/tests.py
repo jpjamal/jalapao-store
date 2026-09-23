@@ -237,7 +237,7 @@ class ConcurrencyTests(TransactionTestCase):
             try:
                 return create_sale(data=data, actor=user).id
             finally:
-                close_old_connections()
+                connection.close()
 
         with ThreadPoolExecutor(max_workers=2) as executor:
             results = list(executor.map(submit, range(2)))
@@ -269,7 +269,7 @@ class ConcurrencyTests(TransactionTestCase):
             except ValidationError:
                 return False
             finally:
-                close_old_connections()
+                connection.close()
 
         with ThreadPoolExecutor(max_workers=2) as executor:
             results = list(executor.map(buy, users))
