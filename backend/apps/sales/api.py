@@ -2,6 +2,7 @@ from rest_framework import serializers, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema
 from .models import Sale, SaleItem
 from .services import create_sale, receive_sale, cancel_sale
 
@@ -41,6 +42,7 @@ class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     serializer_class = SaleSerializer
     filterset_fields = ["channel", "status"]
 
+    @extend_schema(request=SaleInput, responses={201: SaleSerializer})
     def create(self, request):
         if not request.user.has_perm("inventory.add_movement"):
             raise PermissionDenied("Sem permissão para baixar estoque.")
@@ -55,11 +57,13 @@ class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         ):
             raise PermissionDenied("Sem permissão para movimentar venda, estoque e caixa.")
 
+    @extend_schema(request=None, responses=SaleSerializer)
     @action(detail=True, methods=["post"])
     def receive(self, request, pk=None):
         self._change_permission()
         return Response(SaleSerializer(receive_sale(sale_id=self.get_object().id, actor=request.user)).data)
 
+    @extend_schema(request=None, responses=SaleSerializer)
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
         self._change_permission()

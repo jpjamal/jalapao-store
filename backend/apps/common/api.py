@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework import serializers
+from drf_spectacular.utils import extend_schema, inline_serializer
 from apps.catalog.models import Product
 from apps.sales.models import Sale
 from apps.finance.models import CashEntry
@@ -20,6 +22,18 @@ def health(request):
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses=inline_serializer(
+            name="Dashboard",
+            fields={
+                **{
+                    key: serializers.CharField()
+                    for key in ("stock_value", "gross", "profit", "receivable", "cash_balance")
+                },
+                "product_count": serializers.IntegerField(),
+            },
+        )
+    )
     def get(self, request):
         if not request.user.has_perms(["catalog.view_product", "sales.view_sale", "finance.view_cashentry"]):
             raise PermissionDenied()

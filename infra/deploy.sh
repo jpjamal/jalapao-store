@@ -37,5 +37,6 @@ if ! dc run --rm --no-deps --entrypoint sh certbot -c 'test -s /etc/letsencrypt/
 fi
 dc --profile https up -d --wait --remove-orphans
 curl --fail --silent --show-error --retry 6 --retry-delay 3 https://217.216.82.25/health
+dc run --rm --no-deps --entrypoint sh certbot -c 'touch /var/www/certbot/.https-ready'
 curl --fail --silent --show-error --output /dev/null https://217.216.82.25/jalapao-store/login
 dc --profile https ps

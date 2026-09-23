@@ -100,4 +100,14 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
 }
-SPECTACULAR_SETTINGS = {"TITLE": "Jalapão Store API", "VERSION": "1.0.0", "SERVE_INCLUDE_SCHEMA": False}
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Jalapão Store API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": "/api/v1",
+    "SCHEMA_PATH_PREFIX_TRIM": True,
+    "SERVERS": [
+        {"url": "/jalapao-store/backend-api", "description": "Produção"},
+        {"url": "/api/v1", "description": "Backend direto (desenvolvimento)"},
+    ],
+}

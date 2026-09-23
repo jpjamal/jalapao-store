@@ -4,6 +4,8 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import IsAdminUser
+from rest_framework.authentication import SessionAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from apps.accounts.api import LoginView, MeView
 from apps.catalog.api import ProductViewSet
 from apps.inventory.api import MovementViewSet
@@ -24,7 +26,21 @@ urlpatterns = [
     path("api/v1/auth/logout/", TokenBlacklistView.as_view()),
     path("api/v1/auth/me/", MeView.as_view()),
     path("api/v1/dashboard/", DashboardView.as_view()),
-    path("api/v1/schema/", SpectacularAPIView.as_view(permission_classes=[IsAdminUser]), name="schema"),
-    path("api/v1/docs/", SpectacularSwaggerView.as_view(url_name="schema", permission_classes=[IsAdminUser])),
+    path(
+        "api/v1/schema/",
+        SpectacularAPIView.as_view(
+            permission_classes=[IsAdminUser],
+            authentication_classes=[SessionAuthentication, JWTAuthentication],
+        ),
+        name="schema",
+    ),
+    path(
+        "api/v1/docs/",
+        SpectacularSwaggerView.as_view(
+            url="/jalapao-store/backend-api/schema/",
+            permission_classes=[IsAdminUser],
+            authentication_classes=[SessionAuthentication, JWTAuthentication],
+        ),
+    ),
     path("api/v1/", include(router.urls)),
 ]
