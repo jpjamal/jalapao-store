@@ -1,21 +1,17 @@
-# Sistema Jalapão Store
+# Jalapão Store — orientação do projeto
 
-Site interno da loja: HTML e JavaScript puro, sem build, sem framework, sem dependência
-instalada. O que está em `site/` é o que vai para o ar em `/jalapao-store`.
+O pedido de 2026-09-23 autoriza migração para Django/DRF/PostgreSQL e Next.js/Tailwind/shadcn.
+Substitui as antigas restrições sem build, framework, banco ou login.
 
-## Regras da casa
-
-- **Nada de build.** Se a solução exigir npm install, provavelmente não é a solução.
-- **Cores só pelos tokens** do topo de `site/assets/jalapao.css`, que vêm da Paleta Jalapão
-  (`Jalapao Midia/Paleta_Jalapao_design_system.html`). Nada de hex solto nas páginas.
-- **A conta e o armazenamento ficam em módulos** (`site/assets/custo-3d.js`,
-  `site/assets/produtos.js`), fora das telas.
-- **Regra de negócio não muda sozinha.** Taxa de marketplace só muda com pedido explícito e
-  conferida contra um pedido real do painel — ver `docs/calculadora-marketplace.md`.
-- **O menu é repetido em cada página** (não existe include): mexeu em um, mexa em todos.
-- **Commits com a identidade do dono da loja**, sem assinatura de assistente.
-
-## Deploy
-
-`push` na `main` → GitHub Actions → rsync + `docker compose up -d` no servidor.
-Os manuais em PDF vão por SSH, fora do Git (`manuais/` é excluída do rsync).
+- Ler docs/constitution.md, docs/specs/001-platform e READMEs backend/frontend.
+- Backend com uv, pyproject.toml, uv.lock e .venv; não Poetry nem Python global.
+- Monólito modular por domínio. Serviços transacionais para estoque, vendas e caixa.
+- Dinheiro Decimal, relações explícitas, migrations versionadas, permissões Django.
+- Preservar paleta/tokens, ferramentas, produtos e manuais existentes.
+- Taxas de marketplace não mudam sozinhas; distinguir estimativas de valores reais.
+- Código na VPS somente pelo GitHub Actions. Não publicar app por SSH.
+- Preservar dados/, manuais/, .env* e volumes em deploy e rollback.
+- Job test placeholder preservado; testes reais estão no job quality.
+- Autor exclusivo dos commits: jpjamal <jpfisica3@gmail.com>, sem coautores ou IA.
+- Contexto original e segredos fora do Git. Admin/jpmorais não têm senha em código ou docs.
+- Integração Mercado Livre ainda não ativada; não declarar sincronização concluída.

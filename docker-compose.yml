@@ -1,24 +1,41 @@
-# Para rodar na sua máquina, sem Traefik: docker compose up
-# Depois abra http://localhost:8080/jalapao-store/
+name: jalapao-local
 services:
-  jalapao-store:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: jalapao-store-local
-    ports:
-      - "8080:80"
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: jalapao
+      POSTGRES_USER: jalapao
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copie .env.example para .env}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U jalapao -d jalapao']
+      interval: 5s
+      retries: 20
+  backend:
+    build: ./backend
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Copie .env.example para .env}
+      DJANGO_DEBUG: '1'
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      CSRF_TRUSTED_ORIGINS: http://localhost:8080
+    depends_on:
+      db: {condition: service_healthy}
+    command: sh -c 'python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000'
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8000
+      APP_ORIGIN: http://localhost:8080
+      COOKIE_SECURE: 'false'
+    depends_on: [backend]
+  gateway:
+    image: nginx:stable-alpine
+    ports: ['8080:80']
     volumes:
-      - ./manuais:/usr/share/nginx/html/manuais:ro
-    restart: unless-stopped
-
-  jalapao-api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    container_name: jalapao-api-local
-    ports:
-      - "8001:8000"
-    volumes:
-      - ./dados:/dados
-    restart: unless-stopped
+      - ./infra/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/nginx/locations.conf:/etc/nginx/jalapao-locations.conf:ro
+      - ./manuais:/srv/manuais:ro
+    depends_on: [backend, frontend]
+volumes:
+  postgres_data:

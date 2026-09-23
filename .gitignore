@@ -208,3 +208,19 @@ __marimo__/
 
 # gerado pelo Claude Design, pesado e reconstruivel a partir dos .dc.html
 design/sistema-jalapao-store.html
+
+# Aplicação Django / Next.js; nunca versionar segredos nem dependências instaladas
+.env.*
+!.env.example
+!.env.production.example
+.tools/
+node_modules/
+.next/
+*.tsbuildinfo
+staticfiles/
+dados/
+data/
+playwright-report/
+test-results/
+!frontend/src/lib/
+!frontend/src/lib/**

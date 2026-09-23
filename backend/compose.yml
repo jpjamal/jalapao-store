@@ -1,0 +1,25 @@
+name: jalapao-backend
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: jalapao
+      POSTGRES_USER: jalapao
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U jalapao -d jalapao']
+      interval: 5s
+      retries: 20
+  backend:
+    build: .
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Configure DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: '1'
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports: ['127.0.0.1:8000:8000']
+    depends_on:
+      db: {condition: service_healthy}
+    command: sh -c 'python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000'
+volumes:
+  postgres_data:

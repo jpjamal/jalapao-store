@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custo de impressão 3D — Sistema Jalapão Store</title>
+<link rel="icon" href="assets/logo-jalapao.png">
+<link rel="stylesheet" href="assets/jalapao.css">
+<style>
+  .grade-calc {
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) minmax(300px, 1.05fr);
+    gap: 1.2rem;
+    align-items: start;
+  }
+  @media (max-width: 780px) { .grade-calc { grid-template-columns: 1fr; } }
+
+  .par { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+
+  .sugestoes { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.4rem; }
+  .sugestoes button {
+    min-height: 32px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    background: var(--surface);
+    color: var(--ink-soft);
+    border-color: var(--rule);
+  }
+  .sugestoes button:hover { background: var(--surface-alt); color: var(--accent-deep); border-color: var(--rule-strong); }
+
+  .resultado {
+    background: var(--surface);
+    border: 1px solid var(--rule-strong);
+    border-top: 4px solid var(--cerrado);
+    border-radius: 4px;
+    padding: 1.5rem 1.6rem;
+  }
+  .preco {
+    font-family: var(--f-display);
+    font-size: clamp(2.4rem, 7vw, 3.4rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    color: var(--ok);
+    font-variant-numeric: tabular-nums;
+    margin: 0.2rem 0 0;
+  }
+  .preco.apagado { color: var(--ink-faint); }
+
+  .quebra { margin-top: 1.5rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); }
+  .linha {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.42rem 0;
+    font-size: 0.95rem;
+  }
+  .linha + .linha { border-top: 1px solid var(--rule); }
+  .linha span:first-child { color: var(--ink-soft); }
+  .linha .pontilhado { flex: 1; border-bottom: 1px dotted var(--rule-strong); }
+  .linha strong {
+    font-family: var(--f-data);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+  .linha.somatorio { border-top: 2px solid var(--ink); margin-top: 0.3rem; padding-top: 0.7rem; }
+  .linha.somatorio span:first-child,
+  .linha.somatorio strong { font-weight: 700; color: var(--ink); }
+  .linha.lucro strong { color: var(--ok); }
+
+  .aviso { font-size: 0.85rem; color: var(--warn); margin: 0.9rem 0 0; }
+  .ajuda { font-size: 0.78rem; color: var(--ink-faint); margin: 0.1rem 0 0; }
+  .linha-acoes { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.9rem; }
+  .linha-acoes .botao, .linha-acoes button { min-height: 40px; padding: 0.55rem 0.9rem; font-size: 0.74rem; }
+  #estadoSalvamento:not(:empty) { margin-top: 0.6rem; color: var(--ok); }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-conteudo">
+    <span class="selo"><img src="assets/logo-jalapao.svg" alt="Selo Jalapão Store"></span>
+    <span class="marca">
+      <b>Sistema Jalapão Store</b>
+      <span>Ferramentas da loja</span>
+    </span>
+    <nav class="menu">
+      <a href="/jalapao-store">Início</a>
+      <a href="impressao-3d.html" aria-current="page">Impressão 3D</a>
+      <a href="/jalapao-store/produtos">Produtos</a>
+      <a href="calculadora.html">Marketplace</a>
+      <a href="etiquetas.html">Etiquetas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="pagina-topo">
+    <p class="eyebrow">Ferramenta · produção</p>
+    <h1>Custo de impressão 3D</h1>
+    <p class="lead">O que a peça custou de filamento, energia e trabalho — e por quanto
+      sai com a margem que você quiser.</p>
+  </div>
+
+  <div class="grade-calc">
+
+    <div class="painel">
+
+      <h3>O produto</h3>
+      <div class="campo">
+        <label class="rotulo" for="nomeProduto">Nome do produto</label>
+        <input type="text" id="nomeProduto" placeholder="Luminária de capim dourado" autocomplete="off" spellcheck="false">
+        <p class="ajuda">dê um nome para guardar esta conta e consultar depois</p>
+      </div>
+      <div class="linha-acoes">
+        <button id="btnSalvar">Salvar produto</button>
+        <button class="secundario oculto" id="btnSalvarNovo">Salvar como novo</button>
+        <button class="secundario oculto" id="btnCancelar">Cancelar edição</button>
+        <a class="botao secundario" href="/jalapao-store/produtos" id="linkProdutos">Ver produtos</a>
+      </div>
+      <p class="ajuda" id="estadoSalvamento"></p>
+      <p class="aviso oculto" id="avisoArmazenamento">Este navegador não está deixando guardar
+        dados nesta página, então os produtos não serão salvos.</p>
+
+      <h3 style="margin-top:1.4rem">A peça</h3>
+      <div class="par">
+        <div class="campo">
+          <label class="rotulo" for="precoKg">Preço do filamento (R$/kg)</label>
+          <input type="number" id="precoKg" placeholder="120,00" step="0.01" min="0" inputmode="decimal">
+        </div>
+        <div class="campo">
+          <label class="rotulo" for="gramas">Filamento usado (g)</label>
+          <input type="number" id="gramas" placeholder="100" step="0.1" min="0" inputmode="decimal">
+          <p class="ajuda">o fatiador informa a gramagem da peça</p>
+        </div>
+      </div>
+
+      <h3 style="margin-top:1.4rem">A impressão</h3>
+      <div class="campo">
+        <label class="rotulo" for="consumo">Consumo da impressora (W)</label>
+        <input type="number" id="consumo" placeholder="200" step="1" min="0" inputmode="numeric">
+        <div class="sugestoes">
+          <button type="button" data-alvo="consumo" data-valor="120">Ender 3 · 120 W</button>
+          <button type="button" data-alvo="consumo" data-valor="200">Bambu A1 · 200 W</button>
+          <button type="button" data-alvo="consumo" data-valor="350">Bambu X1C · 350 W</button>
+        </div>
+      </div>
+
+      <div class="par">
+        <div class="campo">
+          <label class="rotulo" for="horas">Tempo — horas</label>
+          <input type="number" id="horas" placeholder="5" step="1" min="0" inputmode="numeric">
+        </div>
+        <div class="campo">
+          <label class="rotulo" for="minutos">Tempo — minutos</label>
+          <input type="number" id="minutos" placeholder="30" step="1" min="0" max="59" inputmode="numeric">
+          <p class="ajuda">hora decimal do fatiador: 2,3 h = 2 h e 18 min</p>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label class="rotulo" for="kwh">Valor do kWh (R$)</label>
+        <input type="number" id="kwh" placeholder="0,80" step="0.01" min="0" inputmode="decimal">
+        <div class="sugestoes">
+          <button type="button" data-alvo="kwh" data-valor="0.65">Bandeira verde</button>
+          <button type="button" data-alvo="kwh" data-valor="0.80">Bandeira amarela</button>
+          <button type="button" data-alvo="kwh" data-valor="1.00">Bandeira vermelha</button>
+        </div>
+      </div>
+
+      <h3 style="margin-top:1.4rem">O resto (opcional)</h3>
+      <div class="par">
+        <div class="campo">
+          <label class="rotulo" for="maoDeObra">Mão de obra (R$)</label>
+          <input type="number" id="maoDeObra" placeholder="15,00" step="0.01" min="0" inputmode="decimal">
+          <p class="ajuda">valor fixo por peça — preparação, acabamento</p>
+        </div>
+        <div class="campo">
+          <label class="rotulo" for="custoFixo">Custos fixos (R$)</label>
+          <input type="number" id="custoFixo" placeholder="0,00" step="0.01" min="0" inputmode="decimal">
+          <p class="ajuda">desgaste da impressora, bico, lixa, cola</p>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label class="rotulo" for="margem">Margem de lucro (%)</label>
+        <input type="number" id="margem" placeholder="30" step="1" min="0" inputmode="numeric">
+        <div class="sugestoes">
+          <button type="button" data-alvo="margem" data-valor="30">30%</button>
+          <button type="button" data-alvo="margem" data-valor="50">50%</button>
+          <button type="button" data-alvo="margem" data-valor="80">80%</button>
+          <button type="button" data-alvo="margem" data-valor="100">100%</button>
+        </div>
+      </div>
+
+      <div style="margin-top:1.4rem; display:flex; gap:0.6rem;">
+        <button class="secundario miudo" id="btnLimpar">Limpar</button>
+      </div>
+    </div>
+
+    <div class="resultado">
+      <h3 id="tituloResultado">Custo da impressão</h3>
+      <p class="preco apagado" id="precoFinal">R$ 0,00</p>
+      <p class="aviso oculto" id="aviso">Falta preencher: preço do filamento, gramas, consumo, tempo e kWh.</p>
+
+      <div class="quebra">
+        <div class="linha">
+          <span>Filamento</span><span class="pontilhado"></span><strong id="rFilamento">R$ 0,00</strong>
+        </div>
+        <div class="linha">
+          <span>Energia</span><span class="pontilhado"></span><strong id="rEnergia">R$ 0,00</strong>
+        </div>
+        <div class="linha oculto" id="linhaMO">
+          <span>Mão de obra</span><span class="pontilhado"></span><strong id="rMaoDeObra">R$ 0,00</strong>
+        </div>
+        <div class="linha oculto" id="linhaFixo">
+          <span>Custos fixos</span><span class="pontilhado"></span><strong id="rCustoFixo">R$ 0,00</strong>
+        </div>
+        <div class="linha somatorio">
+          <span>Custo total</span><span class="pontilhado"></span><strong id="rTotal">R$ 0,00</strong>
+        </div>
+        <div class="linha lucro oculto" id="linhaLucro">
+          <span>Lucro estimado</span><span class="pontilhado"></span><strong id="rLucro">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <p class="note" style="margin-top:1.2rem; font-size:0.85rem" id="detalheEnergia"></p>
+    </div>
+
+  </div>
+
+  <p class="note" style="margin-top:1.5rem">O consumo em watts é o da impressora no bico e
+    na mesa quentes — é uma média, não uma medição. Quem quiser o número certo mede com um
+    wattímetro de tomada e guarda esse valor aqui.</p>
+
+  <footer class="rodape">
+    <span>Jalapão Store · Palmas, Tocantins</span>
+    <span>a conta roda no navegador, nada é enviado para fora</span>
+  </footer>
+
+</div>
+
+<script src="assets/custo-3d.js"></script>
+
+
+<script>
+"use strict";
+
+const el  = function(id){ return document.getElementById(id); };
+const brl = Custo3D.brl;
+
+// o que é da máquina, não da peça: fica guardado de uma vez para outra
+const CHAVE = "jalapao_impressao3d";
+const memoria = ["precoKg", "consumo", "kwh", "maoDeObra", "margem"];
+
+// os campos que descrevem uma impressão — é isso que vai salvo no produto
+const CAMPOS = ["precoKg", "gramas", "consumo", "horas", "minutos", "kwh",
+                "maoDeObra", "custoFixo", "margem"];
+
+function lerEntradas(){
+  const e = {};
+  CAMPOS.forEach(function(id){ e[id] = el(id).value; });
+  return e;
+}
+function aplicarEntradas(entradas){
+  CAMPOS.forEach(function(id){
+    if (entradas && entradas[id] !== undefined && entradas[id] !== null) el(id).value = entradas[id];
+  });
+}
+
+function calcular(){
+  const r = Custo3D.calcular(lerEntradas());
+
+  el("aviso").classList.toggle("oculto", r.completo || r.custoTotal === 0);
+
+  el("rFilamento").textContent = brl(r.filamento);
+  el("rEnergia").textContent   = brl(r.energia);
+  el("rTotal").textContent     = brl(r.custoTotal);
+
+  el("linhaMO").classList.toggle("oculto", r.maoDeObra <= 0);
+  el("rMaoDeObra").textContent = brl(r.maoDeObra);
+  el("linhaFixo").classList.toggle("oculto", r.custoFixo <= 0);
+  el("rCustoFixo").textContent = brl(r.custoFixo);
+
+  el("linhaLucro").classList.toggle("oculto", r.lucro <= 0);
+  el("rLucro").textContent = brl(r.lucro);
+
+  el("tituloResultado").textContent = r.lucro > 0 ? "Preço final sugerido" : "Custo da impressão";
+  el("precoFinal").textContent = brl(r.precoFinal);
+  el("precoFinal").className = r.precoFinal > 0 ? "preco" : "preco apagado";
+
+  el("detalheEnergia").textContent = (r.kwhGastos > 0)
+    ? "A impressão gasta " + r.kwhGastos.toLocaleString("pt-BR", { maximumFractionDigits: 2 }) +
+      " kWh em " + Custo3D.horasTexto(r.tempoHoras) + "."
+    : "";
+
+  guardar();
+}
+
+function guardar(){
+  try {
+    const dados = {};
+    memoria.forEach(function(id){ dados[id] = el(id).value; });
+    localStorage.setItem(CHAVE, JSON.stringify(dados));
+  } catch(e){ /* navegador sem armazenamento — segue sem lembrar */ }
+}
+function recuperar(){
+  try {
+    const dados = JSON.parse(localStorage.getItem(CHAVE) || "{}");
+    memoria.forEach(function(id){ if (dados[id]) el(id).value = dados[id]; });
+  } catch(e){ /* idem */ }
+}
+
+document.querySelectorAll("input[type=number]").forEach(function(i){
+  i.addEventListener("input", calcular);
+});
+document.querySelectorAll(".sugestoes button").forEach(function(b){
+  b.addEventListener("click", function(){
+    el(b.dataset.alvo).value = b.dataset.valor;
+    calcular();
+  });
+});
+el("btnLimpar").addEventListener("click", function(){
+  ["gramas", "horas", "minutos", "custoFixo"].forEach(function(id){ el(id).value = ""; });
+  calcular();
+});
+
+
+// Persistence now belongs to the authenticated Django API; no local product copies.
+let produtoAtual = null;
+const campos = {precoKg:'filament_price_kg',gramas:'weight_g',consumo:'power_w',horas:'hours',minutos:'minutes',kwh:'energy_price_kwh',maoDeObra:'labor_cost',custoFixo:'fixed_cost',margem:'markup_percent'};
+async function salvarProduto(comoNovo){
+  const name=el('nomeProduto').value.trim();
+  if(!name){el('nomeProduto').focus();el('estadoSalvamento').textContent='Informe o nome do produto.';return;}
+  el('btnSalvar').disabled=true;el('btnSalvarNovo').disabled=true;
+  const values=lerEntradas();
+  const printing=Object.fromEntries(Object.entries(campos).map(([old,key])=>[key,Number(values[old]||0)]));
+  const editing=produtoAtual&&!comoNovo;
+  const payload={name,kind:'printing',printing};
+  if(!editing)payload.sku='3D-'+crypto.randomUUID().slice(0,12);
+  try{
+    const response=await fetch('/jalapao-store/api/products'+(editing?'/'+produtoAtual:''),{method:editing?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const result=await response.json();
+    if(response.status===401){location.href='/jalapao-store/login';return;}
+    if(!response.ok)throw new Error(JSON.stringify(result.errors||result));
+    produtoAtual=result.id;el('btnSalvar').textContent='Salvar alterações';el('btnSalvarNovo').classList.remove('oculto');
+    el('estadoSalvamento').textContent='Produto salvo no catálogo da loja.';
+  }catch(error){el('estadoSalvamento').textContent='Não foi possível salvar: '+error.message;}
+  finally{el('btnSalvar').disabled=false;el('btnSalvarNovo').disabled=false;}
+}
+el('btnSalvar').addEventListener('click',()=>salvarProduto(false));
+el('btnSalvarNovo').addEventListener('click',()=>salvarProduto(true));
+recuperar();calcular();
+</script>
+
+</body>
+</html>

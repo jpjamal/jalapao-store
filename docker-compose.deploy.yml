@@ -1,69 +1,117 @@
+name: jalapao-store
 services:
-  jalapao-store:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: jalapao-store
-    volumes:
-      # o manual é enviado por SSH para ~/jalapao-store/manuais e servido daqui.
-      # Fica fora do repositório de propósito — por isso o rsync do deploy
-      # exclui essa pasta, senão o --delete apagaria o PDF a cada publicação.
-      - ./manuais:/usr/share/nginx/html/manuais:ro
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jalapao
+      POSTGRES_USER: jalapao
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes: [postgres_data:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/jalapao-store/ || exit 1"]
+      test: [CMD-SHELL, 'pg_isready -U jalapao -d jalapao']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [internal]
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Configure DJANGO_SECRET_KEY}
+      DJANGO_ALLOWED_HOSTS: 217.216.82.25,localhost,127.0.0.1,backend
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: db
+      CSRF_TRUSTED_ORIGINS: https://217.216.82.25
+    volumes: ['./dados:/legacy:ro']
+    depends_on:
+      db: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [internal]
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://backend:8000
+      APP_ORIGIN: https://217.216.82.25
+      COOKIE_SECURE: 'true'
+    depends_on:
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/jalapao-store/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [internal]
+  gateway:
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    volumes:
+      - ./infra/nginx/http.conf:/etc/nginx/conf.d/default.conf:ro
+      - acme_webroot:/var/www/certbot:ro
+      - certificates:/etc/letsencrypt:ro
+    depends_on:
+      frontend: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, 'wget -q -O /dev/null http://127.0.0.1/health']
       interval: 10s
       timeout: 3s
-      retries: 3
-      # sem start_period a primeira checagem so vinha aos 30s, e o Traefik
-      # nao roteia container fora de "healthy" — o site ficava 404 nesse meio
-      start_period: 5s
-    restart: unless-stopped
-    networks:
-      - traefik_proxy
+      retries: 5
+    networks: [internal, traefik_proxy]
     labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik_proxy"
-
-      # o site, aberto (sem senha, por decisão do dono da loja)
-      - "traefik.http.routers.jalapao-store.rule=PathPrefix(`/jalapao-store`)"
-      - "traefik.http.routers.jalapao-store.entrypoints=web"
-      - "traefik.http.routers.jalapao-store.service=jalapao-store"
-
-      # manuais dos produtos, rota pública para virar QR code no pacote
-      - "traefik.http.routers.jalapao-manuais.rule=PathPrefix(`/manuais`)"
-      - "traefik.http.routers.jalapao-manuais.entrypoints=web"
-      - "traefik.http.routers.jalapao-manuais.service=jalapao-store"
-
-      - "traefik.http.services.jalapao-store.loadbalancer.server.port=80"
-
-  # ========== API DE PRODUTOS ==========
-  # É o que tira a lista de dentro do navegador: os produtos passam a viver no
-  # servidor e aparecem em qualquer aparelho. Leitura aberta, gravação com senha.
-  jalapao-api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    container_name: jalapao-api
+      traefik.enable: 'true'
+      traefik.docker.network: traefik_proxy
+      traefik.http.routers.jalapao-store.rule: 'PathPrefix(`/jalapao-store`)'
+      traefik.http.routers.jalapao-store.entrypoints: web
+      traefik.http.routers.jalapao-store.service: jalapao-store
+      traefik.http.routers.jalapao-manuais.rule: 'PathPrefix(`/manuais`)'
+      traefik.http.routers.jalapao-manuais.entrypoints: web
+      traefik.http.routers.jalapao-manuais.service: jalapao-store
+      traefik.http.routers.jalapao-acme.rule: 'Host(`217.216.82.25`) && PathPrefix(`/.well-known/acme-challenge/`)'
+      traefik.http.routers.jalapao-acme.entrypoints: web
+      traefik.http.routers.jalapao-acme.service: jalapao-store
+      traefik.http.services.jalapao-store.loadbalancer.server.port: '80'
+  tls:
+    image: nginx:stable-alpine
+    profiles: [https]
+    restart: unless-stopped
+    ports: ['443:443']
     volumes:
-      # dados/ fica fora do repositório e fora do rsync --delete
-      - ./dados:/dados
+      - ./infra/nginx/https.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/nginx/locations.conf:/etc/nginx/jalapao-locations.conf:ro
+      - ./infra/renew-nginx.sh:/renew-nginx.sh:ro
+      - ./manuais:/srv/manuais:ro
+      - certificates:/etc/letsencrypt:ro
+    command: [sh, /renew-nginx.sh]
+    depends_on:
+      frontend: {condition: service_healthy}
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8000/api/saude || exit 1"]
+      test: [CMD-SHELL, 'wget --no-check-certificate -q -O /dev/null https://127.0.0.1/health']
       interval: 10s
       timeout: 3s
-      retries: 3
-      start_period: 5s
+      retries: 5
+    networks: [internal]
+  certbot:
+    image: certbot/certbot:v5.4.0
+    profiles: [https]
     restart: unless-stopped
-    networks:
-      - traefik_proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik_proxy"
-      - "traefik.http.routers.jalapao-api.rule=PathPrefix(`/api/produtos`) || PathPrefix(`/api/saude`)"
-      - "traefik.http.routers.jalapao-api.entrypoints=web"
-      - "traefik.http.routers.jalapao-api.service=jalapao-api"
-      - "traefik.http.services.jalapao-api.loadbalancer.server.port=8000"
-
+    volumes:
+      - certificates:/etc/letsencrypt
+      - acme_webroot:/var/www/certbot
+    entrypoint: /bin/sh
+    command: ['-c', 'trap exit TERM; while :; do certbot renew --quiet; sleep 43200 & wait $$!; done']
+    networks: [internal]
+volumes:
+  postgres_data:
+  certificates:
+  acme_webroot:
 networks:
+  internal:
   traefik_proxy:
     external: true

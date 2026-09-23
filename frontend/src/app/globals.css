@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f2ea;
+  --foreground: #2a1a0f;
+  --card: #fffdf9;
+  --card-foreground: #2a1a0f;
+  --primary: #a54d0b;
+  --primary-foreground: #fffdf9;
+  --muted: #f1e9dc;
+  --muted-foreground: #6d5947;
+  --border: #e2d6c4;
+  --input: #c9b79e;
+  --ring: #c8670f;
+  --destructive: #8f210b;
+  --success: #4d6b2f;
+  --cerrado: #c8670f;
+  --logo-background: #f7f2ea;
+  --font-display: "Bahnschrift", "Franklin Gothic Medium", Arial, sans-serif;
+  --font-body: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-data: "Consolas", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #17100a;
+    --foreground: #f2e8da;
+    --card: #201710;
+    --card-foreground: #f2e8da;
+    --primary: #de8a2b;
+    --primary-foreground: #17100a;
+    --muted: #2a1e14;
+    --muted-foreground: #b7a58e;
+    --border: #3a2b1d;
+    --input: #574026;
+    --ring: #de8a2b;
+    --destructive: #e07a5a;
+    --success: #9dbb6a;
+  }
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+}
+* {
+  border-color: var(--border);
+}
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  margin: 0;
+}
+h1,
+h2,
+h3,
+nav,
+button,
+label,
+th {
+  font-family: var(--font-display);
+}
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+}
+h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+label {
+  display: block;
+  font-size: 0.875rem;
+  margin-bottom: 0.35rem;
+}
+input,
+select,
+textarea {
+  font-family: var(--font-display);
+}
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--input);
+  border-radius: 0.375rem;
+  background: var(--background);
+  padding: 0.55rem;
+}
+table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+}
+th,
+td {
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+th {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+.money {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+}
+img[alt="Jalapão Store"] {
+  background: var(--logo-background);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
