@@ -186,7 +186,7 @@ jobs:
           {
             printf 'ML_APP_ID=%s\n' "$ML_APP_ID"
             printf 'ML_CLIENT_SECRET=%s\n' "$ML_CLIENT_SECRET"
-            printf 'ML_REDIRECT_URI=https://217.216.82.25/jalapao-store/callback\n'
+            printf 'ML_REDIRECT_URI=https://jalapao-store.217-216-82-25.sslip.io/jalapao-store/callback\n'
             printf 'ML_PKCE_ENABLED=1\n'
           } > /tmp/.env.marketplace
           scp -i ~/.ssh/deploy_key /tmp/.env.marketplace \

@@ -19,10 +19,10 @@ services:
     restart: unless-stopped
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Configure DJANGO_SECRET_KEY}
-      DJANGO_ALLOWED_HOSTS: 217.216.82.25,localhost,127.0.0.1,backend
+      DJANGO_ALLOWED_HOSTS: 217.216.82.25,jalapao-store.217-216-82-25.sslip.io,localhost,127.0.0.1,backend
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_HOST: db
-      CSRF_TRUSTED_ORIGINS: https://217.216.82.25
+      CSRF_TRUSTED_ORIGINS: https://217.216.82.25,https://jalapao-store.217-216-82-25.sslip.io
       # credenciais do marketplace: vêm do .env.backend, nunca do repositório
       SHOPEE_PARTNER_ID: ${SHOPEE_PARTNER_ID:-}
       SHOPEE_PARTNER_KEY: ${SHOPEE_PARTNER_KEY:-}
@@ -30,7 +30,7 @@ services:
       SHOPEE_API_BASE: ${SHOPEE_API_BASE:-https://openplatform.shopee.com.br}
       ML_APP_ID: ${ML_APP_ID:-}
       ML_CLIENT_SECRET: ${ML_CLIENT_SECRET:-}
-      ML_REDIRECT_URI: ${ML_REDIRECT_URI:-https://217.216.82.25/jalapao-store/callback}
+      ML_REDIRECT_URI: ${ML_REDIRECT_URI:-https://jalapao-store.217-216-82-25.sslip.io/jalapao-store/callback}
       ML_PKCE_ENABLED: ${ML_PKCE_ENABLED:-0}
     volumes:
       - './dados:/legacy:ro'
@@ -50,7 +50,7 @@ services:
     restart: unless-stopped
     environment:
       BACKEND_URL: http://backend:8000
-      APP_ORIGIN: https://217.216.82.25
+      APP_ORIGIN: https://217.216.82.25,https://jalapao-store.217-216-82-25.sslip.io
       COOKIE_SECURE: 'true'
     depends_on:
       backend: {condition: service_healthy}
@@ -88,6 +88,9 @@ services:
       traefik.http.routers.jalapao-acme.rule: 'Host(`217.216.82.25`) && PathPrefix(`/.well-known/acme-challenge/`)'
       traefik.http.routers.jalapao-acme.entrypoints: web
       traefik.http.routers.jalapao-acme.service: jalapao-store
+      traefik.http.routers.jalapao-domain-acme.rule: 'Host(`jalapao-store.217-216-82-25.sslip.io`) && PathPrefix(`/.well-known/acme-challenge/`)'
+      traefik.http.routers.jalapao-domain-acme.entrypoints: web
+      traefik.http.routers.jalapao-domain-acme.service: jalapao-store
       traefik.http.services.jalapao-store.loadbalancer.server.port: '80'
   tls:
     image: nginx:stable-alpine

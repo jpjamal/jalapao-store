@@ -137,7 +137,8 @@ registro no Console — não muda código.
    `ML_APP_ID` é uma variável do GitHub Actions, `ML_CLIENT_SECRET` é um **Secret** do GitHub
    Actions e o workflow entrega ambos no arquivo privado `.env.marketplace` da VPS. O fluxo
    também configura `ML_PKCE_ENABLED=1` e o retorno
-   `https://217.216.82.25/jalapao-store/callback`, idêntico ao cadastrado no DevCenter.
+   `https://jalapao-store.217-216-82-25.sslip.io/jalapao-store/callback`. O mesmo URI
+   precisa ser cadastrado no DevCenter antes do próximo teste.
 2. Em **Conectar Mercado Livre**, um usuário autorizado inicia o OAuth. O servidor guarda
    uma tentativa com `state` aleatório, vinculado ao usuário e válido por 10 minutos.
    A página de retorno troca `code` e `state` pelos tokens. O `user_id` vem do Mercado Livre.
@@ -153,8 +154,11 @@ A importação por paginação comum limita-se a 1000 anúncios; acima disso é 
 implementar `scan`. O botão de envio processa até 100 vínculos por chamada. A conexão real
 e os fluxos remotos não foram validados sem uma aplicação e conta autorizadas.
 
-O IP HTTPS no URI de retorno ainda depende de aceitação no DevCenter; isso não foi
-confirmado localmente.
+O DevCenter aceitou cadastrar o retorno HTTPS com IP, mas a autorização real parou antes
+do consentimento: o CloudFront respondeu 403 à URL que continha esse IP no `redirect_uri`.
+O subdomínio gratuito acima resolve para a VPS e não recebeu esse bloqueio em teste com
+URI de exemplo; a autorização completa ainda precisa ser validada. Evidências em
+[validação em produção](specs/006-mercado-livre/validacao-producao-2026-09-24.md).
 
 Especificação e critérios em [006-mercado-livre](specs/006-mercado-livre/spec.md).
 Proteção dos tokens e entrega por anúncio em

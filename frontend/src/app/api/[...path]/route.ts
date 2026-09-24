@@ -42,8 +42,10 @@ async function handle(
   const mutable = !["GET", "HEAD"].includes(request.method);
   if (mutable) {
     const origin = request.headers.get("origin");
-    const expected = process.env.APP_ORIGIN || request.nextUrl.origin;
-    if (origin !== expected)
+    const allowedOrigins = (process.env.APP_ORIGIN || request.nextUrl.origin)
+      .split(",")
+      .map((value) => value.trim());
+    if (!origin || !allowedOrigins.includes(origin))
       return NextResponse.json(
         { errors: { detail: "Origem da solicitação não permitida." } },
         { status: 403 },
