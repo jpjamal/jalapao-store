@@ -174,6 +174,462 @@ paths:
               schema:
                 $ref: '#/components/schemas/Dashboard'
           description: ''
+  /integrations/:
+    get:
+      operationId: integrations_list
+      description: Lojas conectadas. Conectar e sincronizar exigem permissão de escrita.
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+      - in: query
+        name: channel
+        schema:
+          type: string
+          enum:
+          - mercado_livre
+          - shopee
+        description: |-
+          * `shopee` - Shopee
+          * `mercado_livre` - Mercado Livre
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - integrations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAccountList'
+          description: ''
+  /integrations/{id}/:
+    get:
+      operationId: integrations_retrieve
+      description: Lojas conectadas. Conectar e sincronizar exigem permissão de escrita.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este marketplace account.
+        required: true
+      tags:
+      - integrations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: ''
+  /integrations/{id}/import-listings/:
+    post:
+      operationId: integrations_import_listings_create
+      description: Lojas conectadas. Conectar e sincronizar exigem permissão de escrita.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este marketplace account.
+        required: true
+      tags:
+      - integrations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+          description: ''
+  /integrations/{id}/push-stock/:
+    post:
+      operationId: integrations_push_stock_create
+      description: Lojas conectadas. Conectar e sincronizar exigem permissão de escrita.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este marketplace account.
+        required: true
+      tags:
+      - integrations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushStockResult'
+          description: ''
+  /integrations/auth-link/:
+    get:
+      operationId: integrations_auth_link_retrieve
+      description: Lojas conectadas. Conectar e sincronizar exigem permissão de escrita.
+      parameters:
+      - in: query
+        name: channel
+        schema:
+          type: string
+          minLength: 1
+        required: true
+      tags:
+      - integrations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLink'
+          description: ''
+  /integrations/connect/:
+    post:
+      operationId: integrations_connect_create
+      description: Lojas conectadas. Conectar e sincronizar exigem permissão de escrita.
+      tags:
+      - integrations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConnectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConnectRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: ''
+  /integrations/ml-auth-link/:
+    post:
+      operationId: integrations_ml_auth_link_create
+      description: Lojas conectadas. Conectar e sincronizar exigem permissão de escrita.
+      tags:
+      - integrations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MlAuthLink'
+          description: ''
+  /integrations/status/:
+    get:
+      operationId: integrations_status_retrieve
+      description: Lojas conectadas. Conectar e sincronizar exigem permissão de escrita.
+      tags:
+      - integrations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountStatus'
+          description: ''
+  /listing-drafts/:
+    get:
+      operationId: listing_drafts_list
+      parameters:
+      - in: query
+        name: channel
+        schema:
+          type: string
+          enum:
+          - mercado_livre
+          - shopee
+        description: |-
+          * `mercado_livre` - Mercado Livre
+          * `shopee` - Shopee
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: string
+          format: uuid
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - listing-drafts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedListingDraftList'
+          description: ''
+    post:
+      operationId: listing_drafts_create
+      tags:
+      - listing-drafts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListingDraft'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ListingDraft'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ListingDraft'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListingDraft'
+          description: ''
+  /listing-drafts/{id}/:
+    get:
+      operationId: listing_drafts_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este listing draft.
+        required: true
+      tags:
+      - listing-drafts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListingDraft'
+          description: ''
+    put:
+      operationId: listing_drafts_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este listing draft.
+        required: true
+      tags:
+      - listing-drafts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListingDraft'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ListingDraft'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ListingDraft'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListingDraft'
+          description: ''
+    patch:
+      operationId: listing_drafts_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este listing draft.
+        required: true
+      tags:
+      - listing-drafts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedListingDraft'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedListingDraft'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedListingDraft'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListingDraft'
+          description: ''
+  /listings/:
+    get:
+      operationId: listings_list
+      description: Vínculos anúncio ↔ produto. O que se edita aqui é o interruptor
+        e o produto.
+      parameters:
+      - in: query
+        name: marketplace
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: string
+          format: uuid
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      - in: query
+        name: sync_enabled
+        schema:
+          type: boolean
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedListingList'
+          description: ''
+  /listings/{id}/:
+    put:
+      operationId: listings_update
+      description: Vínculos anúncio ↔ produto. O que se edita aqui é o interruptor
+        e o produto.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este listing.
+        required: true
+      tags:
+      - listings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Listing'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Listing'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Listing'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+          description: ''
+    patch:
+      operationId: listings_partial_update
+      description: Vínculos anúncio ↔ produto. O que se edita aqui é o interruptor
+        e o produto.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este listing.
+        required: true
+      tags:
+      - listings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedListing'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedListing'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedListing'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listing'
+          description: ''
   /movements/:
     get:
       operationId: movements_list
@@ -230,6 +686,101 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Movement'
+          description: ''
+  /product-images/:
+    get:
+      operationId: product_images_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: string
+          format: uuid
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - product-images
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductImageList'
+          description: ''
+    post:
+      operationId: product_images_create
+      tags:
+      - product-images
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductImageUpload'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductImageUpload'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductImage'
+          description: ''
+  /product-images/{id}/:
+    delete:
+      operationId: product_images_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este product image.
+        required: true
+      tags:
+      - product-images
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /product-images/{id}/content/:
+    get:
+      operationId: product_images_content_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este product image.
+        required: true
+      tags:
+      - product-images
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
           description: ''
   /products/:
     get:
@@ -651,6 +1202,106 @@ paths:
           description: ''
 components:
   schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        channel:
+          allOf:
+          - $ref: '#/components/schemas/MarketplaceChannelEnum'
+          readOnly: true
+        channel_label:
+          type: string
+          readOnly: true
+        external_id:
+          type: string
+          readOnly: true
+          description: shop_id na Shopee, user_id no ML
+        name:
+          type: string
+          readOnly: true
+        active:
+          type: boolean
+          readOnly: true
+        token_valido:
+          type: boolean
+          readOnly: true
+        authorization_expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        authorization_days_left:
+          type: integer
+          readOnly: true
+          nullable: true
+        last_synced_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        last_error:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - active
+      - authorization_days_left
+      - authorization_expires_at
+      - channel
+      - channel_label
+      - created_at
+      - external_id
+      - id
+      - last_error
+      - last_synced_at
+      - name
+      - token_valido
+    AccountStatus:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - accounts
+    AuthLink:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+      - url
+    AuthorizationAlert:
+      type: object
+      properties:
+        channel:
+          type: string
+        channel_label:
+          type: string
+        name:
+          type: string
+        days_left:
+          type: integer
+        expires_at:
+          type: string
+      required:
+      - channel
+      - channel_label
+      - days_left
+      - expires_at
+      - name
+    BlankEnum:
+      enum:
+      - ''
     Cash:
       type: object
       properties:
@@ -696,18 +1347,45 @@ components:
       - occurred_on
       - receipt
       - sale
-    ChannelEnum:
+    CertificateStatus:
+      type: object
+      properties:
+        expires_at:
+          type: string
+        days_left:
+          type: integer
+        alert:
+          type: boolean
+      required:
+      - alert
+      - days_left
+      - expires_at
+    ConditionEnum:
       enum:
-      - direct
-      - mercado_livre
-      - shopee
-      - other
+      - new
+      - used
+      - reconditioned
       type: string
       description: |-
-        * `direct` - Boca a boca
-        * `mercado_livre` - Mercado Livre
-        * `shopee` - Shopee
-        * `other` - Outro
+        * `new` - Novo
+        * `used` - Usado
+        * `reconditioned` - Recondicionado
+    ConnectRequest:
+      type: object
+      properties:
+        channel:
+          type: string
+        code:
+          type: string
+        external_id:
+          type: string
+        state:
+          type: string
+      required:
+      - channel
+      - code
+      - external_id
+      - state
     CurrentUser:
       type: object
       properties:
@@ -738,8 +1416,18 @@ components:
           type: string
         product_count:
           type: integer
+        certificate:
+          allOf:
+          - $ref: '#/components/schemas/CertificateStatus'
+          nullable: true
+        authorization_alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorizationAlert'
       required:
+      - authorization_alerts
       - cash_balance
+      - certificate
       - gross
       - product_count
       - profit
@@ -753,6 +1441,22 @@ components:
       description: |-
         * `in` - Entrada
         * `out` - Saída
+    ImportResult:
+      type: object
+      properties:
+        total:
+          type: integer
+        vinculos_novos:
+          type: integer
+        pendentes:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - pendentes
+      - total
+      - vinculos_novos
     ItemInput:
       type: object
       properties:
@@ -806,6 +1510,139 @@ components:
       - product
       - product_name
       - quantity
+    Listing:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        marketplace:
+          type: string
+          readOnly: true
+          default: mercado_livre
+        seller_id:
+          type: string
+          readOnly: true
+        item_id:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        product:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+          readOnly: true
+        product_sku:
+          type: string
+          readOnly: true
+        local_stock:
+          type: integer
+          readOnly: true
+        remote_stock:
+          type: integer
+          readOnly: true
+          nullable: true
+        sync_enabled:
+          type: boolean
+        stock_pushed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - id
+      - item_id
+      - local_stock
+      - marketplace
+      - product
+      - product_name
+      - product_sku
+      - remote_stock
+      - seller_id
+      - stock_pushed_at
+      - title
+    ListingDraft:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        product:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+          readOnly: true
+        product_sku:
+          type: string
+          readOnly: true
+        channel:
+          $ref: '#/components/schemas/MarketplaceChannelEnum'
+        title:
+          type: string
+          maxLength: 300
+        description:
+          type: string
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        brand:
+          type: string
+          maxLength: 100
+        model:
+          type: string
+          maxLength: 100
+        condition:
+          oneOf:
+          - $ref: '#/components/schemas/ConditionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        category_id:
+          type: string
+          maxLength: 80
+        attributes: {}
+        image_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - channel
+      - created_at
+      - id
+      - product
+      - product_name
+      - product_sku
+      - updated_at
+    MarketplaceChannelEnum:
+      enum:
+      - shopee
+      - mercado_livre
+      type: string
+      description: |-
+        * `shopee` - Shopee
+        * `mercado_livre` - Mercado Livre
+    MlAuthLink:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+      - url
     Movement:
       type: object
       properties:
@@ -877,6 +1714,29 @@ components:
       - sale
       - value_after
       - value_delta
+    PaginatedAccountList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
     PaginatedCashList:
       type: object
       required:
@@ -900,6 +1760,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Cash'
+    PaginatedListingDraftList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListingDraft'
+    PaginatedListingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Listing'
     PaginatedMovementList:
       type: object
       required:
@@ -923,6 +1829,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Movement'
+    PaginatedProductImageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
     PaginatedProductList:
       type: object
       required:
@@ -992,6 +1921,104 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Sale'
+    PatchedListing:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        marketplace:
+          type: string
+          readOnly: true
+          default: mercado_livre
+        seller_id:
+          type: string
+          readOnly: true
+        item_id:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        product:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+          readOnly: true
+        product_sku:
+          type: string
+          readOnly: true
+        local_stock:
+          type: integer
+          readOnly: true
+        remote_stock:
+          type: integer
+          readOnly: true
+          nullable: true
+        sync_enabled:
+          type: boolean
+        stock_pushed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+    PatchedListingDraft:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        product:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+          readOnly: true
+        product_sku:
+          type: string
+          readOnly: true
+        channel:
+          $ref: '#/components/schemas/MarketplaceChannelEnum'
+        title:
+          type: string
+          maxLength: 300
+        description:
+          type: string
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        brand:
+          type: string
+          maxLength: 100
+        model:
+          type: string
+          maxLength: 100
+        condition:
+          oneOf:
+          - $ref: '#/components/schemas/ConditionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        category_id:
+          type: string
+          maxLength: 80
+        attributes: {}
+        image_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedProduct:
       type: object
       properties:
@@ -1001,7 +2028,7 @@ components:
           readOnly: true
         sku:
           type: string
-          maxLength: 80
+          readOnly: true
         name:
           type: string
           maxLength: 200
@@ -1106,7 +2133,7 @@ components:
           readOnly: true
         sku:
           type: string
-          maxLength: 80
+          readOnly: true
         name:
           type: string
           maxLength: 200
@@ -1161,6 +2188,69 @@ components:
       - sku
       - stock_value
       - updated_at
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        product:
+          type: string
+          format: uuid
+          readOnly: true
+        alt_text:
+          type: string
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+        mime_type:
+          type: string
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+        height:
+          type: integer
+          readOnly: true
+        size_bytes:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - alt_text
+      - created_at
+      - height
+      - id
+      - mime_type
+      - position
+      - product
+      - size_bytes
+      - width
+    ProductImageUpload:
+      type: object
+      properties:
+        product:
+          type: string
+          format: uuid
+        file:
+          type: string
+          format: uri
+        alt_text:
+          type: string
+          maxLength: 200
+        position:
+          type: integer
+          maximum: 65535
+          minimum: 0
+          default: 0
+      required:
+      - file
+      - product
     ProductKindEnum:
       enum:
       - printing
@@ -1169,6 +2259,21 @@ components:
       description: |-
         * `printing` - Impressão 3D
         * `resale` - Revenda
+    PushStockResult:
+      type: object
+      properties:
+        enviados:
+          type: integer
+        ignorados:
+          type: integer
+        falhas:
+          type: array
+          items:
+            type: string
+      required:
+      - enviados
+      - falhas
+      - ignorados
     Receipt:
       type: object
       properties:
@@ -1307,7 +2412,7 @@ components:
           format: date-time
           readOnly: true
         channel:
-          $ref: '#/components/schemas/ChannelEnum'
+          $ref: '#/components/schemas/SaleChannelEnum'
         reference:
           type: string
           maxLength: 100
@@ -1364,6 +2469,18 @@ components:
       - net
       - profit
       - updated_at
+    SaleChannelEnum:
+      enum:
+      - direct
+      - mercado_livre
+      - shopee
+      - other
+      type: string
+      description: |-
+        * `direct` - Boca a boca
+        * `mercado_livre` - Mercado Livre
+        * `shopee` - Shopee
+        * `other` - Outro
     SaleInput:
       type: object
       properties:
@@ -1371,7 +2488,7 @@ components:
           type: string
           format: uuid
         channel:
-          $ref: '#/components/schemas/ChannelEnum'
+          $ref: '#/components/schemas/SaleChannelEnum'
         reference:
           type: string
           default: ''

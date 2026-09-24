@@ -12,6 +12,10 @@ Produção standalone: Dockerfile copia `.next/standalone`, `.next/static` e pub
 - /login: usuário e senha, erros recebidos da API.
 - /: estoque a custo, faturamento, lucro estimado, caixa, a receber, produtos ativos.
 - /produtos: busca, paginação, cadastro/edição, parâmetros 3D e desativação.
+  O SKU aparece após salvar e não é editável; a quantidade é administrada no estoque.
+- /anuncios: fotos reutilizáveis do produto e rascunho independente para Mercado Livre
+  e Shopee. Título, descrição, preço, marca, modelo e categoria são opcionais; salvar
+  não publica nem envia estoque.
 - /estoque: entradas/saídas justificadas, valor e histórico. Produto por busca digitada.
 - /entradas: compra/produção por produto (busca digitada), custo do lote, histórico e
   pagamento de compra.
@@ -21,7 +25,7 @@ Produção standalone: Dockerfile copia `.next/standalone`, `.next/static` e pub
   cada item por busca digitada.
 - /caixa: entradas/saídas, origem automática/manual e histórico preservado.
 - /ferramentas: índice das três ferramentas.
-- /ferramentas/impressao-3d: custo da peça e botão de salvar no catálogo.
+- /ferramentas/impressao-3d: custo da peça e botão de salvar no catálogo, com SKU gerado pelo backend.
 - /ferramentas/calculadora: taxas de Shopee e Mercado Livre, com a tabela de regras.
 - /ferramentas/etiquetas: ZPL → Labelary → PDF nomeado pelo destinatário, com OCR.
 - /integracoes: conectar Shopee e Mercado Livre, importar anúncios, vincular por SKU e

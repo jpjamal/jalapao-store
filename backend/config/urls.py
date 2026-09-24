@@ -8,6 +8,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from apps.accounts.api import LoginView, MeView
 from apps.catalog.api import ProductViewSet
+from apps.catalog.drafts_api import ListingDraftViewSet, ProductImageViewSet
 from apps.inventory.api import MovementViewSet, ReceiptViewSet
 from apps.sales.api import SaleViewSet
 from apps.finance.api import CashViewSet
@@ -16,6 +17,8 @@ from apps.integrations.api import AccountViewSet, ListingViewSet
 
 router = DefaultRouter()
 router.register("products", ProductViewSet)
+router.register("product-images", ProductImageViewSet)
+router.register("listing-drafts", ListingDraftViewSet)
 router.register("movements", MovementViewSet)
 router.register("receipts", ReceiptViewSet)
 router.register("sales", SaleViewSet)

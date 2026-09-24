@@ -64,6 +64,13 @@ if dc ps --status running --services | grep -qx db; then
     test -s "$HOME/backups/jalapao-store/db-$stamp.dump"
     chmod 600 "$HOME/backups/jalapao-store/db-$stamp.dump"
 fi
+# As fotos não ficam no PostgreSQL. Guardar o volume na mesma janela de escrita congelada.
+dc run --rm --no-deps -T --entrypoint python backend -c \
+    'import sys, tarfile; archive = tarfile.open(fileobj=sys.stdout.buffer, mode="w|gz"); archive.add("/app/media", arcname="media"); archive.close()' \
+    > "$HOME/backups/jalapao-store/media-$stamp.tar.gz"
+test -s "$HOME/backups/jalapao-store/media-$stamp.tar.gz"
+tar -tzf "$HOME/backups/jalapao-store/media-$stamp.tar.gz" >/dev/null
+chmod 600 "$HOME/backups/jalapao-store/media-$stamp.tar.gz"
 dc up -d --wait db
 dc run --rm backend python manage.py migrate --noinput
 legacy_running=$(docker ps -q --filter name='^jalapao-api$')

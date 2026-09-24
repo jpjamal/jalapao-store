@@ -1,0 +1,249 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { api, BASE, brl, type Page, type Product } from "@/lib/api";
+import { ProductPicker } from "@/components/product-picker";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ErrorMessage, Empty } from "@/components/feedback";
+
+type Channel = "mercado_livre" | "shopee";
+type ProductImage = {
+  id: string;
+  product: string;
+  alt_text: string;
+  position: number;
+  width: number;
+  height: number;
+};
+type Draft = {
+  id: string;
+  product: string;
+  product_name: string;
+  product_sku: string;
+  channel: Channel;
+  title: string;
+  description: string;
+  price: string | null;
+  brand: string;
+  model: string;
+  condition: string;
+  category_id: string;
+  image_ids: string[];
+};
+const channels: Record<Channel, string> = {
+  mercado_livre: "Mercado Livre",
+  shopee: "Shopee",
+};
+const imageUrl = (id: string) => `${BASE}/api/product-images/${id}/content`;
+
+export default function Anuncios() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [productId, setProductId] = useState("");
+  const [channel, setChannel] = useState<Channel>("mercado_livre");
+  const [images, setImages] = useState<ProductImage[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
+  const [condition, setCondition] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const load = useCallback(async () => {
+    const [productsPage, draftsPage] = await Promise.all([
+      api<Page<Product>>("products"),
+      api<Page<Draft>>("listing-drafts"),
+    ]);
+    setProducts(productsPage.results);
+    setDrafts(draftsPage.results);
+  }, []);
+  useEffect(() => {
+    setProductId(new URLSearchParams(window.location.search).get("product") || "");
+    load().catch((e) => setError((e as Error).message));
+  }, [load]);
+
+  const product = products.find((item) => item.id === productId);
+  const draft = useMemo(
+    () => drafts.find((item) => item.product === productId && item.channel === channel),
+    [drafts, productId, channel],
+  );
+  useEffect(() => {
+    if (!productId) { setImages([]); return; }
+    let active = true;
+    api<Page<ProductImage>>(`product-images?product=${productId}`)
+      .then((page) => { if (active) setImages(page.results); })
+      .catch((e) => { if (active) setError((e as Error).message); });
+    return () => { active = false; };
+  }, [productId]);
+  useEffect(() => {
+    setTitle(draft?.title || "");
+    setDescription(draft?.description || "");
+    setPrice(draft?.price || "");
+    setBrand(draft?.brand || "");
+    setModel(draft?.model || "");
+    setCondition(draft?.condition || "");
+    setCategoryId(draft?.category_id || "");
+    setSelected(draft?.image_ids || []);
+  }, [draft, productId, channel]);
+
+  async function upload(file: File) {
+    if (!productId) return;
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const body = new FormData();
+      body.append("product", productId);
+      body.append("file", file);
+      const result = await fetch(`${BASE}/api/product-images`, { method: "POST", body });
+      const data = await result.json();
+      if (!result.ok) throw new Error(
+        Object.values(data.errors || data).flat().join(" ") || "Falha ao enviar foto."
+      );
+      setImages((before) => [...before, data as ProductImage]);
+      setSelected((before) => [...before, (data as ProductImage).id]);
+      setNotice("Foto adicionada ao produto. Salve o rascunho para usá-la neste canal.");
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  function move(id: string, direction: number) {
+    setSelected((before) => {
+      const next = [...before];
+      const index = next.indexOf(id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= next.length) return before;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  async function save() {
+    if (!productId) return;
+    setBusy(true); setError(""); setNotice("");
+    try {
+      await api(`listing-drafts${draft ? `/${draft.id}` : ""}`, {
+        method: draft ? "PATCH" : "POST",
+        body: JSON.stringify({
+          ...(draft ? {} : { product: productId, channel }), title, description,
+          price: price || null, brand, model, condition, category_id: categoryId,
+          image_ids: selected,
+        }),
+      });
+      await load();
+      setNotice("Rascunho salvo. Nenhum anúncio ou estoque foi enviado ao marketplace.");
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  return <>
+    <h1>Anúncios</h1>
+    <p className="text-muted-foreground mb-7">
+      Prepare um rascunho para cada canal. Salvar aqui não publica o anúncio.
+    </p>
+    <ErrorMessage message={error} />
+    {notice && <p role="status" className="text-success mb-4">{notice}</p>}
+    <Card className="mb-6">
+      <h2>Escolha o produto e o canal</h2>
+      <div className="grid md:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label htmlFor="draft-product">Produto</label>
+          <ProductPicker products={products} value={productId}
+            onChange={(id) => { setProductId(id); setNotice(""); }} id="draft-product"
+            mostrarQuantidade={false} somenteAtivos={false} />
+        </div>
+        <div>
+          <label htmlFor="draft-channel">Canal</label>
+          <select id="draft-channel" value={channel} onChange={(e) => setChannel(e.target.value as Channel)}>
+            <option value="mercado_livre">Mercado Livre</option>
+            <option value="shopee">Shopee</option>
+          </select>
+        </div>
+      </div>
+      {product && <p className="text-sm text-muted-foreground mt-4">
+        SKU {product.sku} · estoque {product.quantity} un. · preço de referência {brl(product.sale_price)}
+      </p>}
+    </Card>
+    {product ? <>
+      <Card className="mb-6">
+        <h2>Fotos do produto</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          JPG, PNG ou WebP, até 10 MB. Marque as fotos deste anúncio; use as setas para escolher a capa e a ordem.
+        </p>
+        <label htmlFor="photo-file">Adicionar foto</label>
+        <Input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp"
+          disabled={busy} onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void upload(file);
+            e.target.value = "";
+          }} />
+        {images.length ? <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
+          {images.map((image) => {
+            const position = selected.indexOf(image.id);
+            return <div key={image.id} className="rounded-lg border p-2">
+              <img src={imageUrl(image.id)} alt={image.alt_text || `Foto do produto ${product.name}`}
+                className="w-full aspect-square object-contain" />
+              <label className="flex items-center gap-2 mt-2 text-sm">
+                <input type="checkbox" checked={position >= 0} onChange={() => setSelected((before) =>
+                  position >= 0 ? before.filter((id) => id !== image.id) : [...before, image.id]
+                )} /> Usar no anúncio
+              </label>
+              {position >= 0 && <div className="flex gap-2 items-center text-sm mt-2">
+                <span>{position === 0 ? "Capa" : `${position + 1}ª foto`}</span>
+                <Button size="sm" variant="outline" type="button" aria-label="Mover foto para antes"
+                  disabled={position === 0} onClick={() => move(image.id, -1)}>↑</Button>
+                <Button size="sm" variant="outline" type="button" aria-label="Mover foto para depois"
+                  disabled={position === selected.length - 1} onClick={() => move(image.id, 1)}>↓</Button>
+              </div>}
+            </div>;
+          })}
+        </div> : <Empty>Nenhuma foto cadastrada para este produto.</Empty>}
+      </Card>
+      <Card>
+        <h2>Rascunho para {channels[channel]}</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Todos os campos abaixo podem ficar vazios enquanto você prepara o anúncio.
+        </p>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="md:col-span-2"><label htmlFor="draft-title">Título sugerido</label>
+            <Input id="draft-title" maxLength={300} value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+          <div className="md:col-span-2"><label htmlFor="draft-description">Descrição</label>
+            <textarea id="draft-description" rows={8} value={description}
+              onChange={(e) => setDescription(e.target.value)} className="w-full rounded-md border bg-background p-3" /></div>
+          <div><label htmlFor="draft-price">Preço proposto (R$)</label>
+            <Input id="draft-price" type="number" min="0" step="0.01" value={price}
+              onChange={(e) => setPrice(e.target.value)} /></div>
+          <div><label htmlFor="draft-condition">Condição</label>
+            <select id="draft-condition" value={condition} onChange={(e) => setCondition(e.target.value)}>
+              <option value="">A definir</option><option value="new">Novo</option>
+              <option value="used">Usado</option><option value="reconditioned">Recondicionado</option>
+            </select></div>
+          <div><label htmlFor="draft-brand">Marca</label>
+            <Input id="draft-brand" maxLength={100} value={brand} onChange={(e) => setBrand(e.target.value)} /></div>
+          <div><label htmlFor="draft-model">Modelo</label>
+            <Input id="draft-model" maxLength={100} value={model} onChange={(e) => setModel(e.target.value)} /></div>
+          <div><label htmlFor="draft-category">Código da categoria no canal</label>
+            <Input id="draft-category" maxLength={80} value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)} /></div>
+        </div>
+        <Button className="mt-5" disabled={busy} onClick={() => void save()}>
+          {busy ? "Salvando…" : "Salvar rascunho"}
+        </Button>
+      </Card>
+    </> : <Card><Empty>Escolha um produto para preparar o anúncio.</Empty></Card>}
+    {drafts.length > 0 && <Card className="mt-6">
+      <h2>Rascunhos salvos</h2>
+      <div className="overflow-auto"><table><thead><tr><th>Produto</th><th>Canal</th><th>Título</th><th></th></tr></thead>
+        <tbody>{drafts.map((item) => <tr key={item.id}>
+          <td>{item.product_name}<span className="block text-xs text-muted-foreground">{item.product_sku}</span></td>
+          <td>{channels[item.channel]}</td><td>{item.title || "Sem título"}</td>
+          <td><Button size="sm" variant="outline" onClick={() => { setProductId(item.product); setChannel(item.channel); window.scrollTo(0, 0); }}>Editar</Button></td>
+        </tr>)}</tbody></table></div>
+    </Card>}
+  </>;
+}

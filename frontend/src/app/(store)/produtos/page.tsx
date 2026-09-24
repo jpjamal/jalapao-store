@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { api, brl, type Product, type Page, type Printing } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,6 @@ function ProductForm({
           const f = new FormData(e.currentTarget);
           const payload: Record<string, unknown> = {
             name: f.get("name"),
-            sku: f.get("sku"),
             description: f.get("description"),
             kind,
             active: f.get("active") === "on",
@@ -77,13 +77,12 @@ function ProductForm({
             required
             maxLength={200}
           />
-          <Field
-            name="sku"
-            label="Código (SKU)"
-            value={product?.sku}
-            required
-            maxLength={80}
-          />
+          <div>
+            <label>Código (SKU)</label>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {product?.sku || "Gerado automaticamente ao salvar"}
+            </p>
+          </div>
           <div>
             <label htmlFor="kind">Tipo</label>
             <select
@@ -304,6 +303,10 @@ export default function Products() {
                       >
                         Editar
                       </Button>
+                      {" "}
+                      <Link className="text-sm underline" href={`/anuncios?product=${p.id}`}>
+                        Fotos e anúncios
+                      </Link>
                     </td>
                   </tr>
                 ))}

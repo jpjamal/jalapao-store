@@ -17,6 +17,11 @@ Rodar `uv run ruff check . --exclude migrations` e `uv run python manage.py make
 ## Organização e contratos
 - accounts: usuário Django extensível, grupos/permissões, JWT e bootstrap explícito.
 - catalog: Product e PrintingProfile 1:1; cálculos em domain.py.
+- catalog: ProductImage guarda fotos privadas por produto; ListingDraft guarda conteúdo
+  opcional por produto e canal, com ordem de fotos própria. Salvar não publica anúncio.
+- Novos produtos recebem SKU automático `SKU-<iniciais>-<sequência>` (ex.: `SKU-LP-0001`).
+  O número é global e crescente; estoque é um campo separado. SKUs existentes e importados
+  permanecem intactos. A API expõe o SKU apenas para leitura.
 - inventory: saldo 1:1, histórico N:1, serviços atômicos com bloqueio do produto.
 - inventory.Receipt: compras/produções por produto com custo congelado; Stock.value mantém
   avaliação pelo custo médio móvel. Product.cost_price é apenas referência de novas entradas.
@@ -33,6 +38,8 @@ Históricos usam PROTECT. Sem DELETE comercial. Desativar produtos pelo campo ac
 API interna `/api/v1/`; pública via `/jalapao-store/backend-api/`.
 Autenticação Bearer JWT. Frontend usa BFF `/jalapao-store/api/` com cookies HttpOnly.
 `products/` GET/POST/PATCH, `movements/` GET/POST, `sales/` GET/POST,
+`product-images/` GET/POST/DELETE e `product-images/{uuid}/content/` GET autenticado,
+`listing-drafts/` GET/POST/PATCH para preparar anúncios por canal,
 `sales/{uuid}/receive/` e `cancel/` POST, `cash/` GET/POST, `dashboard/` GET.
 `receipts/` GET/POST, `receipts/{uuid}/` GET e `receipts/{uuid}/pay/` POST (occurred_on).
 Criar entrada exige add_receipt e add_movement; pagar exige add_receipt, change_receipt e

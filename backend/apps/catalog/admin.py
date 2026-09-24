@@ -13,6 +13,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ["kind", "active"]
     search_fields = ["sku", "name"]
     inlines = [PrintingInline]
+    readonly_fields = ["sku"]
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)

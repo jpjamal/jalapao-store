@@ -32,6 +32,9 @@ infra/deploy.sh constrói, faz pg_dump quando há banco anterior, aplica migrati
 somente a API JSON antiga para importar uma cópia estável, sobe a stack e verifica HTTPS.
 Backup JSON a cada importação; backup de código anterior no workflow. Arquivos sob
 ~/backups/jalapao-store com permissões restritas. Manuais públicos preservados em volume.
+As fotos privadas dos produtos ficam no volume `product_media`, separado do banco.
+O deploy cria `media-<data>.tar.gz` na mesma pasta de backups após parar a API;
+para restauração, recuperar o dump do banco e o arquivo de fotos da mesma data.
 
 ## HTTPS
 Certbot 5.4 com webroot e perfil shortlived para o certificado por IP, que dura cerca de

@@ -34,6 +34,7 @@ services:
       ML_PKCE_ENABLED: ${ML_PKCE_ENABLED:-0}
     volumes:
       - './dados:/legacy:ro'
+      - 'product_media:/app/media'
       # somente leitura, só para avisar no painel antes do certificado vencer
       - 'certificates:/certs:ro'
     depends_on:
@@ -149,6 +150,7 @@ services:
     networks: [internal]
 volumes:
   postgres_data:
+  product_media:
   certificates:
   acme_webroot:
 networks:

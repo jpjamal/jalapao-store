@@ -121,7 +121,6 @@ export default function Impressao3D() {
         body: JSON.stringify({
           name: nome.trim(),
           kind: "printing",
-          sku: `3D-${crypto.randomUUID().slice(0, 12)}`,
           printing,
         }),
       });

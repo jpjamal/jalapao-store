@@ -52,7 +52,7 @@ async function handle(
       );
   }
   if (
-    !/^(auth\/(login|logout|me)|dashboard|products(?:\/[a-f0-9-]+)?|movements|cash|receipts(?:\/[a-f0-9-]+(?:\/pay)?)?|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel))?)?|integrations(?:\/[a-f0-9-]+(?:\/(?:import-listings|push-stock))?)?|integrations\/(?:auth-link|ml-auth-link|connect|status)|listings(?:\/[a-f0-9-]+)?)$/.test(
+    !/^(auth\/(login|logout|me)|dashboard|products(?:\/[a-f0-9-]+)?|product-images(?:\/[a-f0-9-]+(?:\/content)?)?|listing-drafts(?:\/[a-f0-9-]+)?|movements|cash|receipts(?:\/[a-f0-9-]+(?:\/pay)?)?|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel))?)?|integrations(?:\/[a-f0-9-]+(?:\/(?:import-listings|push-stock))?)?|integrations\/(?:auth-link|ml-auth-link|connect|status)|listings(?:\/[a-f0-9-]+)?)$/.test(
       path,
     )
   )
@@ -85,8 +85,15 @@ async function handle(
       rotated = await refresh(oldRefresh);
       access = rotated?.access;
     }
-    const body = mutable ? await request.text() : undefined;
-    if (body && body.length > 1000000)
+    const multipart = request.headers.get("content-type")?.startsWith("multipart/form-data") || false;
+    const limit = multipart ? 11 * 1024 * 1024 : 1000000;
+    if (Number(request.headers.get("content-length") || 0) > limit)
+      return NextResponse.json(
+        { errors: { detail: "Solicitação muito grande." } },
+        { status: 413 },
+      );
+    const body = mutable ? await request.arrayBuffer() : undefined;
+    if (body && body.byteLength > limit)
       return NextResponse.json(
         { errors: { detail: "Solicitação muito grande." } },
         { status: 413 },
@@ -96,7 +103,7 @@ async function handle(
       fetch(`${backend}/api/v1/${target}/${request.nextUrl.search}`, {
         method: request.method,
         headers: {
-          "Content-Type": "application/json",
+          ...(mutable ? { "Content-Type": request.headers.get("content-type") || "application/json" } : {}),
           ...(access ? { Authorization: `Bearer ${access}` } : {}),
         },
         body,
@@ -114,11 +121,22 @@ async function handle(
       access = rotated?.access;
       if (access) result = await send();
     }
+    if (path.startsWith("product-images/") && path.endsWith("/content") && result.ok) {
+      const out = new NextResponse(result.body, { status: result.status });
+      out.headers.set("Content-Type", result.headers.get("content-type") || "application/octet-stream");
+      out.headers.set("Cache-Control", "private, no-store");
+      out.headers.set("X-Content-Type-Options", "nosniff");
+      if (rotated) {
+        out.cookies.set("jalapao_access", rotated.access, { ...cookieOptions, maxAge: 900 });
+        out.cookies.set("jalapao_refresh", rotated.refresh, { ...cookieOptions, maxAge: 86400 });
+      }
+      return out;
+    }
     const data = await result
       .json()
       .catch(() => ({ errors: { detail: "Falha na resposta da API." } }));
     if (path === "auth/login" && result.ok) rotated = data as Tokens;
-    const out = NextResponse.json(
+    const out = result.status === 204 ? new NextResponse(null, { status: 204 }) : NextResponse.json(
       path === "auth/login" && result.ok ? { ok: true } : data,
       { status: result.status },
     );
@@ -149,4 +167,4 @@ async function handle(
     );
   }
 }
-export { handle as GET, handle as POST, handle as PATCH, handle as PUT };
+export { handle as GET, handle as POST, handle as PATCH, handle as PUT, handle as DELETE };

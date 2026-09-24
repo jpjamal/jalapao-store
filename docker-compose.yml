@@ -13,6 +13,7 @@ services:
       retries: 20
   backend:
     build: ./backend
+    volumes: [product_media:/app/media]
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Copie .env.example para .env}
       DJANGO_DEBUG: '1'
@@ -46,3 +47,4 @@ services:
     depends_on: [backend, frontend]
 volumes:
   postgres_data:
+  product_media:

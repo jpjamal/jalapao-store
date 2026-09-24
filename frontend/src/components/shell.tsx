@@ -7,6 +7,7 @@ import { api, BASE } from "@/lib/api";
 import {
   LayoutDashboard,
   Package,
+  Images,
   Boxes,
   ShoppingBag,
   PackagePlus,
@@ -18,6 +19,7 @@ import {
 const navigation = [
   ["/", "Visão geral", LayoutDashboard],
   ["/produtos", "Produtos", Package],
+  ["/anuncios", "Anúncios", Images],
   ["/estoque", "Estoque", Boxes],
   ["/entradas", "Compras / produção", PackagePlus],
   ["/vendas", "Vendas", ShoppingBag],

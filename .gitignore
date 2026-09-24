@@ -218,6 +218,7 @@ node_modules/
 .next/
 *.tsbuildinfo
 staticfiles/
+backend/media/
 dados/
 data/
 playwright-report/
