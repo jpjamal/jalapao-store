@@ -18,13 +18,16 @@ Frontend: `npm ci` dentro de frontend. Consulte os READMEs de cada pasta para co
 | backend/ | Django, apps por domínio, migrations, uv.lock, testes, Dockerfile e compose com DB |
 | frontend/ | Next.js, componentes, as três ferramentas, package-lock e Dockerfile |
 | docs/ | Constituição SDD, decisões, specs, validação e operação |
-| infra/ | Proxy, HTTPS e publicação |
+| infra/ | Nginx interno, Certbot do IP e script de publicação |
 | site/, api/ | Fontes legadas preservadas para consulta/rollback; fora da nova stack |
 | manuais/ | PDFs públicos da loja, fora do rsync de código |
 
-Produção: https://217.216.82.25/jalapao-store
-Admin Django: https://217.216.82.25/jalapao-store/admin/
-Callback reservado: https://217.216.82.25/jalapao-store/callback
+Produção: https://jpsys.duckdns.org/jalapao-store (também pelo IP, https://217.216.82.25/jalapao-store)
+Admin Django: https://jpsys.duckdns.org/jalapao-store/admin/
+Retorno OAuth dos marketplaces: https://jpsys.duckdns.org/jalapao-store/callback
+
+HTTPS terminado pelo Traefik compartilhado da VPS (repositório `traefikproxy`); o Nginx da
+loja é proxy interno na 8080, servindo rotas e arquivos. Ver [operação](docs/operations.md).
 
 ## Desenvolvimento orientado por especificação
 Comece por [constituição](docs/constitution.md), [especificação](docs/specs/001-platform/spec.md),

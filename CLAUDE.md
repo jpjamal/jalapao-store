@@ -15,3 +15,5 @@ Substitui as antigas restrições sem build, framework, banco ou login.
 - Autor exclusivo dos commits: jpjamal <jpfisica3@gmail.com>, sem coautores ou IA.
 - Contexto original e segredos fora do Git. Admin/jpmorais não têm senha em código ou docs.
 - Integração Mercado Livre ainda não ativada; não declarar sincronização concluída.
+- Produção em https://jpsys.duckdns.org/jalapao-store. HTTPS no Traefik do repositório
+  `traefikproxy` (privado); Nginx da loja só interno. Por SSH, só parar/reiniciar container.

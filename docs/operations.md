@@ -41,11 +41,12 @@ configuração ativa após a migração.
 Certbot verifica renovação a cada 12h. Validar periodicamente os logs do certbot e a data
 de expiração servida. Não foi contratado serviço adicional; o domínio é gratuito (DuckDNS).
 
-### Migração do TLS para o Traefik (spec 007)
+### TLS no Traefik (spec 007, concluída em 24/09/2026)
 
-Até agora o Traefik atendia só a porta 80 e o Nginx exclusivo da loja segurava a 443. A
-spec 007 passa o HTTPS para o Traefik, que já é o proxy da VPS e serve o Portainer — um
-ponto de entrada só. O Nginx continua existindo como proxy interno, em HTTP na 8080.
+O Traefik, que já era o proxy da VPS e serve o Portainer, termina o HTTPS: um ponto de
+entrada só, para 80 e 443. O Nginx da loja deixou de ter porta pública e ficou como proxy
+interno em HTTP na 8080 — continua necessário porque o Traefik não serve arquivo de disco
+(o manual em PDF e o webroot do desafio ACME do certificado de IP).
 
 Dois certificados, duas origens, e é assim de propósito:
 

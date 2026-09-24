@@ -1,5 +1,8 @@
 # 007 — HTTPS no Traefik, não no Nginx
 
+> **Nota de 24/09/2026, depois desta validação:** o domínio `jalapao-store.duckdns.org`
+> citado aqui deixou de existir. O endereço atual é `jpsys.duckdns.org` — ver spec 008.
+
 O Traefik já é o proxy da VPS: atende a porta 80 de todos os projetos e serve o Portainer.
 O HTTPS, porém, ficou num Nginx exclusivo da loja, que segura a porta 443 sozinho. Esta
 mudança passa o HTTPS para o Traefik também, para haver **um** ponto de entrada.

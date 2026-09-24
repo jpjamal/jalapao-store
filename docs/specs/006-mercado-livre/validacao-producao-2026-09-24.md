@@ -1,5 +1,8 @@
 # Validação em produção — 2026-09-24
 
+> **Nota de 24/09/2026, depois desta validação:** o domínio `jalapao-store.duckdns.org`
+> citado aqui deixou de existir. O endereço atual é `jpsys.duckdns.org` — ver spec 008.
+
 - Aplicação criada no DevCenter com Authorization Code, Refresh Token e PKCE S256; retornos cadastrados para o IP e para `https://jalapao-store.217-216-82-25.sslip.io/jalapao-store/callback`.
 - `ML_APP_ID` está em variável do GitHub Actions e `ML_CLIENT_SECRET` em Secret. O workflow #23 (`c8f4a72`) passou pelos testes, entregou o arquivo privado de ambiente à VPS e concluiu o deploy com os contêineres saudáveis.
 - HTTPS na VPS: `/health`, `/jalapao-store/login` e `/jalapao-store/callback` responderam 200. A API de integrações sem autenticação respondeu 401, como esperado.

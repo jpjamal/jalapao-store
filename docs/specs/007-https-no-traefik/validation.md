@@ -1,5 +1,8 @@
 # Validação
 
+> **Nota de 24/09/2026, depois desta validação:** o domínio `jalapao-store.duckdns.org`
+> citado aqui deixou de existir. O endereço atual é `jpsys.duckdns.org` — ver spec 008.
+
 Em 2026-09-24, **antes de publicar**. Nada foi aplicado no servidor.
 
 ## Conferido em máquina

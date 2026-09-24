@@ -9,5 +9,7 @@
 - [x] Registro dos adaptadores no `ready()` do AppConfig, com teste de regressão.
 - [x] Aviso de autorização perto de vencer, no painel, junto com o do certificado.
 - [x] Testes sem rede cobrindo assinatura, tokens, casamento por SKU e o interruptor.
-- [ ] Publicação pelo GitHub, quando o dono pedir.
-- [ ] Primeira conexão real, que é quem confirma os campos da resposta e a hipótese do IP.
+- [x] Publicação pelo GitHub — entrou em `d2dad37` e está em produção.
+- [x] Primeira conexão real do Mercado Livre — conta 96417426 (ver spec 006).
+- [ ] Primeira conexão real da Shopee. A hipótese do IP no retorno deixou de importar: o retorno
+      agora é o domínio `jpsys.duckdns.org` (spec 008).

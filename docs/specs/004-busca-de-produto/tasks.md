@@ -4,4 +4,4 @@
 - [x] Uso nas três telas, preservando ativos/desativados e as sugestões de preço e custo.
 - [x] Estoque passa a controlar o produto por estado, em vez de `form.reset()`.
 - [x] Conferência no navegador das três telas e de um movimento gravado ponta a ponta.
-- [ ] Publicação pelo GitHub, quando o dono pedir.
+- [x] Publicação pelo GitHub — entrou em `d2dad37` e está em produção.
