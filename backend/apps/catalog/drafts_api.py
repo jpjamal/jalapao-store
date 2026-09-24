@@ -1,12 +1,14 @@
 from django.db import IntegrityError, transaction
 from django.http import FileResponse, Http404
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from PIL import Image, UnidentifiedImageError
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
+
+from apps.common.permissions import ModelPermissions
 
 from .models import ListingDraft, ListingDraftImage, Product, ProductImage
 
@@ -169,6 +171,12 @@ class ListingDraftSerializer(serializers.ModelSerializer):
         return data
 
 
+class DraftChangePermission(ModelPermissions):
+    """Validar é POST mas não cria nada: exige permissão de alterar rascunho, não de criar."""
+
+    perms_map = {**ModelPermissions.perms_map, "POST": ["%(app_label)s.change_%(model_name)s"]}
+
+
 class ListingDraftViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
     mixins.UpdateModelMixin, viewsets.GenericViewSet,
@@ -176,3 +184,112 @@ class ListingDraftViewSet(
     queryset = ListingDraft.objects.select_related("product").prefetch_related("ordered_images").all()
     serializer_class = ListingDraftSerializer
     filterset_fields = ["product", "channel"]
+
+    # ---------- entrega 2: consultar categoria e validar, sem publicar (spec 011) ----------
+
+    @staticmethod
+    def _integracao(chamada):
+        """Erro vindo do marketplace vira 400 legível, não 500."""
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        from apps.integrations.base import IntegrationError
+
+        try:
+            return chamada()
+        except IntegrationError as exc:
+            raise DjangoValidationError({"integration": str(exc)}) from exc
+
+    @extend_schema(
+        parameters=[OpenApiParameter("q", str, required=True, description="Título do anúncio")],
+        responses=inline_serializer(
+            name="MlCategorySuggestion",
+            fields={
+                "category_id": serializers.CharField(),
+                "category_name": serializers.CharField(),
+                "domain_name": serializers.CharField(),
+            },
+            many=True,
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="ml-categories")
+    def ml_categories(self, request):
+        from apps.integrations.meli.anuncio import conta_do_mercado_livre
+        from apps.integrations.services import chamar
+
+        q = (request.query_params.get("q") or "").strip()
+        if len(q) < 3:
+            raise serializers.ValidationError({"q": "Digite ao menos 3 letras do título."})
+
+        def buscar():
+            conta = conta_do_mercado_livre()
+            return chamar(conta, "suggest_categories", q=q[:200], limit=3)
+
+        sugestoes = self._integracao(buscar)
+        return Response([
+            {
+                "category_id": s.get("category_id") or "",
+                "category_name": s.get("category_name") or "",
+                "domain_name": s.get("domain_name") or "",
+            }
+            for s in sugestoes if s.get("category_id")
+        ])
+
+    @extend_schema(
+        parameters=[OpenApiParameter("category_id", str, required=True)],
+        responses=inline_serializer(
+            name="MlCategoryAttributes",
+            fields={
+                "category": serializers.DictField(),
+                "attributes": serializers.ListField(child=serializers.DictField()),
+            },
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="ml-attributes")
+    def ml_attributes(self, request):
+        from apps.integrations.meli.anuncio import atributos_do_formulario, conta_do_mercado_livre
+        from apps.integrations.services import chamar
+
+        categoria_id = (request.query_params.get("category_id") or "").strip()
+        if not categoria_id or len(categoria_id) > 40 or not categoria_id.replace("-", "").isalnum():
+            raise serializers.ValidationError({"category_id": "Informe um código de categoria válido."})
+
+        def buscar():
+            conta = conta_do_mercado_livre()
+            categoria = chamar(conta, "category", category_id=categoria_id)
+            atributos = chamar(conta, "category_attributes", category_id=categoria_id)
+            return categoria, atributos
+
+        categoria, atributos = self._integracao(buscar)
+        settings = categoria.get("settings") or {}
+        return Response({
+            "category": {
+                "id": categoria.get("id") or categoria_id,
+                "name": categoria.get("name") or "",
+                "path": [p.get("name") for p in (categoria.get("path_from_root") or [])],
+                "listing_allowed": settings.get("listing_allowed", True),
+                "max_title_length": settings.get("max_title_length"),
+                "max_pictures_per_item": settings.get("max_pictures_per_item"),
+                "minimum_price": settings.get("minimum_price"),
+            },
+            "attributes": atributos_do_formulario(atributos),
+        })
+
+    @extend_schema(
+        request=None,
+        responses=inline_serializer(
+            name="DraftValidation",
+            fields={
+                "pode_publicar": serializers.BooleanField(),
+                "simulado_no_mercado_livre": serializers.BooleanField(),
+                "causas_de_foto_retiradas": serializers.IntegerField(),
+                "categoria": serializers.DictField(allow_null=True),
+                "erros": serializers.ListField(child=serializers.DictField()),
+                "avisos": serializers.ListField(child=serializers.DictField()),
+            },
+        ),
+    )
+    @action(detail=True, methods=["post"], permission_classes=[DraftChangePermission])
+    def validate(self, request, pk=None):
+        from apps.integrations.meli.anuncio import diagnosticar
+
+        draft = self.get_object()
+        return Response(self._integracao(lambda: diagnosticar(draft)))

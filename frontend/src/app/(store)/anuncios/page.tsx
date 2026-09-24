@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ErrorMessage, Empty } from "@/components/feedback";
+import {
+  CategoriaEAtributos,
+  RelatorioValidacao,
+  type Atributos,
+  type Categoria,
+  type Relatorio,
+} from "@/components/ml-anuncio";
 
 type Channel = "mercado_livre" | "shopee";
 type ProductImage = {
@@ -30,6 +37,7 @@ type Draft = {
   model: string;
   condition: string;
   category_id: string;
+  attributes: Atributos;
   image_ids: string[];
 };
 const channels: Record<Channel, string> = {
@@ -52,6 +60,9 @@ export default function Anuncios() {
   const [model, setModel] = useState("");
   const [condition, setCondition] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [attributes, setAttributes] = useState<Atributos>({});
+  const [categoria, setCategoria] = useState<Categoria | null>(null);
+  const [relatorio, setRelatorio] = useState<Relatorio | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -90,7 +101,9 @@ export default function Anuncios() {
     setModel(draft?.model || "");
     setCondition(draft?.condition || "");
     setCategoryId(draft?.category_id || "");
+    setAttributes(draft?.attributes || {});
     setSelected(draft?.image_ids || []);
+    setRelatorio(null);
   }, [draft, productId, channel]);
 
   async function upload(file: File) {
@@ -123,20 +136,36 @@ export default function Anuncios() {
     });
   }
 
-  async function save() {
-    if (!productId) return;
-    setBusy(true); setError(""); setNotice("");
-    try {
-      await api(`listing-drafts${draft ? `/${draft.id}` : ""}`, {
+  async function gravar(): Promise<string> {
+    const salvo = await api<Draft>(`listing-drafts${draft ? `/${draft.id}` : ""}`, {
         method: draft ? "PATCH" : "POST",
         body: JSON.stringify({
           ...(draft ? {} : { product: productId, channel }), title, description,
           price: price || null, brand, model, condition, category_id: categoryId,
-          image_ids: selected,
+          attributes, image_ids: selected,
         }),
       });
-      await load();
+    await load();
+    return salvo.id;
+  }
+
+  async function save() {
+    if (!productId) return;
+    setBusy(true); setError(""); setNotice(""); setRelatorio(null);
+    try {
+      await gravar();
       setNotice("Rascunho salvo. Nenhum anúncio ou estoque foi enviado ao marketplace.");
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  // Salva antes: a validação confere o rascunho gravado, não o que está só na tela.
+  async function validar() {
+    if (!productId) return;
+    setBusy(true); setError(""); setNotice(""); setRelatorio(null);
+    try {
+      const id = await gravar();
+      setRelatorio(await api<Relatorio>(`listing-drafts/${id}/validate`, { method: "POST", body: "{}" }));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -211,7 +240,11 @@ export default function Anuncios() {
         </p>
         <div className="grid md:grid-cols-2 gap-4">
           <div className="md:col-span-2"><label htmlFor="draft-title">Título sugerido</label>
-            <Input id="draft-title" maxLength={300} value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+            <Input id="draft-title" maxLength={300} value={title} onChange={(e) => setTitle(e.target.value)} />
+            {channel === "mercado_livre" && categoria?.max_title_length && <p
+              className={`text-xs mt-1 ${title.length > categoria.max_title_length ? "text-destructive" : "text-muted-foreground"}`}>
+              {title.length} de {categoria.max_title_length} caracteres aceitos pela categoria
+            </p>}</div>
           <div className="md:col-span-2"><label htmlFor="draft-description">Descrição</label>
             <textarea id="draft-description" rows={8} value={description}
               onChange={(e) => setDescription(e.target.value)} className="w-full rounded-md border bg-background p-3" /></div>
@@ -227,13 +260,25 @@ export default function Anuncios() {
             <Input id="draft-brand" maxLength={100} value={brand} onChange={(e) => setBrand(e.target.value)} /></div>
           <div><label htmlFor="draft-model">Modelo</label>
             <Input id="draft-model" maxLength={100} value={model} onChange={(e) => setModel(e.target.value)} /></div>
-          <div><label htmlFor="draft-category">Código da categoria no canal</label>
+          {channel === "mercado_livre" ? <CategoriaEAtributos
+            titulo={title} categoryId={categoryId} onCategoria={setCategoryId}
+            atributos={attributes} onAtributos={setAttributes} onInfo={setCategoria} />
+          : <div><label htmlFor="draft-category">Código da categoria no canal</label>
             <Input id="draft-category" maxLength={80} value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)} /></div>
+              onChange={(e) => setCategoryId(e.target.value)} /></div>}
         </div>
-        <Button className="mt-5" disabled={busy} onClick={() => void save()}>
-          {busy ? "Salvando…" : "Salvar rascunho"}
-        </Button>
+        <div className="flex flex-wrap gap-3 mt-5">
+          <Button disabled={busy} onClick={() => void save()}>
+            {busy ? "Aguarde…" : "Salvar rascunho"}
+          </Button>
+          {channel === "mercado_livre" && <Button variant="outline" disabled={busy} onClick={() => void validar()}>
+            Salvar e validar no Mercado Livre
+          </Button>}
+        </div>
+        {channel === "mercado_livre" && <p className="text-xs text-muted-foreground mt-2">
+          Validar confere o rascunho e simula a publicação no Mercado Livre sem criar o anúncio.
+        </p>}
+        {relatorio && <RelatorioValidacao relatorio={relatorio} />}
       </Card>
     </> : <Card><Empty>Escolha um produto para preparar o anúncio.</Empty></Card>}
     {drafts.length > 0 && <Card className="mt-6">

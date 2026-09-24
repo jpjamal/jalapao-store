@@ -37,6 +37,9 @@ const labels: Record<string, string> = {
   unit_cost: "Custo unitário",
   supplier: "Fornecedor",
   notes: "Observação",
+  integration: "Marketplace",
+  category_id: "Categoria",
+  q: "Busca",
 };
 function flatten(value: unknown, prefix = ""): string[] {
   if (Array.isArray(value)) return value.flatMap((v) => flatten(v, prefix));

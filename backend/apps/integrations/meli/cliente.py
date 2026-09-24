@@ -225,3 +225,58 @@ class MercadoLivreAdapter(MarketplaceAdapter):
             raise IntegrationError("Modelo de estoque do anúncio exige verificação antes do envio.")
         self._request("PUT", f"/items/{urllib.parse.quote(item_id, safe='')}",
                       token=account.access_token, data={"available_quantity": quantity})
+
+    # ---------- anúncio: consulta e simulação, nunca criação ----------
+    # Site fixo: a loja vende no Brasil. Os caminhos abaixo são os da documentação
+    # oficial (Categorização de produtos, Atributos, Validador de publicações).
+    SITE = "MLB"
+
+    def suggest_categories(self, *, account, q, limit=3):
+        """Até três categorias prováveis para o título; a primeira é a mais provável."""
+        query = urllib.parse.urlencode({"q": q, "limit": max(1, min(int(limit), 8))})
+        body = self._request(
+            "GET", f"/sites/{self.SITE}/domain_discovery/search?{query}", token=account.access_token
+        ).body
+        return body if isinstance(body, list) else []
+
+    def category(self, *, account, category_id):
+        path = f"/categories/{urllib.parse.quote(str(category_id), safe='')}"
+        return self._request("GET", path, token=account.access_token).body or {}
+
+    def category_attributes(self, *, account, category_id):
+        path = f"/categories/{urllib.parse.quote(str(category_id), safe='')}/attributes"
+        body = self._request("GET", path, token=account.access_token).body
+        return body if isinstance(body, list) else []
+
+    def validate_item(self, *, account, payload):
+        """Simula a publicação em POST /items/validate, que confere sem criar.
+
+        Responde 204 quando o anúncio seria aceito; 400 com a lista `cause` quando não.
+        Não passa por `_request` porque aqui o 400 é resposta esperada, não falha —
+        o que interessa é justamente o corpo com as causas.
+        """
+        response = self.transporte(
+            "POST", "/items/validate", token=account.access_token, data=payload
+        )
+        if response.status == 204:
+            return []
+        if response.status == 400 and isinstance(response.body, dict):
+            causas = response.body.get("cause") or []
+            if causas:
+                return causas
+            # 400 sem causa: erro de formato do próprio envio
+            return [{
+                "type": "error",
+                "code": str(response.body.get("message") or "body.invalid"),
+                "message": str(response.body.get("error") or response.body.get("message") or ""),
+                "references": [],
+            }]
+        # 401/403/429 e o resto seguem o tratamento comum de erro
+        if response.status in (401, 403):
+            raise IntegrationError(
+                "A autorização do Mercado Livre foi recusada ou expirou.",
+                token_invalido=response.status == 401,
+            )
+        if response.status == 429:
+            raise IntegrationError("O Mercado Livre limitou as chamadas. Tente novamente mais tarde.")
+        raise IntegrationError(f"Mercado Livre respondeu HTTP {response.status} na validação.")
