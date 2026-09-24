@@ -171,6 +171,30 @@ jobs:
             "chmod 600 ~/${{ env.APP_NAME }}/.env.production"
           echo "✅ .env.production gerado"
 
+      - name: Configure Mercado Livre credentials
+        env:
+          ML_APP_ID: ${{ vars.ML_APP_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+        run: |
+          test -n "$ML_APP_ID"
+          test -n "$ML_CLIENT_SECRET"
+          if [[ "$ML_APP_ID$ML_CLIENT_SECRET" == *$'\n'* || "$ML_APP_ID$ML_CLIENT_SECRET" == *$'\r'* ]]; then
+            echo "Credenciais Mercado Livre inválidas"
+            exit 1
+          fi
+          umask 077
+          {
+            printf 'ML_APP_ID=%s\n' "$ML_APP_ID"
+            printf 'ML_CLIENT_SECRET=%s\n' "$ML_CLIENT_SECRET"
+            printf 'ML_REDIRECT_URI=https://217.216.82.25/jalapao-store/callback\n'
+            printf 'ML_PKCE_ENABLED=1\n'
+          } > /tmp/.env.marketplace
+          scp -i ~/.ssh/deploy_key /tmp/.env.marketplace \
+            ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:~/${{ env.APP_NAME }}/.env.marketplace
+          ssh -i ~/.ssh/deploy_key ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }} \
+            "chmod 600 ~/${{ env.APP_NAME }}/.env.marketplace"
+          rm /tmp/.env.marketplace
+
       - name: Deploy
         run: |
           ssh -i ~/.ssh/deploy_key ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }} bash << 'EOF'

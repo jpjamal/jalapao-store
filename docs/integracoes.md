@@ -99,7 +99,8 @@ anúncios não pesa; se um dia pesar, o perfil dá para guardar por alguns minut
 
 ## Onde ficam os segredos
 
-Em `.env.backend` no servidor, modo 600, **nunca no repositório**:
+As credenciais da Shopee ficam em `.env.backend` no servidor, modo 600,
+**nunca no repositório**:
 
 ```
 SHOPEE_PARTNER_ID=
@@ -110,6 +111,10 @@ SHOPEE_API_BASE=https://openplatform.shopee.com.br
 
 O `partner_key` não sai do backend: não vai para o front, não entra em log, e o admin do
 Django esconde os tokens da conta.
+
+Para o Mercado Livre, o Client ID fica em uma variável do GitHub Actions e a chave secreta
+em um GitHub Actions Secret. O deploy cria `.env.marketplace` na VPS com modo 600; esse
+arquivo também não é versionado.
 
 Tokens de acesso e renovação e o verificador PKCE ficam cifrados no banco com Fernet.
 A chave deriva do `DJANGO_SECRET_KEY`; **preserve esse segredo** no ambiente do servidor.
@@ -128,9 +133,11 @@ registro no Console — não muda código.
 
 ## Mercado Livre
 
-1. Configure `ML_APP_ID`, `ML_CLIENT_SECRET`, `ML_REDIRECT_URI` no backend. Configure
-   `ML_PKCE_ENABLED=1` se a aplicação no DevCenter tiver PKCE habilitado. O URI de retorno
-   deve coincidir exatamente com o cadastrado no DevCenter.
+1. Configure `ML_APP_ID`, `ML_CLIENT_SECRET`, `ML_REDIRECT_URI` no backend. No deploy atual,
+   `ML_APP_ID` é uma variável do GitHub Actions, `ML_CLIENT_SECRET` é um **Secret** do GitHub
+   Actions e o workflow entrega ambos no arquivo privado `.env.marketplace` da VPS. O fluxo
+   também configura `ML_PKCE_ENABLED=1` e o retorno
+   `https://217.216.82.25/jalapao-store/callback`, idêntico ao cadastrado no DevCenter.
 2. Em **Conectar Mercado Livre**, um usuário autorizado inicia o OAuth. O servidor guarda
    uma tentativa com `state` aleatório, vinculado ao usuário e válido por 10 minutos.
    A página de retorno troca `code` e `state` pelos tokens. O `user_id` vem do Mercado Livre.

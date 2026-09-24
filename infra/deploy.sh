@@ -2,7 +2,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 test -s .env.backend
-dc() { docker compose -f docker-compose.deploy.yml --env-file .env.production --env-file .env.backend "$@"; }
+dc() {
+    local env_files=(--env-file .env.production --env-file .env.backend)
+    if [ -s .env.marketplace ]; then
+        env_files+=(--env-file .env.marketplace)
+    fi
+    docker compose -f docker-compose.deploy.yml "${env_files[@]}" "$@"
+}
 if [ -n "$(dc ps -q tls)" ]; then export COMPOSE_PROFILES=https; fi
 mkdir -p "$HOME/backups/jalapao-store"
 chmod 700 "$HOME/backups/jalapao-store"

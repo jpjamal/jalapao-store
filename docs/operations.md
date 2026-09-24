@@ -13,7 +13,11 @@ Nenhuma senha de usuário é colocada em configuração de imagem, argumento ou 
 As credenciais de marketplace moram no mesmo `.env.backend`, e nunca no repositório:
 `SHOPEE_PARTNER_ID`, `SHOPEE_PARTNER_KEY`, `SHOPEE_REDIRECT_URI`, `SHOPEE_API_BASE`
 (padrão `https://openplatform.shopee.com.br`, o domínio do Brasil) e, para o Mercado Livre,
-`ML_APP_ID`, `ML_CLIENT_SECRET`, `ML_REDIRECT_URI` e `ML_PKCE_ENABLED`. Sem elas o sistema
+`ML_APP_ID`, `ML_CLIENT_SECRET`, `ML_REDIRECT_URI` e `ML_PKCE_ENABLED`. Para o Mercado Livre,
+o deploy também aceita `ML_APP_ID` como variável do GitHub Actions e `ML_CLIENT_SECRET` como
+segredo do GitHub Actions. O workflow entrega esses valores em `.env.marketplace` na VPS,
+com permissão 600; esse arquivo tem precedência sobre `.env.backend` e nunca entra no Git.
+Sem as credenciais o sistema
 sobe normalmente e a tela de Integrações responde qual variável falta — a integração é
 opcional, não pré-requisito de deploy. `MARKETPLACE_ALERT_DAYS` ajusta com quantos dias de
 antecedência o painel avisa que a autorização vai vencer; o padrão é 15.
@@ -47,8 +51,10 @@ recusar basta trocar `SHOPEE_REDIRECT_URI` e o registro lá — nenhuma linha de
 
 ## Comandos na VPS
 Na pasta ~/jalapao-store, usar sempre:
-`docker compose -f docker-compose.deploy.yml --env-file .env.production --env-file .env.backend --profile https`
+`docker compose -f docker-compose.deploy.yml --env-file .env.production --env-file .env.backend --env-file .env.marketplace --profile https`
 seguido de `ps`, `logs --tail 100 backend`, `logs --tail 100 certbot`, etc.
+Se `.env.marketplace` ainda não existir, omita apenas essa opção; o script `infra/deploy.sh`
+faz isso automaticamente.
 Backup: `exec -T db pg_dump -U jalapao -d jalapao -Fc > backup.dump` em diretório privado.
 Restauração deve ser ensaiada em banco separado antes de substituir dados da produção.
 Nunca executar `down -v` em produção.
