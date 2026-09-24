@@ -40,7 +40,11 @@ nome, com expiração informada em 2026-12-23. `/health`, `/jalapao-store/login`
 DevCenter e a URL pública de autorização do Mercado Livre respondeu 200, sem o bloqueio
 anterior do CloudFront. O titular entrou na loja pelo DuckDNS, autorizou a conexão e o
 painel exibiu a conta Mercado Livre com token válido. Nenhum anúncio foi importado e
-nenhum estoque foi enviado. O endereço por IP continua disponível; o `sslip.io` será
-retirado da configuração ativa depois dessa validação.
+nenhum estoque foi enviado. O endereço por IP continua disponível. O workflow #26
+(`0b1899d`) retirou o `sslip.io` do Nginx e das origens aceitas. O DuckDNS e o IP
+responderam 200, a API sem autenticação respondeu 401, e o endereço `sslip.io` falhou
+na validação do nome do certificado. Após o deploy, o painel ainda mostrou a conta
+Mercado Livre com token válido. O URI antigo foi removido do formulário do DevCenter,
+mas ainda aguardava o titular salvar a edição no momento desta atualização.
 
 Referência oficial: [Autenticação e Autorização](https://developers.mercadolivre.com.br/autenticacao-e-autorizacao).
