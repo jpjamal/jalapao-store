@@ -13,4 +13,8 @@
 - [x] Fora do Mercado Livre, mesma entrega: motivos prontos no ajuste de estoque (Compra /
       reposição, Produção 3D, Contagem de inventário, Perda / defeito, Devolução), com texto
       livre ainda aceito. O motivo segue obrigatório (INV-01).
+- [x] Primeira simulação real (Dummy Aranha, 24/09/2026) devolveu `body.required_fields
+      [family_name]`: a conta está no modelo "produto do vendedor". A simulação agora reenvia com
+      `family_name` (= título) e, se o Mercado Livre recusar `title`, sem ele. Máximo de duas
+      novas tentativas, só consulta.
 - [ ] Validar o rascunho real do Dummy Aranha contra o Mercado Livre, com a conta conectada.

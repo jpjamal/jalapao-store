@@ -224,6 +224,40 @@ def montar_envio(*, draft, estoque):
     return {k: v for k, v in envio.items() if v not in (None, "")}
 
 
+def _campos_citados(causas, codigo):
+    """Campos que as causas com esse código citam, por referência ou na mensagem."""
+    campos = set()
+    for c in causas:
+        if (c.get("code") or "") != codigo:
+            continue
+        texto = " ".join([str(c.get("message") or ""), *(str(r) for r in (c.get("references") or []))])
+        campos.update(nome for nome in ("family_name", "title") if nome in texto)
+    return campos
+
+
+def simular(conta, envio):
+    """Chama a simulação e se ajusta ao modelo de anúncio da conta.
+
+    Contas no modelo "produto do vendedor" (User Products) pedem `family_name`, o nome do
+    produto sem variação, e montam o título sozinhas, recusando `title`. Como isso depende da
+    conta e não da categoria, a simulação tenta o formato clássico e corrige conforme a
+    resposta — no máximo duas vezes, sempre só consultando."""
+    from apps.integrations.services import chamar
+
+    causas = chamar(conta, "validate_item", payload=envio)
+    for _ in range(2):
+        faltando = _campos_citados(causas, "body.required_fields")
+        sobrando = _campos_citados(causas, "body.invalid_fields")
+        if "family_name" in faltando and "family_name" not in envio:
+            envio = {**envio, "family_name": envio.get("title", "")}
+        elif "title" in sobrando and "title" in envio:
+            envio = {k: v for k, v in envio.items() if k != "title"}
+        else:
+            break
+        causas = chamar(conta, "validate_item", payload=envio)
+    return causas
+
+
 def _e_de_foto(causa):
     """Causas que existem só porque a simulação vai sem fotos."""
     texto = " ".join([
@@ -298,7 +332,7 @@ def diagnosticar(draft):
     simulado, retiradas = False, 0
     if basico:
         conta = conta or conta_do_mercado_livre()
-        causas = chamar(conta, "validate_item", payload=montar_envio(draft=draft, estoque=estoque))
+        causas = simular(conta, montar_envio(draft=draft, estoque=estoque))
         remotos, retiradas = achados_do_mercado_livre(causas)
         achados.extend(remotos)
         simulado = True

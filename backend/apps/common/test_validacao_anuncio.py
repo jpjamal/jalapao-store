@@ -8,6 +8,7 @@ envio da simulação — e que nenhuma chamada de criação de anúncio acontece
 from contextlib import contextmanager
 from datetime import timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
@@ -317,6 +318,42 @@ class ApiTests(Base):
             r = self.client.get("/api/v1/listing-drafts/ml-categories/?q=luminaria")
         self.assertEqual(r.status_code, 400)
         self.assertIn("Conecte uma conta", str(r.json()))
+
+
+class SimulacaoProdutoDoVendedorTests(TestCase):
+    """Conta no modelo "produto do vendedor": pede family_name e pode recusar title."""
+
+    def rodar(self, *respostas):
+        enviados = []
+
+        def falso(conta, metodo, payload):
+            enviados.append(payload)
+            return respostas[len(enviados) - 1]
+
+        with patch("apps.integrations.services.chamar", side_effect=falso):
+            causas = anuncio.simular(None, {"title": "Dummy Aranha", "price": 50})
+        return causas, enviados
+
+    def test_pede_family_name_e_reenvia_com_o_titulo(self):
+        falta = {"type": "error", "code": "body.required_fields",
+                 "message": "The body does not contains some or none of the following properties [family_name]"}
+        causas, enviados = self.rodar([falta], [])
+        self.assertEqual(causas, [])
+        self.assertEqual(enviados[1]["family_name"], "Dummy Aranha")
+
+    def test_depois_recusa_title_e_reenvia_sem_ele(self):
+        falta = {"type": "error", "code": "body.required_fields", "references": ["family_name"], "message": ""}
+        sobra = {"type": "error", "code": "body.invalid_fields", "references": ["title"], "message": ""}
+        causas, enviados = self.rodar([falta], [sobra], [])
+        self.assertEqual(causas, [])
+        self.assertNotIn("title", enviados[2])
+        self.assertEqual(enviados[2]["family_name"], "Dummy Aranha")
+
+    def test_outras_causas_nao_repetem_a_chamada(self):
+        outra = {"type": "error", "code": "item.attributes.missing_required", "message": "BRAND"}
+        causas, enviados = self.rodar([outra])
+        self.assertEqual(len(enviados), 1)
+        self.assertEqual(causas, [outra])
 
 
 class ClienteValidateTests(TestCase):
