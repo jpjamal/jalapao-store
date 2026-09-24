@@ -20,7 +20,10 @@ jalapao-store/
 │   │   │   └── services.py casos de uso transacionais
 │   │   ├── sales/        vendas, itens e cancelamento
 │   │   ├── finance/      caixa
-│   │   ├── integrations/ outbox do Mercado Livre (ainda sem worker)
+│   │   ├── integrations/ marketplaces: contrato, adaptadores e outbox
+│   │   │   ├── base.py      o contrato que Shopee e Mercado Livre cumprem
+│   │   │   ├── shopee/      assinatura HMAC e cliente
+│   │   │   └── meli/        OAuth2/PKCE e cliente
 │   │   └── common/       dashboard, permissões, certificado e TESTES
 │   └── config/settings.py
 ├── frontend/           Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui

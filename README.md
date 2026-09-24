@@ -40,7 +40,11 @@ lucro por venda, recebimento, estorno e lançamentos manuais. Cadastros antigos 
 por ID sem sobrescrita e com quantidade inicial zero. Calc. marketplace preserva estimativas
 antigas: não substituir taxas reais das vendas por esses valores.
 
-Mercado Livre: modelo de vínculo e outbox preparados; OAuth, anúncios, pedidos e sincronização
-automática ainda não ativados. O callback informa esse estado e não simula uma conexão.
+Marketplaces (Shopee e Mercado Livre): conectar a loja por autorização, espelhar anúncios
+vinculando por SKU e enviar o saldo do estoque, com interruptor por anúncio e desligado por
+padrão. O envio é sempre daqui para lá — saldo do marketplace nunca sobrescreve o local.
+Fora do escopo por enquanto: publicar ou editar anúncio, importar pedido e taxa real,
+empurrar preço, campanha e Ads. Não há worker automático: a sincronia é a pedido.
+Nenhuma conexão real foi exercitada ainda; ver [integrações](docs/integracoes.md).
 
 Deploy de código exclusivamente via main → GitHub Actions. Segredos nunca no Git.

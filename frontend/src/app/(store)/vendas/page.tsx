@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, MoneyField } from "@/components/fields";
 import { ErrorMessage, Empty } from "@/components/feedback";
+import { ProductPicker } from "@/components/product-picker";
 type Item = { product_name: string; quantity: number; unit_price: string };
 type Sale = {
   id: string;
@@ -152,27 +153,18 @@ export default function Sales() {
                 >
                   <div>
                     <label htmlFor={`item-${index}`}>Produto</label>
-                    <select
+                    <ProductPicker
                       id={`item-${index}`}
                       required
+                      products={products}
                       value={item.product_id}
-                      onChange={(e) => {
-                        const p = products.find((p) => p.id === e.target.value);
+                      onChange={(id, p) =>
                         update(index, {
-                          product_id: e.target.value,
+                          product_id: id,
                           unit_price: p?.sale_price || "0",
-                        });
-                      }}
-                    >
-                      <option value="">Selecione…</option>
-                      {products
-                        .filter((p) => p.active)
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name} ({p.quantity} un.)
-                          </option>
-                        ))}
-                    </select>
+                        })
+                      }
+                    />
                   </div>
                   <div>
                     <label htmlFor={`qty-${index}`}>Quantidade</label>

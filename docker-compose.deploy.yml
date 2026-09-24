@@ -23,6 +23,15 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_HOST: db
       CSRF_TRUSTED_ORIGINS: https://217.216.82.25
+      # credenciais do marketplace: vêm do .env.backend, nunca do repositório
+      SHOPEE_PARTNER_ID: ${SHOPEE_PARTNER_ID:-}
+      SHOPEE_PARTNER_KEY: ${SHOPEE_PARTNER_KEY:-}
+      SHOPEE_REDIRECT_URI: ${SHOPEE_REDIRECT_URI:-https://217.216.82.25/jalapao-store/callback}
+      SHOPEE_API_BASE: ${SHOPEE_API_BASE:-https://openplatform.shopee.com.br}
+      ML_APP_ID: ${ML_APP_ID:-}
+      ML_CLIENT_SECRET: ${ML_CLIENT_SECRET:-}
+      ML_REDIRECT_URI: ${ML_REDIRECT_URI:-https://217.216.82.25/jalapao-store/callback}
+      ML_PKCE_ENABLED: ${ML_PKCE_ENABLED:-0}
     volumes:
       - './dados:/legacy:ro'
       # somente leitura, só para avisar no painel antes do certificado vencer

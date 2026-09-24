@@ -12,17 +12,21 @@ Produção standalone: Dockerfile copia `.next/standalone`, `.next/static` e pub
 - /login: usuário e senha, erros recebidos da API.
 - /: estoque a custo, faturamento, lucro estimado, caixa, a receber, produtos ativos.
 - /produtos: busca, paginação, cadastro/edição, parâmetros 3D e desativação.
-- /estoque: entradas/saídas justificadas, valor e histórico.
-- /entradas: compra/produção por produto, custo do lote, histórico e pagamento de compra.
+- /estoque: entradas/saídas justificadas, valor e histórico. Produto por busca digitada.
+- /entradas: compra/produção por produto (busca digitada), custo do lote, histórico e
+  pagamento de compra.
   Cadastro sugere custo; usuário confirma o valor real. Compra só gera caixa ao pagar;
   produção nunca gera despesa automática. Ajustes positivos exigem custo explícito.
-- /vendas: múltiplos itens, canal, descontos/taxas/frete, receber e cancelar.
+- /vendas: múltiplos itens, canal, descontos/taxas/frete, receber e cancelar. Produto de
+  cada item por busca digitada.
 - /caixa: entradas/saídas, origem automática/manual e histórico preservado.
 - /ferramentas: índice das três ferramentas.
 - /ferramentas/impressao-3d: custo da peça e botão de salvar no catálogo.
 - /ferramentas/calculadora: taxas de Shopee e Mercado Livre, com a tabela de regras.
 - /ferramentas/etiquetas: ZPL → Labelary → PDF nomeado pelo destinatário, com OCR.
-- /callback: endereço futuro do Mercado Livre; integração ainda não ativada.
+- /integracoes: conectar Shopee e Mercado Livre, importar anúncios, vincular por SKU e
+  ligar o envio de estoque por anúncio.
+- /callback: retorno da autorização; troca o código por tokens assim que abre.
 
 Todos os caminhos têm basePath /jalapao-store. Login protege tudo, ferramentas inclusive.
 As contas ficam em `src/lib/ferramentas/`, portadas linha a linha do site anterior e sem
@@ -32,6 +36,10 @@ Labelary, recortes do OCR e regras de nome de arquivo). Os HTML originais seguem
 só para consulta e rollback — não são mais servidos nem copiados por script. Os endereços
 antigos (`/calculadora.html`, `/ferramentas/calculadora.html` e afins) redirecionam para as
 páginas novas, em next.config.ts.
+
+`components/product-picker.tsx` é o campo de produto com busca: filtra por nome ou SKU
+ignorando acento, navega por teclado e impede envio com nome digitado sem seleção.
+Usado em vendas, entradas e estoque — ver ../docs/specs/004-busca-de-produto.
 
 ## Segurança e componentes
 BFF valida Origin nas mutações, limita corpo e usa destinos de API permitidos. JWT em cookies

@@ -23,6 +23,9 @@ Rodar `uv run ruff check . --exclude migrations` e `uv run python manage.py make
 - sales: Sale 1:N SaleItem; snapshots, chave idempotente e cancelamento reversível.
 - finance: entradas/saídas imutáveis. Recebimento e estorno por venda são únicos.
 - integrations: Listing relaciona produto interno a item/user_product/family; outbox transacional.
+  Tokens de marketplace são cifrados em repouso com chave derivada de DJANGO_SECRET_KEY;
+  preserve esse segredo ao atualizar a instalação. Cada anúncio Shopee acompanha a versão
+  de estoque enviada, para não encerrar eventos de outras contas nem reenviar saldo antigo.
 
 App por domínio; ORM é persistência, services são casos de uso, api é camada HTTP.
 Históricos usam PROTECT. Sem DELETE comercial. Desativar produtos pelo campo active.

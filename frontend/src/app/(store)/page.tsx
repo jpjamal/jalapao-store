@@ -9,6 +9,13 @@ type Certificate = {
   days_left: number;
   alert: boolean;
 } | null;
+type AuthorizationAlert = {
+  channel: string;
+  channel_label: string;
+  name: string;
+  days_left: number;
+  expires_at: string;
+};
 type Summary = {
   stock_value: string;
   gross: string;
@@ -17,7 +24,41 @@ type Summary = {
   cash_balance: string;
   product_count: number;
   certificate?: Certificate;
+  authorization_alerts?: AuthorizationAlert[];
 };
+
+/* A autorização de uma loja de marketplace vence calada: o token renova normalmente até o
+   dia em que não renova mais, e a sincronia simplesmente para. Aviso antes, no painel. */
+function AvisoAutorizacao({ avisos }: { avisos: AuthorizationAlert[] }) {
+  if (!avisos.length) return null;
+  return (
+    <div
+      role="alert"
+      className="border border-destructive text-destructive rounded-md p-4 mb-6"
+    >
+      <b>Autorização de marketplace perto de vencer.</b>
+      <ul className="list-disc pl-5 mt-2 space-y-1">
+        {avisos.map((a) => (
+          <li key={`${a.channel}-${a.name}`}>
+            {a.channel_label} · {a.name} —{" "}
+            {a.days_left < 0
+              ? "já venceu"
+              : `${a.days_left} dia${a.days_left === 1 ? "" : "s"}`}
+            , até{" "}
+            {new Date(a.expires_at).toLocaleDateString("pt-BR")}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2">
+        Quando vencer, a sincronia para sem avisar.{" "}
+        <Link href="/integracoes" className="underline font-semibold">
+          Autorizar de novo
+        </Link>
+        .
+      </p>
+    </div>
+  );
+}
 
 /* O certificado é de IP, com perfil shortlived: dura ~6 dias e o certbot tenta
    renovar a cada 12h. Se a renovação falhar em silêncio o site cai — então o
@@ -71,6 +112,9 @@ export default function Dashboard() {
         Acompanhe o que você tem, vendeu e recebeu.
       </p>
       <ErrorMessage message={error} />
+      {data?.authorization_alerts?.length ? (
+        <AvisoAutorizacao avisos={data.authorization_alerts} />
+      ) : null}
       {data?.certificate?.alert && <AvisoCertificado cert={data.certificate} />}
       {!data && !error ? (
         <p role="status">Carregando indicadores…</p>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/fields";
 import { ErrorMessage, Empty } from "@/components/feedback";
+import { ProductPicker } from "@/components/product-picker";
 import Link from "next/link";
 type Movement = {
   id: string;
@@ -24,6 +25,9 @@ export default function Inventory() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [delta, setDelta] = useState(0);
+  // o produto é estado, e não campo do formulário: form.reset() não limparia
+  // o input oculto do seletor de busca
+  const [produtoId, setProdutoId] = useState("");
   const load = useCallback(() => {
     Promise.all([allProducts(), api<Page<Movement>>(`movements?page=${page}`)])
       .then(([p, m]) => {
@@ -66,7 +70,7 @@ export default function Inventory() {
                 await api("movements", {
                   method: "POST",
                   body: JSON.stringify({
-                    product: f.get("product"),
+                    product: produtoId,
                     delta: Number(f.get("delta")),
                     reason: f.get("reason"),
                     ...(delta > 0 ? { unit_cost: f.get("unit_cost") } : {}),
@@ -75,6 +79,7 @@ export default function Inventory() {
                 setNotice("Movimentação registrada.");
                 form.reset();
                 setDelta(0);
+                setProdutoId("");
                 load();
               } catch (err) {
                 setError((err as Error).message);
@@ -85,14 +90,14 @@ export default function Inventory() {
           >
             <div>
               <label htmlFor="product">Produto</label>
-              <select id="product" name="product" required>
-                <option value="">Selecione…</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} — {p.quantity} un.
-                  </option>
-                ))}
-              </select>
+              <ProductPicker
+                id="product"
+                required
+                products={products}
+                value={produtoId}
+                onChange={(id) => setProdutoId(id)}
+                somenteAtivos={false}
+              />
             </div>
             <Field
               name="delta"

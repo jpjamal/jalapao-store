@@ -11,6 +11,8 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 from apps.catalog.models import Product
 from apps.sales.models import Sale
 from apps.finance.models import CashEntry
+from apps.integrations.avisos import autorizacoes_a_vencer
+
 from .certificado import estado as estado_do_certificado
 
 
@@ -41,6 +43,18 @@ class DashboardView(APIView):
                     },
                     allow_null=True,
                 ),
+                "authorization_alerts": serializers.ListField(
+                    child=inline_serializer(
+                        name="AuthorizationAlert",
+                        fields={
+                            "channel": serializers.CharField(),
+                            "channel_label": serializers.CharField(),
+                            "name": serializers.CharField(),
+                            "days_left": serializers.IntegerField(),
+                            "expires_at": serializers.CharField(),
+                        },
+                    )
+                ),
             },
         )
     )
@@ -63,5 +77,7 @@ class DashboardView(APIView):
                 "product_count": Product.objects.filter(active=True).count(),
                 # None em desenvolvimento, onde não existe certificado montado
                 "certificate": estado_do_certificado(),
+                # autorização de marketplace vence calada; o painel avisa antes
+                "authorization_alerts": autorizacoes_a_vencer(),
             }
         )

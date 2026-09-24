@@ -7,4 +7,4 @@
 - [x] Aviso no painel, discreto no normal e em alerta perto do vencimento.
 - [x] Testes do certificado e contrato OpenAPI revalidado.
 - [x] Documentação: produtos, manutenção, READMEs e a pasta de dados legada.
-- [ ] Publicação pelo GitHub e conferência das três ferramentas em produção.
+- [x] Publicação pelo GitHub e conferência das três ferramentas em produção.

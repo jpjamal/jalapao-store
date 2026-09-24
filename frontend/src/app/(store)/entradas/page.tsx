@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/fields";
 import { Empty, ErrorMessage } from "@/components/feedback";
+import { ProductPicker } from "@/components/product-picker";
 
 type Receipt = {
   id: string;
@@ -109,28 +110,17 @@ export default function Receipts() {
             </div>
             <div className="md:col-span-2">
               <label htmlFor="product_id">Produto</label>
-              <select
+              <ProductPicker
                 id="product_id"
                 name="product_id"
-                value={productId}
                 required
-                onChange={(e) => {
-                  setProductId(e.target.value);
-                  setCost(
-                    products.find((p) => p.id === e.target.value)?.cost_price ||
-                      "",
-                  );
+                products={products}
+                value={productId}
+                onChange={(id, p) => {
+                  setProductId(id);
+                  setCost(p?.cost_price || "");
                 }}
-              >
-                <option value="">Selecione…</option>
-                {products
-                  .filter((p) => p.active)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} — {p.quantity} un.
-                    </option>
-                  ))}
-              </select>
+              />
             </div>
             <div>
               <label htmlFor="quantity">Quantidade</label>

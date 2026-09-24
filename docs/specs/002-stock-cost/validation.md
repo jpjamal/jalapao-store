@@ -23,3 +23,9 @@ Segunda revisão, ainda em 2026-09-23 — a publicação havia falhado:
 - Reprodução em PostgreSQL 17 real: antes da correção, 22 testes OK e falha no teardown; depois,
   o job inteiro passa — ruff, check, makemigrations, contrato OpenAPI e os 22 testes, incluindo
   os 4 de concorrência que só rodam em PostgreSQL.
+
+- Publicado em seguida por `7d3d234`, com o deploy concluído. Conferido no banco de produção:
+  `inventory -> 0003_opening_stock_value`, `sales -> 0003_historical_item_cost` e
+  `finance -> 0002_cashentry_receipt_cashentry_cash_single_origin` aplicadas, e a tabela
+  `inventory_receipt` existindo com zero registros — nenhuma transação fictícia foi criada
+  na produção. Os seis containers voltaram `healthy` e as rotas HTTPS seguiram respondendo.

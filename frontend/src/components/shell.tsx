@@ -12,6 +12,7 @@ import {
   PackagePlus,
   Wallet,
   Calculator,
+  Plug,
   LogOut,
 } from "lucide-react";
 const navigation = [
@@ -22,6 +23,7 @@ const navigation = [
   ["/vendas", "Vendas", ShoppingBag],
   ["/caixa", "Caixa", Wallet],
   ["/ferramentas", "Ferramentas", Calculator],
+  ["/integracoes", "Integrações", Plug],
 ] as const;
 export function Shell({
   children,

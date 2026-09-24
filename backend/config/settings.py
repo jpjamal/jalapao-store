@@ -107,6 +107,15 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "ProductKindEnum": [("printing", "Impressão 3D"), ("resale", "Revenda")],
         "ReceiptKindEnum": [("purchase", "Compra"), ("production", "Produção")],
+        # dois modelos têm campo "channel": venda e conta de marketplace. Sem nomear os
+        # dois, o gerador do contrato inventa nome e reclama da colisão.
+        "SaleChannelEnum": [
+            ("direct", "Boca a boca"),
+            ("mercado_livre", "Mercado Livre"),
+            ("shopee", "Shopee"),
+            ("other", "Outro"),
+        ],
+        "MarketplaceChannelEnum": [("shopee", "Shopee"), ("mercado_livre", "Mercado Livre")],
     },
     "SCHEMA_PATH_PREFIX": "/api/v1",
     "SCHEMA_PATH_PREFIX_TRIM": True,

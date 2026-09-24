@@ -12,6 +12,7 @@ from apps.inventory.api import MovementViewSet, ReceiptViewSet
 from apps.sales.api import SaleViewSet
 from apps.finance.api import CashViewSet
 from apps.common.api import health, DashboardView
+from apps.integrations.api import AccountViewSet, ListingViewSet
 
 router = DefaultRouter()
 router.register("products", ProductViewSet)
@@ -19,6 +20,8 @@ router.register("movements", MovementViewSet)
 router.register("receipts", ReceiptViewSet)
 router.register("sales", SaleViewSet)
 router.register("cash", CashViewSet)
+router.register("integrations", AccountViewSet)
+router.register("listings", ListingViewSet)
 urlpatterns = [
     path("health/", health),
     path("jalapao-store/admin/", admin.site.urls),
