@@ -70,7 +70,11 @@ decidem quem termina TLS, e ambas começam no lado seguro:
 | Variável | Repositório | Padrão | Na virada |
 |---|---|---|---|
 | `JALAPAO_TLS` | jalapao-store | `nginx` | `traefik` |
-| `TRAEFIK_HTTPS_BIND` | traefikproxy | `127.0.0.1:8443` | `0.0.0.0` |
+| `TRAEFIK_HTTPS_BIND` | traefikproxy | `127.0.0.1:8443` | `0.0.0.0:443` |
+
+`TRAEFIK_HTTPS_BIND` precisa levar a porta junto: o compose monta `"${TRAEFIK_HTTPS_BIND}:443"`, e
+`0.0.0.0` sozinho vira `0.0.0.0:443`, que o Docker lê como *porta do host = 0.0.0.0* —
+`invalid hostPort`. Foi o que falhou na primeira tentativa da virada.
 
 1. **Publicar a loja.** Cria o proxy HTTP na 8080 e as rotas HTTPS no Traefik. O Nginx
    continua na 443; nada muda para quem acessa.

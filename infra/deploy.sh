@@ -111,7 +111,7 @@ fi
 if [ "$JALAPAO_TLS" = traefik ] && ! traefik_publica_443; then
     echo "" >&2
     echo "ATENÇÃO: o Nginx soltou a 443 e o Traefik ainda não assumiu. HTTPS fora do ar." >&2
-    echo "Publique agora o traefikproxy com TRAEFIK_HTTPS_BIND=0.0.0.0 para completar." >&2
+    echo "Publique agora o traefikproxy com TRAEFIK_HTTPS_BIND=0.0.0.0:443 para completar." >&2
     dc ps
     exit 0
 fi

@@ -8,7 +8,7 @@ porta 80. `dynamic.yml` declara o certificado do IP como padrão da store TLS. O
 monta `acme.json` (persistente, 600) e o volume de certificados da loja em somente leitura.
 
 A porta HTTPS vem de `TRAEFIK_HTTPS_BIND`, com padrão `127.0.0.1:8443`. A virada é trocar
-essa variável para `0.0.0.0` no GitHub e publicar — sem editar arquivo, e reversível pelo
+essa variável para `0.0.0.0:443` no GitHub e publicar — sem editar arquivo, e reversível pelo
 mesmo caminho.
 
 O workflow **descobre** a porta publicada pelo container e valida os dois certificados nela.
@@ -38,7 +38,7 @@ O `deploy.sh` recusa rodar se a pasta vizinha não existir, porque a falha seria
 Regra do dono: código e configuração só por deploy; por SSH, só parar ou reiniciar.
 
 Duas variáveis de repositório decidem, ambas começando no lado seguro: `JALAPAO_TLS`
-(`nginx` → `traefik`) na loja e `TRAEFIK_HTTPS_BIND` (`127.0.0.1:8443` → `0.0.0.0`) no
+(`nginx` → `traefik`) na loja e `TRAEFIK_HTTPS_BIND` (`127.0.0.1:8443` → `0.0.0.0:443`) no
 traefikproxy. A decisão explícita substitui a adivinhação: a loja não deduz mais sozinha
 quem deve segurar a 443, ela é informada, e confere a porta de verdade só para recusar uma
 configuração inconsistente.

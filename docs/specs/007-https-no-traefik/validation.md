@@ -57,3 +57,47 @@ antigo vence. Vale conferir a data servida no 443 depois da primeira renovação
 A Let's Encrypt limita **5 certificados por semana** para o mesmo conjunto de nomes; dois
 já foram emitidos para o DuckDNS em 24/09. Se a virada precisar de várias tentativas, há
 risco de esbarrar no limite — outro motivo para a pré-validação existir.
+
+## A virada, em produção — 24/09/2026
+
+**Primeira tentativa: falhou, e por erro meu.** O valor passado para `TRAEFIK_HTTPS_BIND` foi
+`0.0.0.0`. O compose monta `"${TRAEFIK_HTTPS_BIND}:443"`, o que deu `0.0.0.0:443`, e o Docker
+leu como *porta do host = 0.0.0.0*: `invalid hostPort: 0.0.0.0`. Eu só tinha validado o
+compose com o valor padrão, nunca com o da virada. O valor certo é `0.0.0.0:443`.
+
+O log do deploy mostrou que as travas fizeram o que deviam:
+
+```
+=== A 443 está com jalapao-store-tls-1; aguardando liberar (até 3 min) ===
+=== HTTPS público: a 443 está livre, o Traefik vai assumir ===
+=== Pulling images ===
+invalid hostPort: 0.0.0.0
+```
+
+A trava esperou e viu a porta liberar; a falha veio no `pull`, **antes** de recriar o
+Traefik. A porta 80, o Portainer e os outros projetos não foram tocados. Mas o Nginx já
+tinha sido parado pelo vigia, e o HTTPS ficou fora por 3 a 4 minutos até ele ser religado.
+
+**Segunda tentativa: funcionou.** Variável corrigida, Nginx TLS parado por SSH, deploy do
+traefikproxy pelo *Run workflow*. Conferido no servidor e de fora:
+
+- `traefikproxy-traefik-1` publica `0.0.0.0:443`; é o único container na 443.
+- `jalapao-store-tls-1` parado.
+- `jalapao-store.duckdns.org` recebe o certificado **emitido pelo próprio Traefik** (emissor
+  YR2, até 23/12).
+- `217.216.82.25` recebe o certificado **do Certbot**, servido como padrão a partir do volume
+  compartilhado (emissor YE1, perfil shortlived, até 30/09).
+- HTTPS 200 no IP, no domínio e no manual em PDF; `http://` segue redirecionando com 308.
+- Portainer, Postgres e Redis intocados.
+
+O `acme.json` passou por quatro recriações do Traefik sem reemitir certificado nenhum — o
+arquivo seguiu com os mesmos 15994 bytes das 15:07. O limite semanal da Let's Encrypt não foi
+gasto além da emissão inicial.
+
+## O que continua sem prova
+
+**A renovação do certificado de IP servida pelo Traefik.** O Certbot renova, o
+`--deploy-hook` toca `/traefik-config/dynamic.yml`, e o Traefik deveria reler a chave. Nada
+disso aconteceu ainda: o certificado atual vence em 30/09 e a renovação deve rodar por volta
+de 28/09. Se o aviso não chegar ao Traefik, a renovação acontece em disco e o Traefik segue
+servindo a chave velha até ela vencer. **Conferir a data servida na 443 depois de 28/09.**
