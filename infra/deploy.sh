@@ -87,10 +87,10 @@ if ! dc run --rm --no-deps --entrypoint sh certbot -c 'test -s /etc/letsencrypt/
       --preferred-profile shortlived --cert-name jalapao-ip --non-interactive \
       --agree-tos --register-unsafely-without-email
 fi
-if [ "${COMPOSE_PROFILES:-}" = nginx-https ] && ! dc run --rm --no-deps --entrypoint sh certbot -c 'test -s /etc/letsencrypt/live/jalapao-duckdns/fullchain.pem'; then
+if [ "${COMPOSE_PROFILES:-}" = nginx-https ] && ! dc run --rm --no-deps --entrypoint sh certbot -c 'test -s /etc/letsencrypt/live/jpsys-duckdns/fullchain.pem'; then
     dc run --rm --no-deps --entrypoint certbot certbot certonly \
-      --webroot -w /var/www/certbot -d jalapao-store.duckdns.org \
-      --cert-name jalapao-duckdns --non-interactive \
+      --webroot -w /var/www/certbot -d jpsys.duckdns.org \
+      --cert-name jpsys-duckdns --non-interactive \
       --agree-tos --register-unsafely-without-email
 fi
 dc up -d --wait --remove-orphans
@@ -117,9 +117,11 @@ if [ "$JALAPAO_TLS" = traefik ] && ! traefik_publica_443; then
 fi
 
 curl --fail --silent --show-error --retry 6 --retry-delay 3 https://217.216.82.25/health
-curl --fail --silent --show-error --retry 6 --retry-delay 3 https://jalapao-store.duckdns.org/health
+# Domínio novo: o Traefik só emite o certificado quando a rota aparece, e até lá entrega
+# o certificado do IP. --retry sozinho não repete erro de certificado; --retry-all-errors sim.
+curl --fail --silent --show-error --retry 20 --retry-delay 3 --retry-all-errors https://jpsys.duckdns.org/health
 dc run --rm --no-deps --entrypoint sh certbot -c 'touch /var/www/certbot/.https-ready'
 curl --fail --silent --show-error --output /dev/null https://217.216.82.25/jalapao-store/login
-curl --fail --silent --show-error --output /dev/null https://jalapao-store.duckdns.org/jalapao-store/login
+curl --fail --silent --show-error --output /dev/null https://jpsys.duckdns.org/jalapao-store/login
 test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://217.216.82.25/jalapao-store/login)" = 308
 dc ps

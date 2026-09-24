@@ -186,9 +186,9 @@ jobs:
           {
             printf 'ML_APP_ID=%s\n' "$ML_APP_ID"
             printf 'ML_CLIENT_SECRET=%s\n' "$ML_CLIENT_SECRET"
-            printf 'ML_REDIRECT_URI=https://jalapao-store.duckdns.org/jalapao-store/callback\n'
+            printf 'ML_REDIRECT_URI=https://jpsys.duckdns.org/jalapao-store/callback\n'
             printf 'ML_PKCE_ENABLED=1\n'
-            printf 'SHOPEE_REDIRECT_URI=https://jalapao-store.duckdns.org/jalapao-store/callback\n'
+            printf 'SHOPEE_REDIRECT_URI=https://jpsys.duckdns.org/jalapao-store/callback\n'
           } > /tmp/.env.marketplace
           scp -i ~/.ssh/deploy_key /tmp/.env.marketplace \
             ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:~/${{ env.APP_NAME }}/.env.marketplace

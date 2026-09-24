@@ -35,7 +35,7 @@ Backup JSON a cada importação; backup de código anterior no workflow. Arquivo
 
 ## HTTPS
 Certbot 5.4 com webroot e perfil shortlived para o certificado por IP, que dura cerca de
-seis dias. O endereço principal da loja é `https://jalapao-store.duckdns.org/jalapao-store`;
+seis dias. O endereço principal da loja é `https://jpsys.duckdns.org/jalapao-store`;
 o acesso por IP permanece disponível. O `sslip.io` temporário foi retirado da
 configuração ativa após a migração.
 Certbot verifica renovação a cada 12h. Validar periodicamente os logs do certbot e a data
@@ -51,7 +51,7 @@ Dois certificados, duas origens, e é assim de propósito:
 
 | Nome | Emitido por | Validade | Por quê |
 |---|---|---|---|
-| `jalapao-store.duckdns.org` | Traefik, ACME HTTP-01 | 90 dias | o caminho normal |
+| `jpsys.duckdns.org` | Traefik, ACME HTTP-01 | 90 dias | o caminho normal |
 | `217.216.82.25` | Certbot da loja, perfil *shortlived* | ~6 dias | certificado de IP exige esse perfil, que o Traefik não emite |
 
 O do IP entra no Traefik como certificado padrão (`tls.stores.default`), lido do volume
@@ -105,7 +105,7 @@ Depois da primeira renovação do certificado de IP, **conferir a data servida n
 aviso ao Traefik falhar, a renovação acontece e ele segue com a chave velha — falha
 silenciosa que só aparece quando o certificado antigo vence.
 
-Callback principal do Mercado Livre: `https://jalapao-store.duckdns.org/jalapao-store/callback`.
+Callback principal do Mercado Livre: `https://jpsys.duckdns.org/jalapao-store/callback`.
 Desde a spec 005 a rota é funcional:
 recebe o retorno da autorização e troca o código por tokens — quem estiver logado vê a loja
 conectada. O que ainda depende de cadastro e aprovação é a conta de desenvolvedor em cada
