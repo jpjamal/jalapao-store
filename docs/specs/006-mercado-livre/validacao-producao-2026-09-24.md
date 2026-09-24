@@ -11,8 +11,15 @@
 Configurar um nome DNS para a VPS, emitir certificado HTTPS, atualizar o URI no DevCenter e no ambiente de produção e repetir a autorização. Só depois da conexão, testar importação em leitura e, por último, envio manual de estoque com anúncio de teste e saldo conferido.
 
 Foi escolhida uma opção gratuita para o teste: `jalapao-store.217-216-82-25.sslip.io`.
-O DNS já resolve para `217.216.82.25`, e a URL de autorização com esse host no
-`redirect_uri` não recebeu o 403 do CloudFront na verificação sem `state`. A emissão do
-certificado, o cadastro do novo URI no DevCenter e o OAuth completo continuam pendentes.
+O DNS resolve para `217.216.82.25`, e a URL de autorização com esse host no
+`redirect_uri` não recebeu o 403 do CloudFront na verificação sem `state`. O workflow
+#24 (`63be453`) emitiu o certificado Let's Encrypt, válido até 2026-12-23, e concluiu
+o deploy. `/health`, `/jalapao-store/login` e `/jalapao-store/callback` responderam 200
+por HTTPS no novo host; o acesso por IP continuou respondendo 200.
+
+O novo URI está preenchido no formulário do DevCenter, mas ainda precisa ser salvo pelo
+titular da conta após o aceite dos Termos e o reCAPTCHA. O OAuth completo permanece
+pendente desse cadastro e de uma sessão autenticada no novo host (os cookies do acesso
+por IP não são compartilhados com o subdomínio).
 
 Referência oficial: [Autenticação e Autorização](https://developers.mercadolivre.com.br/autenticacao-e-autorizacao).
