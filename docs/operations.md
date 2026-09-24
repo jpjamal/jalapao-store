@@ -45,8 +45,8 @@ de expiração servida. Não foi contratado serviço adicional; o domínio é gr
 
 O Traefik, que já era o proxy da VPS e serve o Portainer, termina o HTTPS: um ponto de
 entrada só, para 80 e 443. O Nginx da loja deixou de ter porta pública e ficou como proxy
-interno em HTTP na 8080 — continua necessário porque o Traefik não serve arquivo de disco
-(o manual em PDF e o webroot do desafio ACME do certificado de IP).
+interno em HTTP na 8080. Além de servir o manual em PDF e o webroot do desafio ACME do
+certificado de IP, ele encaminha as páginas Next.js, o Django Admin, os estáticos e a API.
 
 Dois certificados, duas origens, e é assim de propósito:
 
@@ -62,7 +62,9 @@ diretório, nunca do arquivo**: o rsync do outro deploy troca o inode, e um moun
 ficaria preso no antigo, deixando a renovação sem efeito e em silêncio. O `deploy.sh` recusa
 rodar se a pasta vizinha `~/traefikproxy/traefik` não existir.
 
-Quando o retorno da Shopee migrar para o domínio, o certificado de IP e o Certbot podem sair.
+O backend já usa o retorno da Shopee no domínio atual, mas o cadastro no Console da
+Shopee ainda precisa ser feito antes da primeira conexão. O acesso HTTPS por IP continua
+disponível; só retirar seu certificado e o Certbot quando esse acesso deixar de ser necessário.
 
 **A virada, em ordem.** Código e configuração só mudam por deploy. Por SSH, apenas parar ou
 reiniciar container — nada que altere arquivo. Duas variáveis de repositório no GitHub
@@ -113,13 +115,16 @@ conectada. O que ainda depende de cadastro e aprovação é a conta de desenvolv
 marketplace; sem credencial a rota não tem o que fazer.
 
 O `redirect_uri` precisa bater exatamente com o cadastrado no Console do marketplace.
-O Mercado Livre usa o DuckDNS; a Shopee conserva sua configuração própria por IP até
-que seja alterada separadamente no Console e em `SHOPEE_REDIRECT_URI`.
+O backend configura ambos os retornos para `https://jpsys.duckdns.org/jalapao-store/callback`.
+O cadastro desse URI no DevCenter do Mercado Livre ainda não foi confirmado após a troca
+de domínio. Para a Shopee, o URI ainda precisa ser cadastrado no Console antes do uso.
 
 ## Comandos na VPS
-Na pasta ~/jalapao-store, usar sempre:
-`docker compose -f docker-compose.deploy.yml --env-file .env.production --env-file .env.backend --env-file .env.marketplace --profile https`
-seguido de `ps`, `logs --tail 100 backend`, `logs --tail 100 certbot`, etc.
+Na pasta ~/jalapao-store, usar:
+`docker compose -f docker-compose.deploy.yml --env-file .env.production --env-file .env.backend --env-file .env.marketplace`
+seguido de `ps`, `logs --tail 100 backend`, `logs --tail 100 certbot`, etc. O perfil
+`nginx-https` é apenas a reserva para retornar temporariamente ao Nginx na porta 443;
+não deve ser usado na operação atual com `JALAPAO_TLS=traefik`.
 Se `.env.marketplace` ainda não existir, omita apenas essa opção; o script `infra/deploy.sh`
 faz isso automaticamente.
 Backup: `exec -T db pg_dump -U jalapao -d jalapao -Fc > backup.dump` em diretório privado.

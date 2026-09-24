@@ -48,6 +48,9 @@ vinculando por SKU e enviar o saldo do estoque, com interruptor por anúncio e d
 padrão. O envio é sempre daqui para lá — saldo do marketplace nunca sobrescreve o local.
 Fora do escopo por enquanto: publicar ou editar anúncio, importar pedido e taxa real,
 empurrar preço, campanha e Ads. Não há worker automático: a sincronia é a pedido.
-Nenhuma conexão real foi exercitada ainda; ver [integrações](docs/integracoes.md).
+A conta Mercado Livre foi conectada no domínio anterior. O token existente pode ser
+renovado sem novo callback; uma nova autorização no domínio `jpsys.duckdns.org` ainda
+depende de conferir o retorno cadastrado no DevCenter. Importação e envio remoto de
+estoque ainda aguardam testes controlados. Ver [integrações](docs/integracoes.md).
 
 Deploy de código exclusivamente via main → GitHub Actions. Segredos nunca no Git.

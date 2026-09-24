@@ -2,19 +2,24 @@
 
 ```mermaid
 flowchart LR
-  Browser[Navegador] -->|HTTPS| Proxy[Nginx Jalapão]
+  Browser[Navegador] -->|HTTPS 443| Traefik[Traefik compartilhado]
+  Traefik -->|HTTP 8080 na rede Docker| Proxy[Nginx interno da loja]
   Proxy --> Next[Next.js / BFF]
   Next -->|JWT interno| API[Django REST Framework]
   Proxy --> Admin[Django Admin]
   API --> DB[(PostgreSQL exclusivo)]
   Admin --> DB
-  ACME[Certbot / renovação] --> Certs[Volume de certificados]
-  Certs --> Proxy
+  Traefik -->|ACME HTTP-01| DomainCert[Certificado do domínio]
+  Certbot[Certbot: certificado do IP] --> Certs[Volume de certificados]
+  Certs --> Traefik
 ```
 
-O Traefik compartilhado permanece responsável pelo HTTP. O Nginx da Jalapão termina
-HTTPS na porta443 e roteia somente a aplicação, o Admin, a API e os manuais autorizados.
-Banco e API não publicam portas no host. Código/segredos/dados têm ciclos separados.
+O Traefik compartilhado atende as portas públicas 80 e 443 e termina o HTTPS. O Nginx
+da Jalapão não publica porta no host: recebe HTTP do Traefik, encaminha as rotas da
+aplicação, do Admin e da API, serve os manuais em PDF e o desafio ACME do certificado
+por IP. O certificado do domínio `jpsys.duckdns.org` é emitido pelo Traefik; o do IP
+continua sendo renovado pelo Certbot e servido pelo Traefik. Banco e API não publicam
+portas no host. Código, segredos e dados têm ciclos separados.
 
 ```mermaid
 erDiagram
@@ -43,7 +48,7 @@ permissões em api.py. ORM e migrations seguem convenções Django, sem reposit�
 ## Valores gerenciais
 | Indicador | Regra |
 |---|---|
-| Estoque em reais | Saldo de cada produto × custo atual |
+| Estoque em reais | Valor persistido das entradas menos saídas pelo custo médio móvel |
 | Faturamento | Bruto das vendas confirmadas, inclusive ainda não recebidas |
 | Líquido da venda | Bruto − desconto − taxas − frete pago pela loja |
 | Lucro estimado | Líquido − custo dos itens congelado na venda |
@@ -51,5 +56,5 @@ permissões em api.py. ORM e migrations seguem convenções Django, sem reposit�
 | Caixa | Entradas efetivas − saídas efetivas, incluindo estornos |
 
 Fluxo de caixa manual não altera automaticamente lucro de vendas. Compra/produção de
-estoque é registrada como movimento e, se houve desembolso, como saída de caixa separada.
+estoque é registrada como entrada e movimento; pagar uma compra gera saída de caixa uma vez.
 O operador informa taxas efetivas; calculadoras antigas continuam sendo simulações.

@@ -105,7 +105,7 @@ As credenciais da Shopee ficam em `.env.backend` no servidor, modo 600,
 ```
 SHOPEE_PARTNER_ID=
 SHOPEE_PARTNER_KEY=
-SHOPEE_REDIRECT_URI=https://217.216.82.25/jalapao-store/callback
+SHOPEE_REDIRECT_URI=https://jpsys.duckdns.org/jalapao-store/callback
 SHOPEE_API_BASE=https://openplatform.shopee.com.br
 ```
 
@@ -124,12 +124,12 @@ A migração 0004 converte tokens já salvos; não coloca valores claros em logs
 `SHOPEE_API_BASE` é o domínio do Brasil. A Shopee separa por região, e escolher errado
 responde *loja inexistente* — um erro que não parece erro de domínio.
 
-### Sobre o redirect ser um IP
+### Retorno da Shopee
 
-A Shopee exige que o domínio do `redirect_uri` bata com o declarado no Console dela. Hoje o
-servidor só tem IP. **A documentação não diz que IP é proibido**, então a decisão do dono foi
-tentar assim. Por isso o endereço é variável de ambiente: se recusar, muda a variável e um
-registro no Console — não muda código.
+O deploy já configura o retorno para `jpsys.duckdns.org`, mas a conexão Shopee ainda não é
+usada. Antes da primeira autorização, cadastrar exatamente esse URI no Console da Shopee e
+confirmar que o endereço configurado na plataforma coincide com o do backend. A escolha
+anterior de retorno por IP permanece registrada na spec 005 como histórico.
 
 ## Mercado Livre
 
@@ -137,9 +137,10 @@ registro no Console — não muda código.
    `ML_APP_ID` é uma variável do GitHub Actions, `ML_CLIENT_SECRET` é um **Secret** do GitHub
    Actions e o workflow entrega ambos no arquivo privado `.env.marketplace` da VPS. O fluxo
    também configura `ML_PKCE_ENABLED=1` e o retorno
-   `https://jpsys.duckdns.org/jalapao-store/callback`. O mesmo URI está
-   cadastrado no DevCenter. O retorno por IP permanece; o `sslip.io` foi retirado da
-   configuração ativa e da lista de retornos do DevCenter após a validação do DuckDNS.
+   `https://jpsys.duckdns.org/jalapao-store/callback`. Esse URI ainda precisa ser
+   conferido ou cadastrado no DevCenter antes de uma nova autorização. A lista verificada
+   anteriormente continha o IP e `jalapao-store.duckdns.org`; o `sslip.io` já havia sido
+   retirado.
 2. Em **Conectar Mercado Livre**, um usuário autorizado inicia o OAuth. O servidor guarda
    uma tentativa com `state` aleatório, vinculado ao usuário e válido por 10 minutos.
    A página de retorno troca `code` e `state` pelos tokens. O `user_id` vem do Mercado Livre.
@@ -158,9 +159,10 @@ real foi validada; importação e envio remoto ainda aguardam testes controlados
 O DevCenter aceitou cadastrar o retorno HTTPS com IP, mas a autorização real parou antes
 do consentimento: o CloudFront respondeu 403 à URL que continha esse IP no `redirect_uri`.
 O primeiro subdomínio gratuito `sslip.io` resolveu o bloqueio e permitiu conectar a conta.
-Depois, o titular criou `jpsys.duckdns.org`, que passou a ser o retorno padrão;
-o certificado, o HTTPS e a conta conectada foram validados nesse endereço. Evidências em
-[validação em produção](specs/006-mercado-livre/validacao-producao-2026-09-24.md).
+Depois, o endereço padrão mudou para `jpsys.duckdns.org`. O HTTPS foi validado nesse
+endereço, mas não houve nova autorização do Mercado Livre nele; a conta havia sido
+conectada antes da troca. Ver [validação da conexão](specs/006-mercado-livre/validacao-producao-2026-09-24.md)
+e [validação do domínio atual](specs/008-dominio-jpsys/validation.md).
 
 Especificação e critérios em [006-mercado-livre](specs/006-mercado-livre/spec.md).
 Proteção dos tokens e entrega por anúncio em
