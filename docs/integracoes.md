@@ -137,8 +137,9 @@ registro no Console — não muda código.
    `ML_APP_ID` é uma variável do GitHub Actions, `ML_CLIENT_SECRET` é um **Secret** do GitHub
    Actions e o workflow entrega ambos no arquivo privado `.env.marketplace` da VPS. O fluxo
    também configura `ML_PKCE_ENABLED=1` e o retorno
-   `https://jalapao-store.217-216-82-25.sslip.io/jalapao-store/callback`. O mesmo URI
-   está cadastrado no DevCenter.
+   `https://jalapao-store.duckdns.org/jalapao-store/callback`. O mesmo URI está
+   cadastrado no DevCenter. O retorno por IP permanece; o `sslip.io` foi retirado da
+   configuração ativa após a validação do DuckDNS.
 2. Em **Conectar Mercado Livre**, um usuário autorizado inicia o OAuth. O servidor guarda
    uma tentativa com `state` aleatório, vinculado ao usuário e válido por 10 minutos.
    A página de retorno troca `code` e `state` pelos tokens. O `user_id` vem do Mercado Livre.
@@ -156,8 +157,9 @@ real foi validada; importação e envio remoto ainda aguardam testes controlados
 
 O DevCenter aceitou cadastrar o retorno HTTPS com IP, mas a autorização real parou antes
 do consentimento: o CloudFront respondeu 403 à URL que continha esse IP no `redirect_uri`.
-O subdomínio gratuito acima resolve para a VPS. Com ele, a autorização completa passou
-e a conta apareceu conectada com token válido no painel. Evidências em
+O primeiro subdomínio gratuito `sslip.io` resolveu o bloqueio e permitiu conectar a conta.
+Depois, o titular criou `jalapao-store.duckdns.org`, que passou a ser o retorno padrão;
+o certificado, o HTTPS e a conta conectada foram validados nesse endereço. Evidências em
 [validação em produção](specs/006-mercado-livre/validacao-producao-2026-09-24.md).
 
 Especificação e critérios em [006-mercado-livre](specs/006-mercado-livre/spec.md).

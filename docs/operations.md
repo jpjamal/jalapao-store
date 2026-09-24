@@ -33,21 +33,25 @@ somente a API JSON antiga para importar uma cópia estável, sobe a stack e veri
 Backup JSON a cada importação; backup de código anterior no workflow. Arquivos sob
 ~/backups/jalapao-store com permissões restritas. Manuais públicos preservados em volume.
 
-## HTTPS por IP
-Certbot 5.4 com webroot e perfil shortlived; certificado de IP dura cerca de seis dias.
+## HTTPS
+Certbot 5.4 com webroot e perfil shortlived para o certificado por IP, que dura cerca de
+seis dias. O endereço principal da loja é `https://jalapao-store.duckdns.org/jalapao-store`;
+o acesso por IP permanece disponível. O `sslip.io` temporário foi retirado da
+configuração ativa após a migração.
 Traefik compartilhado mantém porta80, encaminhando somente rotas Jalapão e desafio ACME.
 Nginx exclusivo usa443; não altera configurações dos outros projetos. Certbot verifica
 renovação a cada12h; Nginx recarrega certificados a cada1h. Validar periodicamente logs de
 certbot e data de expiração. Não foi contratado serviço adicional nem domínio.
 
-Callback: `https://217.216.82.25/jalapao-store/callback`. Desde a spec 005 a rota é funcional:
+Callback principal do Mercado Livre: `https://jalapao-store.duckdns.org/jalapao-store/callback`.
+Desde a spec 005 a rota é funcional:
 recebe o retorno da autorização e troca o código por tokens — quem estiver logado vê a loja
 conectada. O que ainda depende de cadastro e aprovação é a conta de desenvolvedor em cada
 marketplace; sem credencial a rota não tem o que fazer.
 
-O domínio do `redirect_uri` precisa bater com o declarado no Console do marketplace. Aqui ele
-aponta para o IP, por decisão do dono: a documentação da Shopee não proíbe IP, e se o Console
-recusar basta trocar `SHOPEE_REDIRECT_URI` e o registro lá — nenhuma linha de código.
+O `redirect_uri` precisa bater exatamente com o cadastrado no Console do marketplace.
+O Mercado Livre usa o DuckDNS; a Shopee conserva sua configuração própria por IP até
+que seja alterada separadamente no Console e em `SHOPEE_REDIRECT_URI`.
 
 ## Comandos na VPS
 Na pasta ~/jalapao-store, usar sempre:

@@ -26,7 +26,21 @@ Nenhum anúncio foi importado e nenhum estoque foi enviado.
 
 Importar anúncios para conferir a leitura e os vínculos pendentes. Depois, testar o
 envio manual de estoque apenas com anúncio de teste e saldo previamente conferido.
-O subdomínio gratuito serve ao teste atual; para operação duradoura, avaliar um nome
-sob controle da loja e planejar a troca do URI com reconexão da conta.
+O `sslip.io` serviu ao primeiro teste. O envio manual de estoque continua reservado a
+anúncio de teste com saldo previamente conferido.
+
+## Migração para DuckDNS
+
+O titular criou `jalapao-store.duckdns.org` e o registro A foi conferido apontando para
+`217.216.82.25`. O commit `ce7b7a3` adicionou o endereço ao Nginx, à lista de origens
+aceitas pelo frontend e backend e ao retorno padrão enviado pelo GitHub Actions. O
+workflow #25 concluiu testes, build e deploy; o Certbot emitiu certificado para o novo
+nome, com expiração informada em 2026-12-23. `/health`, `/jalapao-store/login` e
+`/jalapao-store/callback` responderam 200 por HTTPS. O titular salvou o novo URI no
+DevCenter e a URL pública de autorização do Mercado Livre respondeu 200, sem o bloqueio
+anterior do CloudFront. O titular entrou na loja pelo DuckDNS, autorizou a conexão e o
+painel exibiu a conta Mercado Livre com token válido. Nenhum anúncio foi importado e
+nenhum estoque foi enviado. O endereço por IP continua disponível; o `sslip.io` será
+retirado da configuração ativa depois dessa validação.
 
 Referência oficial: [Autenticação e Autorização](https://developers.mercadolivre.com.br/autenticacao-e-autorizacao).
