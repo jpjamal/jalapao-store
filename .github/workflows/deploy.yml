@@ -171,7 +171,7 @@ jobs:
             "chmod 600 ~/${{ env.APP_NAME }}/.env.production"
           echo "✅ .env.production gerado"
 
-      - name: Configure Mercado Livre credentials
+      - name: Configure marketplace credentials and callbacks
         env:
           ML_APP_ID: ${{ vars.ML_APP_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
@@ -188,6 +188,7 @@ jobs:
             printf 'ML_CLIENT_SECRET=%s\n' "$ML_CLIENT_SECRET"
             printf 'ML_REDIRECT_URI=https://jalapao-store.duckdns.org/jalapao-store/callback\n'
             printf 'ML_PKCE_ENABLED=1\n'
+            printf 'SHOPEE_REDIRECT_URI=https://jalapao-store.duckdns.org/jalapao-store/callback\n'
           } > /tmp/.env.marketplace
           scp -i ~/.ssh/deploy_key /tmp/.env.marketplace \
             ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:~/${{ env.APP_NAME }}/.env.marketplace

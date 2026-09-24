@@ -38,10 +38,68 @@ Certbot 5.4 com webroot e perfil shortlived para o certificado por IP, que dura 
 seis dias. O endereço principal da loja é `https://jalapao-store.duckdns.org/jalapao-store`;
 o acesso por IP permanece disponível. O `sslip.io` temporário foi retirado da
 configuração ativa após a migração.
-Traefik compartilhado mantém porta80, encaminhando somente rotas Jalapão e desafio ACME.
-Nginx exclusivo usa443; não altera configurações dos outros projetos. Certbot verifica
-renovação a cada12h; Nginx recarrega certificados a cada1h. Validar periodicamente logs de
-certbot e data de expiração. Não foi contratado serviço adicional nem domínio.
+Certbot verifica renovação a cada 12h. Validar periodicamente os logs do certbot e a data
+de expiração servida. Não foi contratado serviço adicional; o domínio é gratuito (DuckDNS).
+
+### Migração do TLS para o Traefik (spec 007)
+
+Até agora o Traefik atendia só a porta 80 e o Nginx exclusivo da loja segurava a 443. A
+spec 007 passa o HTTPS para o Traefik, que já é o proxy da VPS e serve o Portainer — um
+ponto de entrada só. O Nginx continua existindo como proxy interno, em HTTP na 8080.
+
+Dois certificados, duas origens, e é assim de propósito:
+
+| Nome | Emitido por | Validade | Por quê |
+|---|---|---|---|
+| `jalapao-store.duckdns.org` | Traefik, ACME HTTP-01 | 90 dias | o caminho normal |
+| `217.216.82.25` | Certbot da loja, perfil *shortlived* | ~6 dias | certificado de IP exige esse perfil, que o Traefik não emite |
+
+O do IP entra no Traefik como certificado padrão (`tls.stores.default`), lido do volume
+compartilhado. Como o Traefik só relê certificado quando a configuração dinâmica muda, o
+`--deploy-hook` do Certbot toca o `dynamic.yml` do traefikproxy — **por bind mount do
+diretório, nunca do arquivo**: o rsync do outro deploy troca o inode, e um mount de arquivo
+ficaria preso no antigo, deixando a renovação sem efeito e em silêncio. O `deploy.sh` recusa
+rodar se a pasta vizinha `~/traefikproxy/traefik` não existir.
+
+Quando o retorno da Shopee migrar para o domínio, o certificado de IP e o Certbot podem sair.
+
+**A virada, em ordem.** Código e configuração só mudam por deploy. Por SSH, apenas parar ou
+reiniciar container — nada que altere arquivo. Duas variáveis de repositório no GitHub
+decidem quem termina TLS, e ambas começam no lado seguro:
+
+| Variável | Repositório | Padrão | Na virada |
+|---|---|---|---|
+| `JALAPAO_TLS` | jalapao-store | `nginx` | `traefik` |
+| `TRAEFIK_HTTPS_BIND` | traefikproxy | `127.0.0.1:8443` | `0.0.0.0` |
+
+1. **Publicar a loja.** Cria o proxy HTTP na 8080 e as rotas HTTPS no Traefik. O Nginx
+   continua na 443; nada muda para quem acessa.
+2. **Publicar o traefikproxy.** Sobe o Traefik com a 443 só no loopback e valida os dois
+   certificados por dentro. Nada muda para quem acessa.
+3. **Trocar as duas variáveis** no GitHub.
+4. **Parar o Nginx TLS por SSH:** `docker stop jalapao-store-tls-1`. A partir daqui o HTTPS
+   está fora do ar — por isso o passo seguinte vem logo em seguida.
+5. **Publicar o traefikproxy de novo.** Ele confere que a 443 está livre, assume e valida.
+   Fim da janela de indisponibilidade.
+6. **Publicar a loja de novo.** Com `JALAPAO_TLS=traefik`, remove o container do Nginx TLS
+   e valida o HTTPS pelo Traefik.
+
+Três travas protegem a sequência:
+
+- **O Traefik recusa assumir a 443 se ela estiver ocupada**, e nesse caso nem é recriado.
+  Isso importa porque ele é compartilhado: se subisse pedindo uma porta ocupada, falharia
+  ao iniciar e derrubaria a porta 80 de todos os projetos, Portainer incluído.
+- **A loja recusa `JALAPAO_TLS=nginx` com o Traefik já na 443**, em vez de tentar subir o
+  Nginx numa porta ocupada no meio do deploy.
+- **Quem publica a 443 é lido da porta de verdade**, não procurado no texto. `grep '443->443'`
+  casaria com a pré-validação `127.0.0.1:8443->443/tcp` e desligaria o HTTPS por engano.
+
+Voltar atrás é o inverso: as variáveis nos valores padrão, parar o Traefik não é
+necessário — publicar o traefikproxy (volta ao loopback) e depois a loja (sobe o Nginx).
+
+Depois da primeira renovação do certificado de IP, **conferir a data servida na 443**: se o
+aviso ao Traefik falhar, a renovação acontece e ele segue com a chave velha — falha
+silenciosa que só aparece quando o certificado antigo vence.
 
 Callback principal do Mercado Livre: `https://jalapao-store.duckdns.org/jalapao-store/callback`.
 Desde a spec 005 a rota é funcional:
