@@ -139,8 +139,7 @@ registro no Console — não muda código.
    também configura `ML_PKCE_ENABLED=1` e o retorno
    `https://jalapao-store.duckdns.org/jalapao-store/callback`. O mesmo URI está
    cadastrado no DevCenter. O retorno por IP permanece; o `sslip.io` foi retirado da
-   configuração ativa após a validação do DuckDNS. Sua remoção da lista do DevCenter
-   requer que o titular salve a edição preparada no formulário.
+   configuração ativa e da lista de retornos do DevCenter após a validação do DuckDNS.
 2. Em **Conectar Mercado Livre**, um usuário autorizado inicia o OAuth. O servidor guarda
    uma tentativa com `state` aleatório, vinculado ao usuário e válido por 10 minutos.
    A página de retorno troca `code` e `state` pelos tokens. O `user_id` vem do Mercado Livre.

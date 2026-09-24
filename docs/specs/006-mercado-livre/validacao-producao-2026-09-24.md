@@ -44,7 +44,8 @@ nenhum estoque foi enviado. O endereço por IP continua disponível. O workflow 
 (`0b1899d`) retirou o `sslip.io` do Nginx e das origens aceitas. O DuckDNS e o IP
 responderam 200, a API sem autenticação respondeu 401, e o endereço `sslip.io` falhou
 na validação do nome do certificado. Após o deploy, o painel ainda mostrou a conta
-Mercado Livre com token válido. O URI antigo foi removido do formulário do DevCenter,
-mas ainda aguardava o titular salvar a edição no momento desta atualização.
+Mercado Livre com token válido. O titular salvou a edição no DevCenter: a lista final
+de retornos contém apenas o IP e `https://jalapao-store.duckdns.org/jalapao-store/callback`.
+Uma nova conferência do painel pelo DuckDNS mostrou a conta `96417426` com token válido.
 
 Referência oficial: [Autenticação e Autorização](https://developers.mercadolivre.com.br/autenticacao-e-autorizacao).
