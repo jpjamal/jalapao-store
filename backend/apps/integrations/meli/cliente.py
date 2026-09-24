@@ -239,6 +239,11 @@ class MercadoLivreAdapter(MarketplaceAdapter):
         ).body
         return body if isinstance(body, list) else []
 
+    def site_categories(self, *, account):
+        """Categorias de primeiro nível do site, ponto de partida para navegar a árvore."""
+        body = self._request("GET", f"/sites/{self.SITE}/categories", token=account.access_token).body
+        return body if isinstance(body, list) else []
+
     def category(self, *, account, category_id):
         path = f"/categories/{urllib.parse.quote(str(category_id), safe='')}"
         return self._request("GET", path, token=account.access_token).body or {}

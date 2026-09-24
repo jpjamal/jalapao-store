@@ -5,6 +5,7 @@ import { allProducts } from "@/lib/products";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/fields";
+import { Input } from "@/components/ui/input";
 import { ErrorMessage, Empty } from "@/components/feedback";
 import { ProductPicker } from "@/components/product-picker";
 import Link from "next/link";
@@ -17,6 +18,15 @@ type Movement = {
   created_at: string;
   value_delta: string | null;
 };
+// Motivos mais comuns de ajuste manual; o campo continua aceitando texto livre.
+const MOTIVOS = [
+  "Compra / reposição",
+  "Produção 3D",
+  "Contagem de inventário",
+  "Perda / defeito",
+  "Devolução",
+];
+
 export default function Inventory() {
   const [products, setProducts] = useState<Product[]>([]);
   const [rows, setRows] = useState<Page<Movement> | null>(null);
@@ -28,6 +38,7 @@ export default function Inventory() {
   // o produto é estado, e não campo do formulário: form.reset() não limparia
   // o input oculto do seletor de busca
   const [produtoId, setProdutoId] = useState("");
+  const [motivo, setMotivo] = useState("");
   const load = useCallback(() => {
     Promise.all([allProducts(), api<Page<Movement>>(`movements?page=${page}`)])
       .then(([p, m]) => {
@@ -79,6 +90,7 @@ export default function Inventory() {
                 setNotice("Movimentação registrada.");
                 form.reset();
                 setDelta(0);
+                setMotivo("");
                 setProdutoId("");
                 load();
               } catch (err) {
@@ -121,7 +133,33 @@ export default function Inventory() {
               Ajustes não movimentam caixa. Saídas usam o custo médio; entradas
               exigem o custo conhecido.
             </p>
-            <Field name="reason" label="Motivo" required maxLength={240} />
+            <div>
+              <label htmlFor="reason">Motivo</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {MOTIVOS.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    aria-pressed={motivo === m}
+                    className={`rounded-full border px-3 py-1 text-sm cursor-pointer hover:bg-muted ${
+                      motivo === m ? "border-primary bg-muted" : ""
+                    }`}
+                    onClick={() => setMotivo(m)}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+              <Input
+                id="reason"
+                name="reason"
+                required
+                maxLength={240}
+                placeholder="Escolha acima ou escreva"
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+              />
+            </div>
             <Button disabled={busy || !products.length}>
               {busy ? "Registrando…" : "Registrar movimento"}
             </Button>

@@ -5,5 +5,12 @@
 - [x] Endpoints de consulta e de validação, com permissões e contrato OpenAPI.
 - [x] Tela: sugestão de categoria, formulário de atributos, contador do título e relatório.
 - [x] Testes sem rede, incluindo que nenhuma chamada de criação acontece.
-- [ ] Publicar pelo GitHub, quando o dono pedir.
+- [x] Publicar pelo GitHub (commit 35b179f, 24/09/2026).
+- [x] Categoria escolhida navegando a árvore do Mercado Livre (`GET /sites/MLB/categories` e
+      `children_categories` de `GET /categories/{id}`), no lugar de digitar o código. Só categoria
+      final (sem filhas) é aceita; a sugestão pelo título posiciona a árvore. Endpoint
+      `listing-drafts/ml-category-tree`.
+- [x] Fora do Mercado Livre, mesma entrega: motivos prontos no ajuste de estoque (Compra /
+      reposição, Produção 3D, Contagem de inventário, Perda / defeito, Devolução), com texto
+      livre ainda aceito. O motivo segue obrigatório (INV-01).
 - [ ] Validar o rascunho real do Dummy Aranha contra o Mercado Livre, com a conta conectada.

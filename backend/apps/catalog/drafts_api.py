@@ -233,6 +233,57 @@ class ListingDraftViewSet(
             for s in sugestoes if s.get("category_id")
         ])
 
+    @staticmethod
+    def _categoria_valida(categoria_id):
+        if not categoria_id or len(categoria_id) > 40 or not categoria_id.replace("-", "").isalnum():
+            raise serializers.ValidationError({"category_id": "Informe um código de categoria válido."})
+
+    @extend_schema(
+        parameters=[OpenApiParameter(
+            "category_id", str, required=False, description="Vazio devolve o primeiro nível"
+        )],
+        responses=inline_serializer(
+            name="MlCategoryTree",
+            fields={
+                "id": serializers.CharField(),
+                "name": serializers.CharField(),
+                "path": serializers.ListField(child=serializers.DictField()),
+                "listing_allowed": serializers.BooleanField(),
+                "children": serializers.ListField(child=serializers.DictField()),
+            },
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="ml-category-tree")
+    def ml_category_tree(self, request):
+        """Um nível da árvore de categorias do Mercado Livre, para escolher navegando."""
+        from apps.integrations.meli.anuncio import conta_do_mercado_livre
+        from apps.integrations.services import chamar
+
+        categoria_id = (request.query_params.get("category_id") or "").strip()
+        if categoria_id:
+            self._categoria_valida(categoria_id)
+
+        def buscar():
+            conta = conta_do_mercado_livre()
+            if not categoria_id:
+                return {"id": "", "name": "", "children_categories": chamar(conta, "site_categories")}
+            return chamar(conta, "category", category_id=categoria_id)
+
+        categoria = self._integracao(buscar)
+        filhas = categoria.get("children_categories") or []
+        return Response({
+            "id": categoria.get("id") or categoria_id,
+            "name": categoria.get("name") or "",
+            "path": [
+                {"id": p.get("id") or "", "name": p.get("name") or ""}
+                for p in (categoria.get("path_from_root") or [])
+            ],
+            # sem filhas é folha: é nela que o anúncio entra, salvo se a categoria recusar
+            "listing_allowed": bool(categoria_id) and not filhas
+            and (categoria.get("settings") or {}).get("listing_allowed", True) is not False,
+            "children": [{"id": f.get("id") or "", "name": f.get("name") or ""} for f in filhas if f.get("id")],
+        })
+
     @extend_schema(
         parameters=[OpenApiParameter("category_id", str, required=True)],
         responses=inline_serializer(
@@ -249,8 +300,7 @@ class ListingDraftViewSet(
         from apps.integrations.services import chamar
 
         categoria_id = (request.query_params.get("category_id") or "").strip()
-        if not categoria_id or len(categoria_id) > 40 or not categoria_id.replace("-", "").isalnum():
-            raise serializers.ValidationError({"category_id": "Informe um código de categoria válido."})
+        self._categoria_valida(categoria_id)
 
         def buscar():
             conta = conta_do_mercado_livre()

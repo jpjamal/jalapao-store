@@ -55,8 +55,16 @@ class Falso:
         Falso.chamadas.append(("suggest_categories", q))
         return [{"category_id": "MLB1234", "category_name": "Luminárias", "domain_name": "Luminárias"}]
 
+    def site_categories(self, *, account):
+        Falso.chamadas.append(("site_categories", ""))
+        return [{"id": "MLB1574", "name": "Casa"}, {"id": "MLB1132", "name": "Brinquedos"}]
+
     def category(self, *, account, category_id):
         Falso.chamadas.append(("category", category_id))
+        if category_id == "MLB1574":
+            return {"id": "MLB1574", "name": "Casa", "path_from_root": [{"id": "MLB1574", "name": "Casa"}],
+                    "children_categories": [{"id": "MLB1234", "name": "Luminárias"}],
+                    "settings": {"listing_allowed": True}}
         return CATEGORIA
 
     def category_attributes(self, *, account, category_id):
@@ -275,6 +283,23 @@ class ApiTests(Base):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["category"]["max_pictures_per_item"], 3)
         self.assertNotIn("GTIN", [a["id"] for a in r.json()["attributes"]])
+
+    def test_arvore_de_categorias_navega_ate_a_folha(self):
+        self.permitir("view_listingdraft")
+        with mercado_livre_falso():
+            raiz = self.client.get("/api/v1/listing-drafts/ml-category-tree/").json()
+            meio = self.client.get("/api/v1/listing-drafts/ml-category-tree/?category_id=MLB1574").json()
+            folha = self.client.get("/api/v1/listing-drafts/ml-category-tree/?category_id=MLB1234").json()
+        self.assertEqual([c["name"] for c in raiz["children"]], ["Casa", "Brinquedos"])
+        self.assertFalse(raiz["listing_allowed"])
+        # categoria com filhas não recebe anúncio, mesmo que o settings diga que sim
+        self.assertEqual(meio["children"], [{"id": "MLB1234", "name": "Luminárias"}])
+        self.assertFalse(meio["listing_allowed"])
+        self.assertEqual(folha["children"], [])
+        self.assertTrue(folha["listing_allowed"])
+        self.assertEqual(self.client.get(
+            "/api/v1/listing-drafts/ml-category-tree/?category_id=../x"
+        ).status_code, 400)
 
     def test_busca_curta_e_categoria_invalida_sao_recusadas(self):
         self.permitir("view_listingdraft")
