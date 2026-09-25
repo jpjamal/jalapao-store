@@ -140,6 +140,19 @@ class PublicacaoTests(Base):
             publicar(d.pk)
         self.assertEqual(ml.ultimo_envio["family_name"], "Luminária Pimentão 3D")
 
+    def test_criacao_pede_family_name_e_depois_recusa_title(self):
+        # a sequência exata da primeira publicação real, com as causas já traduzidas pelo cliente
+        d = self.rascunho(fotos=[self.foto()])
+        pede = (None, [{"type": "error", "code": "body.required_fields", "references": ["body"],
+                        "message": "The body does not contains some or none of the following properties [family_name]"}])
+        recusa = (None, [{"type": "error", "code": "body.invalid_fields", "references": [],
+                          "message": "The fields [title] are invalid for requested call."}])
+        with mercado_livre_publicando(criar=[pede, recusa, (dict(ITEM), [])]) as ml:
+            r = publicar(d.pk)
+        self.assertNotIn("title", ml.ultimo_envio)
+        self.assertEqual(ml.ultimo_envio["family_name"], "Luminária Pimentão 3D")
+        self.assertEqual(r["item_id"], "MLB5000")
+
     def test_falha_na_descricao_vira_aviso_e_mantem_o_anuncio(self):
         d = self.rascunho(fotos=[self.foto()])
         with mercado_livre_publicando(descricao_falha=True):
@@ -223,11 +236,15 @@ class ClientePublicacaoTests(Base):
         adap = self.adaptador(
             (201, {"id": "MLB1"}),
             (400, {"cause": [{"type": "error", "code": "x", "message": "m"}]}),
-            (400, {"error": "validation_error", "message": "body invalid"}),
+            # resposta real da primeira publicação: sem causa, código em `message`
+            (400, {"cause": [], "message": "body.invalid_fields",
+                   "error": "The fields [title] are invalid for requested call.", "status": 400}),
         )
         self.assertEqual(adap.create_item(account=self.conta(), payload={}), ({"id": "MLB1"}, []))
         self.assertEqual(adap.create_item(account=self.conta(), payload={})[1][0]["message"], "m")
-        self.assertEqual(adap.create_item(account=self.conta(), payload={})[1][0]["message"], "body invalid")
+        causa = adap.create_item(account=self.conta(), payload={})[1][0]
+        self.assertEqual(causa["code"], "body.invalid_fields")
+        self.assertIn("[title]", causa["message"])
 
     def test_descricao_vai_em_texto_simples(self):
         adap = self.adaptador((201, {}))

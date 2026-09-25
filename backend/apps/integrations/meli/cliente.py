@@ -317,10 +317,13 @@ class MercadoLivreAdapter(MarketplaceAdapter):
         if response.status in (200, 201) and isinstance(response.body, dict) and response.body.get("id"):
             return response.body, []
         if response.status == 400 and isinstance(response.body, dict):
+            # 400 sem causa: o código vem em `message` e o texto em `error`, como na validação
+            # (visto na primeira publicação real: message "body.invalid_fields",
+            # error "The fields [title] are invalid for requested call.")
             causas = response.body.get("cause") or [{
                 "type": "error",
-                "code": str(response.body.get("error") or "body.invalid"),
-                "message": str(response.body.get("message") or ""),
+                "code": str(response.body.get("message") or "body.invalid"),
+                "message": str(response.body.get("error") or response.body.get("message") or ""),
                 "references": [],
             }]
             return None, causas
