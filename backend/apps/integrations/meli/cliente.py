@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 import os
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -83,6 +84,11 @@ class MercadoLivreAdapter(MarketplaceAdapter):
         )
         body = response.body
         if response.status >= 400:
+            # sem token nem corpo enviado: só o que o Mercado Livre respondeu, para diagnóstico
+            logger.warning(
+                "Mercado Livre %s %s → HTTP %s: %s",
+                method, path.split("?")[0], response.status, str(body)[:800],
+            )
             code = body.get("error", "") if isinstance(body, dict) else ""
             if response.status in (401, 403):
                 message = "A autorização do Mercado Livre foi recusada ou expirou."
@@ -278,10 +284,18 @@ class MercadoLivreAdapter(MarketplaceAdapter):
             content,
             f"\r\n--{fronteira}--\r\n".encode(),
         ])
-        response = self._request(
-            "POST", "/pictures/items/upload", token=account.access_token,
-            headers={"Content-Type": f"multipart/form-data; boundary={fronteira}"}, raw=corpo,
-        )
+        for tentativa in range(2):
+            try:
+                response = self._request(
+                    "POST", "/pictures/items/upload", token=account.access_token,
+                    headers={"Content-Type": f"multipart/form-data; boundary={fronteira}"}, raw=corpo,
+                )
+                break
+            except IntegrationError as exc:
+                # 5xx no upload costuma ser passageiro: uma nova tentativa, depois desiste
+                if tentativa or "HTTP 5" not in str(exc):
+                    raise
+                time.sleep(2)
         body = response.body if isinstance(response.body, dict) else {}
         foto_id = body.get("id")
         if not foto_id:
@@ -298,6 +312,8 @@ class MercadoLivreAdapter(MarketplaceAdapter):
         """Cria o anúncio. Devolve `(item, causas)`: o item quando criou, as causas quando o
         Mercado Livre recusou com 400 — como na validação, o 400 aqui é resposta."""
         response = self.transporte("POST", "/items", token=account.access_token, data=payload)
+        if response.status >= 300:
+            logger.warning("Mercado Livre POST /items → HTTP %s: %s", response.status, str(response.body)[:800])
         if response.status in (200, 201) and isinstance(response.body, dict) and response.body.get("id"):
             return response.body, []
         if response.status == 400 and isinstance(response.body, dict):
