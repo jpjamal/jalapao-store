@@ -13,9 +13,12 @@ Produção standalone: Dockerfile copia `.next/standalone`, `.next/static` e pub
 - /: estoque a custo, faturamento, lucro estimado, caixa, a receber, produtos ativos.
 - /produtos: busca, paginação, cadastro/edição, parâmetros 3D e desativação.
   O SKU aparece após salvar e não é editável; a quantidade é administrada no estoque.
-- /anuncios: fotos reutilizáveis do produto e rascunho independente para Mercado Livre
-  e Shopee. Título, descrição, preço, marca, modelo e categoria são opcionais; salvar
-  não publica nem envia estoque.
+- /anuncios: rascunho por produto e canal, em etapas (produto e canal, conteúdo, fotos,
+  categoria). Salvar não publica. No Mercado Livre: validar (simula sem criar), publicar
+  com confirmação e, depois de publicado, "Salvar e enviar" manda as alterações ao anúncio
+  — specs 009, 011 e 012.
+- /pesquisa-precos: pesquisa de mercado no Mercado Livre, só leitura — mais vendidos por
+  categoria e busca no catálogo, com link para ver os preços no site (spec 013).
 - /estoque: entradas/saídas justificadas, valor e histórico. Produto por busca digitada.
 - /entradas: compra/produção por produto (busca digitada), custo do lote, histórico e
   pagamento de compra.
@@ -44,6 +47,29 @@ páginas novas, em next.config.ts.
 `components/product-picker.tsx` é o campo de produto com busca: filtra por nome ou SKU
 ignorando acento, navega por teclado e impede envio com nome digitado sem seleção.
 Usado em vendas, entradas e estoque — ver ../docs/specs/004-busca-de-produto.
+
+## Layout e componentes de tela
+Pensado para celular e computador (reorganização no commit 6563091):
+- `components/shell.tsx`: menu lateral agrupado no computador; no celular, barra fina no topo
+  com menu em gaveta (fecha com Esc, ao tocar fora e ao trocar de página).
+- `components/page-header.tsx`: título, descrição, ações e link de volta, iguais em toda página.
+- `components/form-actions.tsx` e `components/pagination.tsx`: botões de formulário e
+  paginação padronizados — empilhados e com largura total no celular.
+- Tabelas com `className="data-table"` viram cartões no celular: cada `<td>` leva
+  `data-label` (nome da coluna), a célula que identifica a linha `data-role="title"` e a de
+  botões `data-role="actions"`. O CSS está em `globals.css`.
+- Alvos de toque de 44 px no celular e campos com 16 px (evita o zoom do iPhone).
+
+## App instalável (PWA)
+O sistema instala como app no Android e no iPhone ("Adicionar à tela inicial"), com o ícone
+colorido da marca — spec 014.
+- `src/app/manifest.ts`: manifesto servido em /jalapao-store/manifest.webmanifest.
+- `public/icons/`: ícones gerados por `npm run icons` (`scripts/gerar-icones.mjs`) a partir de
+  `brand/logo-jalapao-colorido.png`. Trocou o logo? Substitua o arquivo em `brand/` e rode de novo.
+- `public/sw.js` + `components/service-worker.tsx`: service worker mínimo, registrado só em
+  produção. Não guarda dados nem API — só a página `public/offline.html`, mostrada sem internet.
+  Ao mudar essa página ou o ícone, trocar `VERSAO` em sw.js.
+- Arquivos de public/ referenciados no manifesto e nos metadados levam o basePath à mão.
 
 ## Segurança e componentes
 BFF valida Origin nas mutações, limita corpo e usa destinos de API permitidos. JWT em cookies

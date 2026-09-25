@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sem conexão | Jalapão Store</title>
+  <style>
+    :root { color-scheme: light dark; --fundo: #f7f2ea; --texto: #2a1a0f; --suave: #6d5947; --primaria: #a54d0b; }
+    @media (prefers-color-scheme: dark) { :root { --fundo: #17100a; --texto: #f2e8da; --suave: #b7a58e; --primaria: #de8a2b; } }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--fundo);
+      color: var(--texto); font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; text-align: center; padding: 1.5rem; }
+    img { width: 112px; height: 112px; border-radius: 1.5rem; }
+    h1 { font-family: "Bahnschrift", Arial, sans-serif; font-size: 1.6rem; margin: 1.25rem 0 .5rem; }
+    p { color: var(--suave); max-width: 22rem; margin: 0 auto 1.5rem; }
+    button { font: 600 1rem "Bahnschrift", Arial, sans-serif; background: var(--primaria); color: var(--fundo);
+      border: 0; border-radius: .5rem; min-height: 2.75rem; padding: 0 1.5rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="/jalapao-store/icons/icon-192.png" alt="Jalapão Store">
+    <h1>Sem conexão</h1>
+    <p>O sistema precisa de internet para mostrar estoque, vendas e anúncios atualizados.</p>
+    <button type="button" onclick="location.reload()">Tentar de novo</button>
+  </main>
+</body>
+</html>
