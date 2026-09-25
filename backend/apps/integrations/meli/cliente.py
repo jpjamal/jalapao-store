@@ -268,6 +268,54 @@ class MercadoLivreAdapter(MarketplaceAdapter):
         body = self._request("GET", path, token=account.access_token).body
         return body if isinstance(body, list) else []
 
+    # ---------- pesquisa de preços (spec 013): só leitura ----------
+    # Caminhos da documentação oficial: Buscador de produtos (/products/search),
+    # Mais vendidos (/highlights) e Busca de itens (/items/bulk, que substitui /items?ids=).
+
+    def _get(self, account, path):
+        return self._request("GET", path, token=account.access_token).body
+
+    def search_catalog(self, *, account, q="", gtin="", limit=10):
+        """Produtos do catálogo por palavra-chave ou por código de barras."""
+        params = {"status": "active", "site_id": self.SITE, "limit": max(1, min(int(limit), 20))}
+        if gtin:
+            params["product_identifier"] = gtin
+        else:
+            params["q"] = q
+        body = self._get(account, f"/products/search?{urllib.parse.urlencode(params)}")
+        return (body or {}).get("results") or [] if isinstance(body, dict) else []
+
+    def product(self, *, account, product_id):
+        return self._get(account, f"/products/{urllib.parse.quote(str(product_id), safe='')}") or {}
+
+    def product_items(self, *, account, product_id, limit=20):
+        """Anúncios que vendem o produto do catálogo, cada um com seu preço."""
+        path = f"/products/{urllib.parse.quote(str(product_id), safe='')}/items?limit={max(1, min(int(limit), 50))}"
+        body = self._get(account, path)
+        return (body or {}).get("results") or [] if isinstance(body, dict) else []
+
+    def best_sellers(self, *, account, category_id):
+        """Os 20 mais vendidos da categoria: só ids, posição e tipo."""
+        path = f"/highlights/{self.SITE}/category/{urllib.parse.quote(str(category_id), safe='')}"
+        body = self._get(account, path)
+        return (body or {}).get("content") or [] if isinstance(body, dict) else []
+
+    def items(self, *, account, ids):
+        """Vários anúncios numa chamada. A resposta vem como lista de {code, body}."""
+        if not ids:
+            return []
+        query = urllib.parse.urlencode({"ids": ",".join(ids[:20])})
+        body = self._get(account, f"/items/bulk?{query}")
+        resultado = []
+        for linha in body if isinstance(body, list) else []:
+            corpo = linha.get("body") if isinstance(linha, dict) and "body" in linha else linha
+            if isinstance(corpo, dict) and corpo.get("id") and (linha.get("code", 200) == 200):
+                resultado.append(corpo)
+        return resultado
+
+    def user_product(self, *, account, user_product_id):
+        return self._get(account, f"/user-products/{urllib.parse.quote(str(user_product_id), safe='')}") or {}
+
     # ---------- publicação (spec 012): as únicas chamadas que criam algo no Mercado Livre ----------
 
     def upload_picture(self, *, account, filename, content, mime_type):

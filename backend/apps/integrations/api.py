@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -229,6 +229,71 @@ class AccountViewSet(
         return Response(
             {"accounts": [situacao(c) for c in MarketplaceAccount.objects.filter(active=True)]}
         )
+
+    # ---------- pesquisa de preços no Mercado Livre (spec 013): só leitura ----------
+
+    @staticmethod
+    def _codigo(valor, campo):
+        """Códigos do Mercado Livre são letras, números e hífen — nada que mude o caminho."""
+        valor = (valor or "").strip()
+        if not valor or len(valor) > 40 or not valor.replace("-", "").isalnum():
+            raise serializers.ValidationError({campo: "Informe um código válido."})
+        return valor
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("q", str, required=False, description="Palavras do produto"),
+            OpenApiParameter("gtin", str, required=False, description="Código de barras (EAN)"),
+        ],
+        responses=inline_serializer(
+            name="PriceProducts", fields={"produtos": serializers.ListField(child=serializers.DictField())}
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="price-products")
+    def price_products(self, request):
+        from .meli.pesquisa import produtos
+
+        q = (request.query_params.get("q") or "").strip()[:200]
+        gtin = (request.query_params.get("gtin") or "").strip()
+        if gtin and not gtin.isdigit():
+            raise serializers.ValidationError({"gtin": "O código de barras tem só números."})
+        if not gtin and len(q) < 3:
+            raise serializers.ValidationError({"q": "Digite ao menos 3 letras ou o código de barras."})
+        return Response({"produtos": _traduzir(lambda: produtos(q=q, gtin=gtin))})
+
+    @extend_schema(
+        parameters=[OpenApiParameter("product_id", str, required=True)],
+        responses=inline_serializer(
+            name="PriceOffers",
+            fields={
+                "resumo": serializers.DictField(),
+                "ofertas": serializers.ListField(child=serializers.DictField()),
+            },
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="price-offers")
+    def price_offers(self, request):
+        from .meli.pesquisa import ofertas
+
+        produto_id = self._codigo(request.query_params.get("product_id"), "product_id")
+        return Response(_traduzir(lambda: ofertas(produto_id)))
+
+    @extend_schema(
+        parameters=[OpenApiParameter("category_id", str, required=True)],
+        responses=inline_serializer(
+            name="PriceBestSellers",
+            fields={
+                "resumo": serializers.DictField(),
+                "itens": serializers.ListField(child=serializers.DictField()),
+            },
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="price-best-sellers")
+    def price_best_sellers(self, request):
+        from .meli.pesquisa import mais_vendidos
+
+        categoria_id = self._codigo(request.query_params.get("category_id"), "category_id")
+        return Response(_traduzir(lambda: mais_vendidos(categoria_id)))
 
 
 class ListingViewSet(

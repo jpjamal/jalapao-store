@@ -356,12 +356,15 @@ type NoCategoria = {
 
 /* Árvore de categorias vinda direto do Mercado Livre: começa no primeiro nível e desce
    até uma categoria final, que é a única onde o anúncio entra. */
-function NavegadorCategorias({
+export function NavegadorCategorias({
   categoryId,
   onCategoria,
+  onAbrir,
 }: {
   categoryId: string;
   onCategoria: (id: string) => void;
+  /** avisa cada categoria aberta, de qualquer nível (a pesquisa de preços usa) */
+  onAbrir?: (categoria: { id: string; name: string; path: string[] }) => void;
 }) {
   const [no, setNo] = useState<NoCategoria | null>(null);
   const [carregando, setCarregando] = useState(false);
@@ -375,6 +378,7 @@ function NavegadorCategorias({
         `listing-drafts/ml-category-tree${id ? `?category_id=${encodeURIComponent(id)}` : ""}`,
       );
       setNo(r);
+      onAbrir?.({ id: r.id, name: r.name, path: r.path.map((p) => p.name) });
       if (r.id && r.listing_allowed && r.id !== categoryId) onCategoria(r.id);
     } catch (e) {
       setErro((e as Error).message);

@@ -52,7 +52,7 @@ async function handle(
       );
   }
   if (
-    !/^(auth\/(login|logout|me)|dashboard|products(?:\/[a-f0-9-]+)?|product-images(?:\/[a-f0-9-]+(?:\/content)?)?|listing-drafts(?:\/[a-f0-9-]+(?:\/(?:validate|publish|push))?)?|listing-drafts\/(?:ml-categories|ml-attributes|ml-category-tree)|movements|cash|receipts(?:\/[a-f0-9-]+(?:\/pay)?)?|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel))?)?|integrations(?:\/[a-f0-9-]+(?:\/(?:import-listings|push-stock))?)?|integrations\/(?:auth-link|ml-auth-link|connect|status)|listings(?:\/[a-f0-9-]+)?)$/.test(
+    !/^(auth\/(login|logout|me)|dashboard|products(?:\/[a-f0-9-]+)?|product-images(?:\/[a-f0-9-]+(?:\/content)?)?|listing-drafts(?:\/[a-f0-9-]+(?:\/(?:validate|publish|push))?)?|listing-drafts\/(?:ml-categories|ml-attributes|ml-category-tree)|movements|cash|receipts(?:\/[a-f0-9-]+(?:\/pay)?)?|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel))?)?|integrations(?:\/[a-f0-9-]+(?:\/(?:import-listings|push-stock))?)?|integrations\/(?:auth-link|ml-auth-link|connect|status|price-products|price-offers|price-best-sellers)|listings(?:\/[a-f0-9-]+)?)$/.test(
       path,
     )
   )

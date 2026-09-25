@@ -40,6 +40,7 @@ const labels: Record<string, string> = {
   integration: "Marketplace",
   category_id: "Categoria",
   q: "Busca",
+  gtin: "Código de barras",
 };
 function flatten(value: unknown, prefix = ""): string[] {
   if (Array.isArray(value)) return value.flatMap((v) => flatten(v, prefix));

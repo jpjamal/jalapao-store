@@ -16,6 +16,7 @@ import {
   Plug,
   LogOut,
   Menu,
+  SearchCheck,
   X,
 } from "lucide-react";
 
@@ -36,6 +37,7 @@ const groups: { title: string; items: Item[] }[] = [
     title: "Marketplaces",
     items: [
       { href: "/anuncios", label: "Anúncios", Icon: Images },
+      { href: "/pesquisa-precos", label: "Pesquisa de preços", Icon: SearchCheck },
       { href: "/integracoes", label: "Integrações", Icon: Plug },
     ],
   },
