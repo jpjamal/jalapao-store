@@ -288,12 +288,6 @@ class MercadoLivreAdapter(MarketplaceAdapter):
     def product(self, *, account, product_id):
         return self._get(account, f"/products/{urllib.parse.quote(str(product_id), safe='')}") or {}
 
-    def product_items(self, *, account, product_id, limit=20):
-        """Anúncios que vendem o produto do catálogo, cada um com seu preço."""
-        path = f"/products/{urllib.parse.quote(str(product_id), safe='')}/items?limit={max(1, min(int(limit), 50))}"
-        body = self._get(account, path)
-        return (body or {}).get("results") or [] if isinstance(body, dict) else []
-
     def best_sellers(self, *, account, category_id):
         """Os 20 mais vendidos da categoria: só ids, posição e tipo."""
         path = f"/highlights/{self.SITE}/category/{urllib.parse.quote(str(category_id), safe='')}"

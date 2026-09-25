@@ -1,4 +1,8 @@
-"""Spec 013 — pesquisa de preços no Mercado Livre. Só leitura, sem rede nos testes."""
+"""Spec 013 — pesquisa no Mercado Livre: produtos e mais vendidos. Só leitura, sem rede.
+
+As respostas de mentira seguem o formato visto na primeira pesquisa real (25/09/2026):
+produto do catálogo com `permalink` vazio, foto em `pickers` e sem vendedor ganhando a página.
+"""
 
 from contextlib import contextmanager
 from datetime import timedelta
@@ -13,39 +17,35 @@ from apps.integrations import base
 from apps.integrations.meli import pesquisa
 from apps.integrations.models import MarketplaceAccount
 
+PRODUTO_REAL = {
+    "id": "MLB19713494", "catalog_product_id": "MLB19713494", "status": "active",
+    "pdp_types": ["traditional"], "domain_id": "MLB-MOBILE_DEVICE_CHARGERS", "permalink": "",
+    "name": "Carregador Turbo USB-C 20W Hrebos Branco Compatível Samsung Galaxy",
+    "family_name": "Carregador Hrebos HS-363C usb-c com cabo carregamento turbo",
+    "type": "catalog_product", "buy_box_winner": None,
+    "attributes": [{"id": "BRAND", "value_name": "Hrebos"}, {"id": "MODEL", "value_name": "HS-363C"}],
+    "pickers": [{"picker_id": "COLOR", "products": [
+        {"product_id": "MLB0000", "thumbnail": "https://http2.mlstatic.com/outra.jpg"},
+        {"product_id": "MLB19713494", "thumbnail": "https://http2.mlstatic.com/branco.jpg"},
+    ]}],
+}
+
 
 class Pesquisador:
-    """Mercado Livre de mentira, com respostas no formato da documentação."""
+    """Mercado Livre de mentira."""
 
     channel = "mercado_livre"
     chamadas = []
 
     def search_catalog(self, *, account, q="", gtin="", limit=10):
         Pesquisador.chamadas.append(("search_catalog", q or gtin))
-        return [{"id": "MLB111", "name": "Carregador Turbo 20W"}, {"id": "MLB222", "name": "Sem preço"}]
+        return [{"id": "MLB19713494", "name": "Carregador"}]
 
     def product(self, *, account, product_id):
         Pesquisador.chamadas.append(("product", product_id))
-        if product_id == "MLB111":
-            return {
-                "id": "MLB111", "name": "Carregador Turbo 20W USB-C",
-                "permalink": "https://www.mercadolivre.com.br/p/MLB111",
-                "attributes": [{"id": "BRAND", "value_name": "Baseus"}, {"id": "MODEL", "value_name": "T20"}],
-                "pictures": [{"secure_url": "https://http2.mlstatic.com/foto.jpg"}],
-                "buy_box_winner": {"price": 49.9, "shipping": {"free_shipping": True}},
-            }
-        if product_id == "MLB333":
-            return {"id": "MLB333", "name": "Fone Bluetooth", "buy_box_winner": {"price": 89}}
-        return {"id": product_id, "name": "Sem preço"}
-
-    def product_items(self, *, account, product_id, limit=20):
-        Pesquisador.chamadas.append(("product_items", product_id))
-        return [
-            {"item_id": "MLB9", "price": 59.9, "seller_id": 3, "condition": "new",
-             "shipping": {"free_shipping": True, "logistic_type": "fulfillment"}},
-            {"item_id": "MLB8", "price": 45.0, "seller_id": 2, "condition": "new", "shipping": {}},
-            {"item_id": "MLB7", "price": 52.5, "seller_id": 1, "condition": "new", "shipping": {}},
-        ]
+        if product_id == "MLB19713494":
+            return PRODUTO_REAL
+        return {"id": product_id, "name": "Fone Bluetooth", "permalink": "https://www.mercadolivre.com.br/p/MLB333"}
 
     def best_sellers(self, *, account, category_id):
         Pesquisador.chamadas.append(("best_sellers", category_id))
@@ -57,8 +57,9 @@ class Pesquisador:
 
     def items(self, *, account, ids):
         Pesquisador.chamadas.append(("items", tuple(ids)))
-        return [{"id": "MLB500", "title": "Suporte de celular", "price": 19.9,
-                 "permalink": "https://produto.mercadolivre.com.br/MLB-500"}]
+        return [{"id": "MLB500", "title": "Suporte de celular",
+                 "permalink": "https://produto.mercadolivre.com.br/MLB-500",
+                 "pictures": [{"secure_url": "https://http2.mlstatic.com/suporte.jpg"}]}]
 
     def user_product(self, *, account, user_product_id):
         Pesquisador.chamadas.append(("user_product", user_product_id))
@@ -86,53 +87,44 @@ class Conta(TestCase):
 
 
 class RegrasTests(TestCase):
-    def test_preco_nos_formatos_conhecidos(self):
-        self.assertEqual(pesquisa.preco_de({"price": 10}), 10.0)
-        self.assertEqual(pesquisa.preco_de({"price": {"amount": "12.5"}}), 12.5)
-        self.assertEqual(pesquisa.preco_de({"sale_price": {"amount": 7}}), 7.0)
-        self.assertEqual(pesquisa.preco_de({"buy_box_winner": {"price": 3}}), 3.0)
-        self.assertIsNone(pesquisa.preco_de({"name": "x"}))
-        self.assertIsNone(pesquisa.preco_de(None))
-
-    def test_resumo_ignora_sem_preco(self):
+    def test_link_usa_permalink_ou_a_busca_do_site(self):
+        self.assertEqual(pesquisa.link({"permalink": "https://x/p/1"}, "a"), "https://x/p/1")
         self.assertEqual(
-            pesquisa.resumo([30, None, 10, 20]),
-            {"quantidade": 3, "menor": 10, "mediana": 20, "maior": 30},
+            pesquisa.link({"permalink": ""}, "Carregador  Hrebos HS-363C"),
+            "https://lista.mercadolivre.com.br/Carregador-Hrebos-HS-363C",
         )
-        self.assertEqual(pesquisa.resumo([None])["quantidade"], 0)
+        self.assertEqual(pesquisa.link({}, ""), "")
 
 
 class PesquisaTests(Conta):
-    def test_produtos_com_preco_vencedor(self):
-        with mercado_livre_pesquisando(), self.assertLogs("apps.integrations.meli.pesquisa", "WARNING"):
-            r = pesquisa.produtos(q="carregador 20w")
-        self.assertEqual(r[0]["preco_vencedor"], 49.9)
-        self.assertEqual((r[0]["marca"], r[0]["modelo"]), ("Baseus", "T20"))
-        self.assertTrue(r[0]["frete_gratis"])
-        self.assertIsNone(r[1]["preco_vencedor"])  # sem preço: fica vazio e vai para o log
-
-    def test_ofertas_da_mais_barata_para_a_mais_cara(self):
+    def test_produtos_com_marca_modelo_foto_e_link(self):
         with mercado_livre_pesquisando():
-            r = pesquisa.ofertas("MLB111")
-        self.assertEqual([o["preco"] for o in r["ofertas"]], [45.0, 52.5, 59.9])
-        self.assertEqual(r["resumo"], {"quantidade": 3, "menor": 45.0, "mediana": 52.5, "maior": 59.9})
-        self.assertTrue(r["ofertas"][2]["full"])
+            r = pesquisa.produtos(q="carregador 20w")
+        p = r[0]
+        self.assertEqual((p["marca"], p["modelo"]), ("Hrebos", "HS-363C"))
+        self.assertEqual(p["foto"], "https://http2.mlstatic.com/branco.jpg")  # a variação do próprio produto
+        self.assertTrue(p["link"].startswith("https://lista.mercadolivre.com.br/Carregador-Hrebos"))
+        self.assertNotIn("preco", p)  # preço de concorrente não vem pela API: não é prometido
 
-    def test_mais_vendidos_completa_nome_e_preco_por_tipo(self):
-        with mercado_livre_pesquisando() as ml, self.assertLogs("apps.integrations.meli.pesquisa", "WARNING"):
+    def test_mais_vendidos_na_ordem_e_completados_por_tipo(self):
+        with mercado_livre_pesquisando() as ml:
             r = pesquisa.mais_vendidos("MLB1234")
-        self.assertEqual([i["posicao"] for i in r["itens"]], [1, 2, 3])
-        self.assertEqual((r["itens"][0]["nome"], r["itens"][0]["preco"]), ("Suporte de celular", 19.9))
-        self.assertEqual((r["itens"][1]["nome"], r["itens"][1]["preco"]), ("Fone Bluetooth", 89.0))
-        self.assertEqual(r["itens"][2]["nome"], "Luminária 3D")
-        self.assertIsNone(r["itens"][2]["preco"])
+        itens = r["itens"]
+        self.assertEqual([i["posicao"] for i in itens], [1, 2, 3])
+        self.assertEqual(itens[0]["nome"], "Suporte de celular")
+        self.assertEqual(itens[0]["link"], "https://produto.mercadolivre.com.br/MLB-500")
+        self.assertEqual(itens[1]["nome"], "Fone Bluetooth")
+        self.assertEqual(itens[2]["nome"], "Luminária 3D")
         self.assertIn(("items", ("MLB500",)), ml.chamadas)  # anúncios numa chamada só
 
-    def test_nada_e_gravado_nem_enviado(self):
+    def test_so_leitura(self):
         with mercado_livre_pesquisando() as ml:
-            pesquisa.ofertas("MLB111")
-        operacoes = {nome for nome, _ in ml.chamadas}
-        self.assertEqual(operacoes, {"product_items"})
+            pesquisa.mais_vendidos("MLB1234")
+            pesquisa.produtos(gtin="7891234567890")
+        self.assertEqual(
+            {nome for nome, _ in ml.chamadas},
+            {"best_sellers", "items", "product", "user_product", "search_catalog"},
+        )
 
 
 class ApiTests(Conta):
@@ -149,7 +141,7 @@ class ApiTests(Conta):
 
     def test_exige_permissao_de_ver_integracoes(self):
         with mercado_livre_pesquisando() as ml:
-            r = self.client.get("/api/v1/integrations/price-offers/?product_id=MLB111")
+            r = self.client.get("/api/v1/integrations/price-best-sellers/?category_id=MLB1234")
         self.assertEqual(r.status_code, 403)
         self.assertEqual(ml.chamadas, [])
 
@@ -162,12 +154,12 @@ class ApiTests(Conta):
                 self.client.get("/api/v1/integrations/price-best-sellers/?category_id=../x").status_code, 400
             )
             self.assertEqual(ml.chamadas, [])
-            with self.assertLogs("apps.integrations.meli.pesquisa", "WARNING"):
-                r = self.client.get("/api/v1/integrations/price-products/?gtin=7891234567890")
+            r = self.client.get("/api/v1/integrations/price-products/?gtin=7891234567890")
             self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.json()["produtos"][0]["id"], "MLB111")
-            r = self.client.get("/api/v1/integrations/price-offers/?product_id=MLB111")
-            self.assertEqual(r.json()["resumo"]["menor"], 45.0)
+            self.assertEqual(r.json()["produtos"][0]["id"], "MLB19713494")
+            r = self.client.get("/api/v1/integrations/price-best-sellers/?category_id=MLB1234")
+            self.assertEqual(len(r.json()["itens"]), 3)
+        self.assertEqual(self.client.get("/api/v1/integrations/price-offers/?product_id=MLB1").status_code, 404)
 
     def test_sem_conta_vira_400_legivel(self):
         MarketplaceAccount.objects.all().delete()
@@ -199,17 +191,14 @@ class ClientePesquisaTests(Conta):
         conta = MarketplaceAccount.objects.get()
         adap = self.adaptador(
             (200, {"results": [{"id": "MLB1"}]}),
-            (200, {"results": []}),
             (200, {"content": [{"id": "MLB2", "type": "ITEM"}]}),
-            (200, [{"code": 200, "body": {"id": "MLB2", "price": 5}}, {"code": 404, "body": {"id": "MLB3"}}]),
+            (200, [{"code": 200, "body": {"id": "MLB2", "title": "x"}}, {"code": 404, "body": {"id": "MLB3"}}]),
         )
         self.assertEqual(adap.search_catalog(account=conta, gtin="789"), [{"id": "MLB1"}])
-        self.assertEqual(adap.product_items(account=conta, product_id="MLB1"), [])
         self.assertEqual(adap.best_sellers(account=conta, category_id="MLB9")[0]["id"], "MLB2")
-        self.assertEqual(adap.items(account=conta, ids=["MLB2", "MLB3"]), [{"id": "MLB2", "price": 5}])
+        self.assertEqual(adap.items(account=conta, ids=["MLB2", "MLB3"]), [{"id": "MLB2", "title": "x"}])
         caminhos = [p for _, p in self.pedidos]
         self.assertIn("product_identifier=789", caminhos[0])
         self.assertTrue(caminhos[0].startswith("/products/search?status=active&site_id=MLB"))
-        self.assertTrue(caminhos[1].startswith("/products/MLB1/items?limit="))
-        self.assertEqual(caminhos[2], "/highlights/MLB/category/MLB9")
-        self.assertEqual(caminhos[3], "/items/bulk?ids=MLB2%2CMLB3")
+        self.assertEqual(caminhos[1], "/highlights/MLB/category/MLB9")
+        self.assertEqual(caminhos[2], "/items/bulk?ids=MLB2%2CMLB3")

@@ -37,7 +37,7 @@ const groups: { title: string; items: Item[] }[] = [
     title: "Marketplaces",
     items: [
       { href: "/anuncios", label: "Anúncios", Icon: Images },
-      { href: "/pesquisa-precos", label: "Pesquisa de preços", Icon: SearchCheck },
+      { href: "/pesquisa-precos", label: "Pesquisa de mercado", Icon: SearchCheck },
       { href: "/integracoes", label: "Integrações", Icon: Plug },
     ],
   },

@@ -230,7 +230,7 @@ class AccountViewSet(
             {"accounts": [situacao(c) for c in MarketplaceAccount.objects.filter(active=True)]}
         )
 
-    # ---------- pesquisa de preços no Mercado Livre (spec 013): só leitura ----------
+    # ---------- pesquisa no Mercado Livre (spec 013): só leitura ----------
 
     @staticmethod
     def _codigo(valor, campo):
@@ -262,30 +262,10 @@ class AccountViewSet(
         return Response({"produtos": _traduzir(lambda: produtos(q=q, gtin=gtin))})
 
     @extend_schema(
-        parameters=[OpenApiParameter("product_id", str, required=True)],
-        responses=inline_serializer(
-            name="PriceOffers",
-            fields={
-                "resumo": serializers.DictField(),
-                "ofertas": serializers.ListField(child=serializers.DictField()),
-            },
-        ),
-    )
-    @action(detail=False, methods=["get"], url_path="price-offers")
-    def price_offers(self, request):
-        from .meli.pesquisa import ofertas
-
-        produto_id = self._codigo(request.query_params.get("product_id"), "product_id")
-        return Response(_traduzir(lambda: ofertas(produto_id)))
-
-    @extend_schema(
         parameters=[OpenApiParameter("category_id", str, required=True)],
         responses=inline_serializer(
             name="PriceBestSellers",
-            fields={
-                "resumo": serializers.DictField(),
-                "itens": serializers.ListField(child=serializers.DictField()),
-            },
+            fields={"itens": serializers.ListField(child=serializers.DictField())},
         ),
     )
     @action(detail=False, methods=["get"], url_path="price-best-sellers")
