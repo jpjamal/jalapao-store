@@ -308,12 +308,11 @@ class MercadoLivreAdapter(MarketplaceAdapter):
             )
         return str(foto_id)
 
-    def create_item(self, *, account, payload):
-        """Cria o anúncio. Devolve `(item, causas)`: o item quando criou, as causas quando o
-        Mercado Livre recusou com 400 — como na validação, o 400 aqui é resposta."""
-        response = self.transporte("POST", "/items", token=account.access_token, data=payload)
+    def _item_ou_causas(self, response, rotulo):
+        """Resposta de criar ou alterar anúncio: `(item, [])` no sucesso, `(None, causas)` no
+        400 — como na validação, o 400 aqui é resposta, não falha."""
         if response.status >= 300:
-            logger.warning("Mercado Livre POST /items → HTTP %s: %s", response.status, str(response.body)[:800])
+            logger.warning("Mercado Livre %s → HTTP %s: %s", rotulo, response.status, str(response.body)[:800])
         if response.status in (200, 201) and isinstance(response.body, dict) and response.body.get("id"):
             return response.body, []
         if response.status == 400 and isinstance(response.body, dict):
@@ -334,12 +333,39 @@ class MercadoLivreAdapter(MarketplaceAdapter):
             )
         if response.status == 429:
             raise IntegrationError("O Mercado Livre limitou as chamadas. Tente novamente mais tarde.")
-        raise IntegrationError(f"Mercado Livre respondeu HTTP {response.status} ao criar o anúncio.")
+        raise IntegrationError(f"Mercado Livre respondeu HTTP {response.status} em {rotulo}.")
 
-    def set_description(self, *, account, item_id, text):
-        """A descrição vai em chamada própria, depois de o anúncio existir."""
+    def create_item(self, *, account, payload):
+        """Cria o anúncio. Devolve `(item, causas)`."""
+        response = self.transporte("POST", "/items", token=account.access_token, data=payload)
+        return self._item_ou_causas(response, "POST /items")
+
+    def update_item(self, *, account, item_id, payload):
+        """Altera o anúncio existente com os campos enviados. Devolve `(item, causas)`."""
+        path = f"/items/{urllib.parse.quote(str(item_id), safe='')}"
+        response = self.transporte("PUT", path, token=account.access_token, data=payload)
+        return self._item_ou_causas(response, "PUT /items/{id}")
+
+    def get_description(self, *, account, item_id):
+        """Texto da descrição que o anúncio tem agora; vazio se não tiver nenhuma."""
         path = f"/items/{urllib.parse.quote(str(item_id), safe='')}/description"
-        self._request("POST", path, token=account.access_token, data={"plain_text": text})
+        response = self.transporte("GET", path, token=account.access_token)
+        if response.status == 404:
+            return ""
+        if response.status >= 400:
+            self._request("GET", path, token=account.access_token)  # mesmo tratamento de erro
+        body = response.body if isinstance(response.body, dict) else {}
+        return str(body.get("plain_text") or body.get("text") or "")
+
+    def set_description(self, *, account, item_id, text, replace=False):
+        """A descrição vai em chamada própria, depois de o anúncio existir. Criar é POST;
+        substituir uma que já existe é PUT com `api_version=2` — POST numa descrição
+        existente dá 400, segundo a documentação."""
+        path = f"/items/{urllib.parse.quote(str(item_id), safe='')}/description"
+        if replace:
+            self._request("PUT", path + "?api_version=2", token=account.access_token, data={"plain_text": text})
+        else:
+            self._request("POST", path, token=account.access_token, data={"plain_text": text})
 
     def validate_item(self, *, account, payload):
         """Simula a publicação em POST /items/validate, que confere sem criar.

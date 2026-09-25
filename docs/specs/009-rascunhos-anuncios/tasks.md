@@ -6,5 +6,5 @@
 - [x] Tela de Anúncios e atalho em Produtos; edição de conteúdo e seleção/ordem de fotos.
 - [x] Backup do volume de fotos no procedimento de deploy e contrato OpenAPI atualizado.
 - [x] Validação dos atributos obrigatórios por categoria no Mercado Livre — spec 011; conferida com a conta real no Dummy Aranha em 24/09/2026.
-- [x] Publicação explícita e vínculo do rascunho ao anúncio remoto — spec 012 (falta a primeira publicação real).
+- [x] Publicação explícita e vínculo do rascunho ao anúncio remoto — spec 012; primeira publicação real: MLB7700023302, 25/09/2026.
 - [ ] Atributos e publicação próprios da Shopee.

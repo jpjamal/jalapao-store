@@ -1,7 +1,7 @@
 from django.db import IntegrityError, transaction
 from django.http import FileResponse, Http404
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field, inline_serializer
 from PIL import Image, UnidentifiedImageError
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
@@ -110,13 +110,23 @@ class ListingDraftSerializer(serializers.ModelSerializer):
     product_sku = serializers.CharField(source="product.sku", read_only=True)
     # preenchido quando o rascunho já virou anúncio (spec 012)
     published_item_id = serializers.CharField(source="listing.item_id", read_only=True, allow_null=True)
+    pending_changes = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_pending_changes(self, draft):
+        """Rascunho publicado e salvo depois do último envio ao anúncio."""
+        # o acesso reverso sem vínculo levanta um AttributeError: getattr devolve None
+        listing = getattr(draft, "listing", None)
+        if not listing:
+            return False
+        return listing.pushed_at is None or draft.updated_at > listing.pushed_at
 
     class Meta:
         model = ListingDraft
         fields = [
             "id", "product", "product_name", "product_sku", "channel", "title", "description",
             "price", "brand", "model", "condition", "category_id", "attributes", "image_ids",
-            "published_item_id", "created_at", "updated_at",
+            "published_item_id", "pending_changes", "created_at", "updated_at",
         ]
         read_only_fields = ["id", "product_name", "product_sku", "created_at", "updated_at"]
 
@@ -177,6 +187,21 @@ class DraftChangePermission(ModelPermissions):
     """Validar é POST mas não cria nada: exige permissão de alterar rascunho, não de criar."""
 
     perms_map = {**ModelPermissions.perms_map, "POST": ["%(app_label)s.change_%(model_name)s"]}
+
+
+PUBLICACAO = inline_serializer(
+    name="DraftPublication",
+    fields={
+        "item_id": serializers.CharField(),
+        "permalink": serializers.CharField(),
+        "status": serializers.CharField(),
+        "titulo": serializers.CharField(),
+        "fotos": serializers.IntegerField(),
+        "fotos_novas": serializers.IntegerField(),
+        "estoque": serializers.IntegerField(allow_null=True),
+        "avisos": serializers.ListField(child=serializers.CharField()),
+    },
+)
 
 
 class DraftPublishPermission(DraftChangePermission):
@@ -355,21 +380,7 @@ class ListingDraftViewSet(
         draft = self.get_object()
         return Response(self._integracao(lambda: diagnosticar(draft)))
 
-    @extend_schema(
-        request=None,
-        responses=inline_serializer(
-            name="DraftPublication",
-            fields={
-                "item_id": serializers.CharField(),
-                "permalink": serializers.CharField(),
-                "status": serializers.CharField(),
-                "titulo": serializers.CharField(),
-                "fotos": serializers.IntegerField(),
-                "estoque": serializers.IntegerField(),
-                "avisos": serializers.ListField(child=serializers.CharField()),
-            },
-        ),
-    )
+    @extend_schema(request=None, responses=PUBLICACAO)
     @action(detail=True, methods=["post"], permission_classes=[DraftPublishPermission])
     def publish(self, request, pk=None):
         """Publica de verdade no Mercado Livre. Valida de novo antes; nunca publica duas vezes."""
@@ -377,3 +388,13 @@ class ListingDraftViewSet(
 
         draft = self.get_object()
         return Response(self._integracao(lambda: publicar(draft.pk, actor=request.user)), status=201)
+
+    @extend_schema(request=None, responses=PUBLICACAO)
+    @action(detail=True, methods=["post"], permission_classes=[DraftPublishPermission])
+    def push(self, request, pk=None):
+        """Envia ao anúncio já publicado o que mudou no rascunho: preço, fotos, atributos e
+        descrição."""
+        from apps.integrations.meli.publicacao import enviar_alteracoes
+
+        draft = self.get_object()
+        return Response(self._integracao(lambda: enviar_alteracoes(draft.pk, actor=request.user)))

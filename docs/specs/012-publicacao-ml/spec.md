@@ -28,9 +28,22 @@ fotos, o preço e que a quantidade disponível é o estoque atual do produto. Ti
 6. Cria o `Listing` ligado ao produto e ao rascunho, com `item_id`, `user_product_id` e
    `family_id` devolvidos.
 
-**Depois.** A tela mostra o código do anúncio, o link para ele e os avisos. A lista de
-rascunhos passa a mostrar "Publicado · MLB…". O rascunho continua editável, mas alterar o
-rascunho **não** muda o anúncio.
+**Depois de publicado, o rascunho continua sendo onde o anúncio é editado.** A tela mostra
+"Publicado como MLB…" e se há alterações no rascunho ainda não enviadas. O botão de validar dá
+lugar a **Salvar e enviar ao Mercado Livre**, que manda ao anúncio (`PUT /items/{id}`):
+- preço;
+- fotos, na ordem do rascunho — só as que ainda não estão lá sobem;
+- atributos;
+- descrição, criada ou substituída (`PUT …/description?api_version=2`) só quando mudou, e
+  conferida depois por `GET`;
+- título, só em anúncio do modelo clássico — no "produto do vendedor" quem monta é o Mercado
+  Livre.
+
+Categoria e estoque não vão: categoria não muda depois de publicado, e o estoque segue a
+sincronização de Integrações. Antes de enviar, roda a checagem local da spec 011 (fotos,
+atributos obrigatórios, limites da categoria); com erro, o anúncio não é tocado.
+
+A lista de rascunhos mostra "Publicado · MLB…" e, se for o caso, "alterações não enviadas".
 
 ## Decisões e limites
 
@@ -47,5 +60,7 @@ rascunho **não** muda o anúncio.
 - **Frete não é enviado.** Vale o modo de envio configurado na conta (o aviso `User has not
   mode me1` da spec 011 vem disso). Tipo de anúncio fixo em Clássico (`gold_special`).
 - **Custo interno nunca sai**, como na validação.
-- **Fora do escopo:** editar anúncio já publicado a partir do rascunho, pausar ou encerrar pelo
-  sistema, variações, Premium, frete e Shopee.
+- **Alteração pendente** é o rascunho salvo depois do último envio (`Listing.pushed_at`).
+- **Fotos não sobem de novo:** `Listing.picture_ids` guarda foto da loja → id no Mercado Livre.
+- **Fora do escopo:** pausar ou encerrar pelo sistema, trocar categoria, variações, Premium,
+  frete e Shopee.

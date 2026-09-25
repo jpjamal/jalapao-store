@@ -40,14 +40,17 @@ type Draft = {
   attributes: Atributos;
   image_ids: string[];
   published_item_id: string | null;
+  pending_changes: boolean;
 };
 type Publicacao = {
+  acao?: "publicado" | "atualizado";
   item_id: string;
   permalink: string;
   status: string;
   titulo: string;
   fotos: number;
-  estoque: number;
+  fotos_novas: number;
+  estoque: number | null;
   avisos: string[];
 };
 const channels: Record<Channel, string> = {
@@ -190,11 +193,25 @@ export default function Anuncios() {
     setBusy(true); setError(""); setNotice(""); setPublicacao(null);
     try {
       const r = await api<Publicacao>(`listing-drafts/${draft.id}/publish`, { method: "POST", body: "{}" });
-      setPublicacao(r);
+      setPublicacao({ ...r, acao: "publicado" });
       setRelatorio(null);
       setConfirmando(false);
       await load();
     } catch (e) { setError((e as Error).message); setConfirmando(false); }
+    finally { setBusy(false); }
+  }
+
+  // Cria ou substitui a descrição do anúncio já publicado e mostra o que ficou gravado lá.
+  // Rascunho publicado: salva e manda ao anúncio o que mudou (preço, fotos, atributos, descrição).
+  async function enviar() {
+    if (!draft) return;
+    setBusy(true); setError(""); setNotice(""); setPublicacao(null);
+    try {
+      await gravar();
+      const r = await api<Publicacao>(`listing-drafts/${draft.id}/push`, { method: "POST", body: "{}" });
+      setPublicacao({ ...r, acao: "atualizado" });
+      await load();
+    } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
 
@@ -298,16 +315,25 @@ export default function Anuncios() {
             <Input id="draft-category" maxLength={80} value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)} /></div>}
         </div>
+        {publicado && <p className="text-sm mb-3">
+          Publicado no Mercado Livre como <b>{publicado}</b>
+          {draft?.pending_changes
+            ? " · há alterações no rascunho que ainda não foram enviadas ao anúncio."
+            : " · o anúncio está igual ao rascunho."}
+        </p>}
         <div className="flex flex-wrap gap-3 mt-5">
           <Button disabled={busy} onClick={() => void save()}>
             {busy ? "Aguarde…" : "Salvar rascunho"}
           </Button>
-          {channel === "mercado_livre" && <Button variant="outline" disabled={busy} onClick={() => void validar()}>
-            Salvar e validar no Mercado Livre
-          </Button>}
+          {channel === "mercado_livre" && !publicado && <Button variant="outline" disabled={busy}
+            onClick={() => void validar()}>Salvar e validar no Mercado Livre</Button>}
+          {channel === "mercado_livre" && publicado && <Button variant="outline" disabled={busy}
+            onClick={() => void enviar()}>{busy ? "Enviando…" : "Salvar e enviar ao Mercado Livre"}</Button>}
         </div>
         {channel === "mercado_livre" && <p className="text-xs text-muted-foreground mt-2">
-          Validar confere o rascunho e simula a publicação no Mercado Livre sem criar o anúncio.
+          {publicado
+            ? "Enviar atualiza no anúncio o preço, as fotos, os atributos e a descrição. Categoria e estoque não mudam por aqui."
+            : "Validar confere o rascunho e simula a publicação no Mercado Livre sem criar o anúncio."}
         </p>}
         {relatorio && <RelatorioValidacao relatorio={relatorio} />}
         {podePublicar && !confirmando && <Button className="mt-4" disabled={busy}
@@ -331,21 +357,21 @@ export default function Anuncios() {
         {error && (confirmando || relatorio || publicado) && <p role="alert"
           className="text-sm text-destructive mt-3 whitespace-pre-wrap">{error}</p>}
         {publicacao && <div role="status" className="rounded-lg border border-[var(--success)] p-4 mt-4">
-          <p className="font-semibold">Publicado no Mercado Livre: {publicacao.item_id}</p>
+          <p className="font-semibold">
+            {publicacao.acao === "publicado" ? "Publicado no Mercado Livre" : "Anúncio atualizado"}: {publicacao.item_id}
+          </p>
           <p className="text-sm">
-            {publicacao.fotos} foto{publicacao.fotos === 1 ? "" : "s"}, {publicacao.estoque} unidade
-            {publicacao.estoque === 1 ? "" : "s"} disponíve{publicacao.estoque === 1 ? "l" : "is"}
+            {publicacao.fotos} foto{publicacao.fotos === 1 ? "" : "s"}
+            {publicacao.acao === "atualizado" && ` (${publicacao.fotos_novas} nova${publicacao.fotos_novas === 1 ? "" : "s"})`}
+            {publicacao.acao === "publicado" && publicacao.estoque !== null &&
+              `, ${publicacao.estoque} unidade${publicacao.estoque === 1 ? "" : "s"} disponíve${publicacao.estoque === 1 ? "l" : "is"}`}
             {publicacao.status ? ` · situação: ${publicacao.status}` : ""}.
-            {" "}A sincronização de estoque fica desligada até você ligar em Integrações.
+            {publicacao.acao === "publicado" && " A sincronização de estoque fica desligada até você ligar em Integrações."}
           </p>
           {publicacao.permalink && <a className="underline text-sm" href={publicacao.permalink}
             target="_blank" rel="noopener noreferrer">Ver o anúncio no Mercado Livre</a>}
           {publicacao.avisos.map((a, i) => <p key={i} className="text-sm mt-1">! {a}</p>)}
         </div>}
-        {publicado && !publicacao && <p className="text-sm mt-4">
-          Este rascunho já foi publicado como <b>{publicado}</b>. Alterar o rascunho não muda o
-          anúncio no Mercado Livre.
-        </p>}
       </Card>
     </> : <Card><Empty>Escolha um produto para preparar o anúncio.</Empty></Card>}
     {drafts.length > 0 && <Card className="mt-6">
@@ -354,7 +380,9 @@ export default function Anuncios() {
         <tbody>{drafts.map((item) => <tr key={item.id}>
           <td>{item.product_name}<span className="block text-xs text-muted-foreground">{item.product_sku}</span></td>
           <td>{channels[item.channel]}</td><td>{item.title || "Sem título"}</td>
-          <td>{item.published_item_id ? `Publicado · ${item.published_item_id}` : "Rascunho"}</td>
+          <td>{item.published_item_id
+            ? `Publicado · ${item.published_item_id}${item.pending_changes ? " · alterações não enviadas" : ""}`
+            : "Rascunho"}</td>
           <td><Button size="sm" variant="outline" onClick={() => { setProductId(item.product); setChannel(item.channel); window.scrollTo(0, 0); }}>Editar</Button></td>
         </tr>)}</tbody></table></div>
     </Card>}

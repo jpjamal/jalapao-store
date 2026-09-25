@@ -11,10 +11,10 @@ from contextlib import contextmanager
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 
-from apps.catalog.models import ProductImage
+from apps.catalog.models import ListingDraft, ListingDraftImage, ProductImage
 from apps.integrations import base
 from apps.integrations.base import IntegrationError
-from apps.integrations.meli.publicacao import publicar
+from apps.integrations.meli.publicacao import enviar_alteracoes, publicar
 from apps.integrations.models import Listing
 from apps.inventory.models import Stock
 
@@ -38,15 +38,31 @@ class Publicador(Falso):
         Falso.chamadas.append(("upload_picture", filename))
         return f"FOTO-{len([c for c in Falso.chamadas if c[0] == 'upload_picture'])}"
 
+    alterar = []  # respostas de update_item, em ordem: (item, causas)
+
+    def update_item(self, *, account, item_id, payload):
+        Falso.chamadas.append(("update_item", item_id))
+        Falso.ultimo_envio = payload
+        return Publicador.alterar.pop(0)
+
     def create_item(self, *, account, payload):
         Falso.chamadas.append(("create_item", payload.get("title")))
         Falso.ultimo_envio = payload
         return Publicador.criar.pop(0)
 
-    def set_description(self, *, account, item_id, text):
-        Falso.chamadas.append(("set_description", item_id))
+    descricao = ""        # o que o anúncio "tem" no Mercado Livre
+    descricao_some = False  # aceita o envio mas não grava, como na primeira publicação real
+
+    def get_description(self, *, account, item_id):
+        Falso.chamadas.append(("get_description", item_id))
+        return Publicador.descricao
+
+    def set_description(self, *, account, item_id, text, replace=False):
+        Falso.chamadas.append(("set_description", "PUT" if replace else "POST"))
         if Publicador.descricao_falha:
             raise IntegrationError("Mercado Livre respondeu HTTP 500.")
+        if not Publicador.descricao_some:
+            Publicador.descricao = text
 
 
 ITEM = {
@@ -57,11 +73,13 @@ ITEM = {
 
 
 @contextmanager
-def mercado_livre_publicando(criar=None, causas=(), descricao_falha=False):
+def mercado_livre_publicando(criar=None, causas=(), descricao_falha=False, descricao="", descricao_some=False):
     original = base._ADAPTADORES.get("mercado_livre")
     Falso.chamadas, Falso.causas, Falso.ultimo_envio = [], list(causas), None
     Publicador.criar = list(criar if criar is not None else [(dict(ITEM), [])])
     Publicador.descricao_falha = descricao_falha
+    Publicador.descricao, Publicador.descricao_some = descricao, descricao_some
+    Publicador.alterar = [(dict(ITEM), [])]
     base._ADAPTADORES["mercado_livre"] = Publicador
     try:
         yield Falso
@@ -70,7 +88,9 @@ def mercado_livre_publicando(criar=None, causas=(), descricao_falha=False):
 
 
 @override_settings(MEDIA_ROOT=MIDIA)
-class PublicacaoTests(Base):
+class ComFotosReais(Base):
+    """Fotos com arquivo de verdade, porque publicar lê o arquivo para subir."""
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -82,6 +102,8 @@ class PublicacaoTests(Base):
             mime_type=mime, width=w, height=h, size_bytes=8,
         )
 
+
+class PublicacaoTests(ComFotosReais):
     def test_publica_com_fotos_estoque_real_e_descricao(self):
         d = self.rascunho(fotos=[self.foto(), self.foto()])
         with mercado_livre_publicando() as ml:
@@ -90,7 +112,9 @@ class PublicacaoTests(Base):
         # valida antes, sobe as fotos, cria e só então a descrição
         self.assertLess(operacoes.index("validate_item"), operacoes.index("upload_picture"))
         self.assertLess(operacoes.index("upload_picture"), operacoes.index("create_item"))
-        self.assertEqual(operacoes[-1], "set_description")
+        self.assertIn(("set_description", "POST"), ml.chamadas)
+        self.assertEqual(operacoes[-1], "get_description")  # confere o que ficou gravado
+        self.assertEqual(r["avisos"], [])
         self.assertEqual(ml.ultimo_envio["pictures"], [{"id": "FOTO-1"}, {"id": "FOTO-2"}])
         self.assertEqual(ml.ultimo_envio["available_quantity"], 5)
         self.assertNotIn("12.34", str(ml.ultimo_envio))  # custo nunca sai
@@ -153,12 +177,82 @@ class PublicacaoTests(Base):
         self.assertEqual(ml.ultimo_envio["family_name"], "Luminária Pimentão 3D")
         self.assertEqual(r["item_id"], "MLB5000")
 
+    def test_descricao_aceita_mas_nao_gravada_vira_aviso(self):
+        d = self.rascunho(fotos=[self.foto()])
+        with mercado_livre_publicando(descricao_some=True):
+            r = publicar(d.pk)
+        self.assertIn("ainda não aparece", r["avisos"][0])
+
     def test_falha_na_descricao_vira_aviso_e_mantem_o_anuncio(self):
         d = self.rascunho(fotos=[self.foto()])
         with mercado_livre_publicando(descricao_falha=True):
             r = publicar(d.pk)
         self.assertIn("descrição não foi gravada", r["avisos"][0])
         self.assertEqual(Listing.objects.count(), 1)
+
+
+class EnvioDeAlteracoesTests(ComFotosReais):
+    """Depois de publicado, o rascunho continua sendo onde o anúncio é editado."""
+
+    def publicado(self, fotos=1):
+        d = self.rascunho(fotos=[self.foto() for _ in range(fotos)])
+        with mercado_livre_publicando():
+            publicar(d.pk)
+        return d
+
+    def test_envia_preco_atributos_so_fotos_novas_e_descricao(self):
+        d = self.publicado(fotos=2)
+        nova = self.foto()
+        ListingDraftImage.objects.create(draft=d, image=nova, position=2)
+        ListingDraft.objects.filter(pk=d.pk).update(price="64.90", description="Texto novo")
+        with mercado_livre_publicando(descricao="Peça impressa em 3D.") as ml:
+            r = enviar_alteracoes(d.pk)
+        operacoes = [n for n, _ in ml.chamadas]
+        self.assertEqual(operacoes.count("upload_picture"), 1)  # só a foto nova sobe
+        self.assertEqual(r["fotos"], 3)
+        self.assertEqual(r["fotos_novas"], 1)
+        self.assertEqual(ml.ultimo_envio["price"], 64.9)
+        self.assertEqual(len(ml.ultimo_envio["pictures"]), 3)
+        self.assertNotIn("title", ml.ultimo_envio)       # produto do vendedor: título é do ML
+        self.assertNotIn("available_quantity", ml.ultimo_envio)  # estoque segue Integrações
+        self.assertIn(("set_description", "PUT"), ml.chamadas)
+        self.assertNotIn("create_item", operacoes)
+        self.assertEqual(r["avisos"], [])
+
+    def test_titulo_vai_no_modelo_classico(self):
+        d = self.publicado()
+        Listing.objects.filter(draft=d).update(family_id="")
+        with mercado_livre_publicando() as ml:
+            enviar_alteracoes(d.pk)
+        self.assertEqual(ml.ultimo_envio["title"], "Luminária Pimentão 3D")
+
+    def test_descricao_igual_nao_e_reenviada(self):
+        d = self.publicado()
+        with mercado_livre_publicando(descricao="Peça impressa em 3D.") as ml:
+            enviar_alteracoes(d.pk)
+        self.assertNotIn("set_description", [n for n, _ in ml.chamadas])
+
+    def test_sem_publicar_recusa_sem_chamar(self):
+        d = self.rascunho(fotos=[self.foto()])
+        with mercado_livre_publicando() as ml, self.assertRaisesMessage(IntegrationError, "ainda não foi publicado"):
+            enviar_alteracoes(d.pk)
+        self.assertEqual(ml.chamadas, [])
+
+    def test_rascunho_com_erro_local_nao_altera_o_anuncio(self):
+        d = self.publicado()
+        ListingDraftImage.objects.filter(draft=d).delete()
+        with mercado_livre_publicando() as ml, self.assertRaisesMessage(IntegrationError, "problemas a corrigir"):
+            enviar_alteracoes(d.pk)
+        self.assertNotIn("update_item", [n for n, _ in ml.chamadas])
+
+    def test_recusa_do_mercado_livre_nao_marca_como_enviado(self):
+        d = self.publicado()
+        antes = Listing.objects.get(draft=d).pushed_at
+        with mercado_livre_publicando():
+            Publicador.alterar[:] = [(None, [{"type": "error", "code": "item.price.invalid", "message": "Preço inválido"}])]
+            with self.assertRaisesMessage(IntegrationError, "Preço inválido"):
+                enviar_alteracoes(d.pk)
+        self.assertEqual(Listing.objects.get(draft=d).pushed_at, antes)
 
 
 @override_settings(MEDIA_ROOT=MIDIA)
@@ -195,6 +289,16 @@ class PublicacaoApiTests(Base):
             r = self.client.post(url)
         self.assertEqual(r.status_code, 400)
         self.assertIn("já foi publicado", str(r.json()))
+        rascunho = self.client.get(f"/api/v1/listing-drafts/{d.id}/").json()
+        self.assertFalse(rascunho["pending_changes"])
+        self.assertEqual(self.client.patch(
+            f"/api/v1/listing-drafts/{d.id}/", {"price": "70.00"}, format="json"
+        ).status_code, 200)
+        self.assertTrue(self.client.get(f"/api/v1/listing-drafts/{d.id}/").json()["pending_changes"])
+        with mercado_livre_publicando():
+            r = self.client.post(f"/api/v1/listing-drafts/{d.id}/push/")
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertFalse(self.client.get(f"/api/v1/listing-drafts/{d.id}/").json()["pending_changes"])
 
 
 class ClientePublicacaoTests(Base):
@@ -251,3 +355,10 @@ class ClientePublicacaoTests(Base):
         adap.set_description(account=self.conta(), item_id="MLB1", text="Peça 3D")
         method, path, kw = self.pedidos[0]
         self.assertEqual((method, path, kw["data"]), ("POST", "/items/MLB1/description", {"plain_text": "Peça 3D"}))
+
+    def test_substituir_descricao_usa_put_versao_2_e_ler_trata_404(self):
+        adap = self.adaptador((200, {}), (404, {"message": "not found"}), (200, {"plain_text": "Oi"}))
+        adap.set_description(account=self.conta(), item_id="MLB1", text="Oi", replace=True)
+        self.assertEqual(self.pedidos[0][:2], ("PUT", "/items/MLB1/description?api_version=2"))
+        self.assertEqual(adap.get_description(account=self.conta(), item_id="MLB1"), "")
+        self.assertEqual(adap.get_description(account=self.conta(), item_id="MLB1"), "Oi")

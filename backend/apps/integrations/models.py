@@ -65,6 +65,10 @@ class Listing(Entity):
     draft = models.OneToOneField(
         "catalog.ListingDraft", on_delete=models.SET_NULL, null=True, blank=True, related_name="listing"
     )
+    # último envio do rascunho ao anúncio, para saber se há alteração pendente
+    pushed_at = models.DateTimeField(null=True, blank=True)
+    # foto da loja → id da foto no marketplace, para não subir a mesma foto de novo
+    picture_ids = models.JSONField(default=dict, blank=True)
 
     # espelho do anúncio, só para conferência na tela — não manda em nada
     title = models.CharField(max_length=300, blank=True)
