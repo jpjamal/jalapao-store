@@ -235,17 +235,22 @@ def _campos_citados(causas, codigo):
     return campos
 
 
-def simular(conta, envio):
-    """Chama a simulação e se ajusta ao modelo de anúncio da conta.
+def ajustar_envio(conta, envio, operacao="validate_item"):
+    """Chama `operacao` e se ajusta ao modelo de anúncio da conta. Devolve `(resultado, envio)`.
 
     Contas no modelo "produto do vendedor" (User Products) pedem `family_name`, o nome do
     produto sem variação, e montam o título sozinhas, recusando `title`. Como isso depende da
-    conta e não da categoria, a simulação tenta o formato clássico e corrige conforme a
-    resposta — no máximo duas vezes, sempre só consultando."""
+    conta e não da categoria, a chamada vai no formato clássico e se corrige conforme a
+    resposta — no máximo duas vezes. `resultado` é a lista de causas (validação) ou o par
+    `(item, causas)` (criação); o envio devolvido é o formato que valeu por último."""
     from apps.integrations.services import chamar
 
-    causas = chamar(conta, "validate_item", payload=envio)
+    def causas_de(resultado):
+        return resultado[1] if isinstance(resultado, tuple) else resultado
+
+    resultado = chamar(conta, operacao, payload=envio)
     for _ in range(2):
+        causas = causas_de(resultado)
         faltando = _campos_citados(causas, "body.required_fields")
         sobrando = _campos_citados(causas, "body.invalid_fields")
         if "family_name" in faltando and "family_name" not in envio:
@@ -254,8 +259,13 @@ def simular(conta, envio):
             envio = {k: v for k, v in envio.items() if k != "title"}
         else:
             break
-        causas = chamar(conta, "validate_item", payload=envio)
-    return causas
+        resultado = chamar(conta, operacao, payload=envio)
+    return resultado, envio
+
+
+def simular(conta, envio):
+    """Só a simulação: devolve as causas, sem criar nada."""
+    return ajustar_envio(conta, envio)[0]
 
 
 def _e_de_foto(causa):

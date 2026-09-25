@@ -61,6 +61,10 @@ class Listing(Entity):
     user_product_id = models.CharField(max_length=80, blank=True)
     family_id = models.CharField(max_length=80, blank=True)
     sync_enabled = models.BooleanField(default=False)
+    # rascunho que originou o anúncio, quando ele foi publicado por aqui (spec 012)
+    draft = models.OneToOneField(
+        "catalog.ListingDraft", on_delete=models.SET_NULL, null=True, blank=True, related_name="listing"
+    )
 
     # espelho do anúncio, só para conferência na tela — não manda em nada
     title = models.CharField(max_length=300, blank=True)

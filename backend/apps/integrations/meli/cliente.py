@@ -22,11 +22,14 @@ class HttpResponse:
     headers: dict
 
 
-def transporte_urllib(method, path, *, token="", data=None, form=False, headers=None):
+def transporte_urllib(method, path, *, token="", data=None, form=False, headers=None, raw=None):
+    """`raw` manda bytes prontos (upload multipart); o Content-Type vem em `headers`."""
     url = API + path
     payload = None
     content_type = "application/x-www-form-urlencoded" if form else "application/json"
-    if data is not None:
+    if raw is not None:
+        payload, content_type = raw, (headers or {}).pop("Content-Type", "application/octet-stream")
+    elif data is not None:
         payload = (
             urllib.parse.urlencode(data).encode()
             if form else json.dumps(data).encode("utf-8")
@@ -40,7 +43,7 @@ def transporte_urllib(method, path, *, token="", data=None, form=False, headers=
     for key, value in (headers or {}).items():
         req.add_header(key, value)
     try:
-        with urllib.request.urlopen(req, timeout=20) as response:
+        with urllib.request.urlopen(req, timeout=60 if raw is not None else 20) as response:
             raw = response.read().decode("utf-8")
             return HttpResponse(response.status, json.loads(raw) if raw else {}, dict(response.headers))
     except urllib.error.HTTPError as exc:
@@ -70,8 +73,11 @@ class MercadoLivreAdapter(MarketplaceAdapter):
         if not all((self.client_id, self.client_secret, self.redirect_uri)):
             raise IntegrationError("Configure ML_APP_ID, ML_CLIENT_SECRET e ML_REDIRECT_URI no backend.")
 
-    def _request(self, method, path, *, token="", data=None, form=False, headers=None):
-        response = self.transporte(method, path, token=token, data=data, form=form, headers=headers)
+    def _request(self, method, path, *, token="", data=None, form=False, headers=None, raw=None):
+        extra = {"raw": raw} if raw is not None else {}
+        response = self.transporte(
+            method, path, token=token, data=data, form=form, headers=headers, **extra
+        )
         body = response.body
         if response.status >= 400:
             code = body.get("error", "") if isinstance(body, dict) else ""
@@ -252,6 +258,59 @@ class MercadoLivreAdapter(MarketplaceAdapter):
         path = f"/categories/{urllib.parse.quote(str(category_id), safe='')}/attributes"
         body = self._request("GET", path, token=account.access_token).body
         return body if isinstance(body, list) else []
+
+    # ---------- publicação (spec 012): as únicas chamadas que criam algo no Mercado Livre ----------
+
+    def upload_picture(self, *, account, filename, content, mime_type):
+        """Sobe uma foto para o Mercado Livre e devolve o id dela, para usar em `pictures`.
+
+        As fotos da loja são privadas — não há URL pública para o `source` —, então vão pelo
+        upload direto em multipart, que é o que a documentação recomenda."""
+        fronteira = "jalapao" + os.urandom(12).hex()
+        nome = "".join(c for c in filename if c not in '"\r\n') or "foto.jpg"
+        corpo = b"".join([
+            f"--{fronteira}\r\n".encode(),
+            f'Content-Disposition: form-data; name="file"; filename="{nome}"\r\n'.encode(),
+            f"Content-Type: {mime_type}\r\n\r\n".encode(),
+            content,
+            f"\r\n--{fronteira}--\r\n".encode(),
+        ])
+        response = self._request(
+            "POST", "/pictures/items/upload", token=account.access_token,
+            headers={"Content-Type": f"multipart/form-data; boundary={fronteira}"}, raw=corpo,
+        )
+        foto_id = (response.body or {}).get("id") if isinstance(response.body, dict) else None
+        if not foto_id:
+            raise IntegrationError("O Mercado Livre recebeu a foto mas não devolveu o id dela.")
+        return str(foto_id)
+
+    def create_item(self, *, account, payload):
+        """Cria o anúncio. Devolve `(item, causas)`: o item quando criou, as causas quando o
+        Mercado Livre recusou com 400 — como na validação, o 400 aqui é resposta."""
+        response = self.transporte("POST", "/items", token=account.access_token, data=payload)
+        if response.status in (200, 201) and isinstance(response.body, dict) and response.body.get("id"):
+            return response.body, []
+        if response.status == 400 and isinstance(response.body, dict):
+            causas = response.body.get("cause") or [{
+                "type": "error",
+                "code": str(response.body.get("error") or "body.invalid"),
+                "message": str(response.body.get("message") or ""),
+                "references": [],
+            }]
+            return None, causas
+        if response.status in (401, 403):
+            raise IntegrationError(
+                "A autorização do Mercado Livre foi recusada ou expirou.",
+                token_invalido=response.status == 401,
+            )
+        if response.status == 429:
+            raise IntegrationError("O Mercado Livre limitou as chamadas. Tente novamente mais tarde.")
+        raise IntegrationError(f"Mercado Livre respondeu HTTP {response.status} ao criar o anúncio.")
+
+    def set_description(self, *, account, item_id, text):
+        """A descrição vai em chamada própria, depois de o anúncio existir."""
+        path = f"/items/{urllib.parse.quote(str(item_id), safe='')}/description"
+        self._request("POST", path, token=account.access_token, data={"plain_text": text})
 
     def validate_item(self, *, account, payload):
         """Simula a publicação em POST /items/validate, que confere sem criar.

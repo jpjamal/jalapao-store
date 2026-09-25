@@ -108,13 +108,15 @@ class ListingDraftSerializer(serializers.ModelSerializer):
     )
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_sku = serializers.CharField(source="product.sku", read_only=True)
+    # preenchido quando o rascunho já virou anúncio (spec 012)
+    published_item_id = serializers.CharField(source="listing.item_id", read_only=True, allow_null=True)
 
     class Meta:
         model = ListingDraft
         fields = [
             "id", "product", "product_name", "product_sku", "channel", "title", "description",
             "price", "brand", "model", "condition", "category_id", "attributes", "image_ids",
-            "created_at", "updated_at",
+            "published_item_id", "created_at", "updated_at",
         ]
         read_only_fields = ["id", "product_name", "product_sku", "created_at", "updated_at"]
 
@@ -177,11 +179,20 @@ class DraftChangePermission(ModelPermissions):
     perms_map = {**ModelPermissions.perms_map, "POST": ["%(app_label)s.change_%(model_name)s"]}
 
 
+class DraftPublishPermission(DraftChangePermission):
+    """Publicar cria anúncio de verdade: além de alterar rascunho, exige a permissão própria."""
+
+    perms_map = {
+        **DraftChangePermission.perms_map,
+        "POST": ["%(app_label)s.change_%(model_name)s", "%(app_label)s.publish_%(model_name)s"],
+    }
+
+
 class ListingDraftViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
     mixins.UpdateModelMixin, viewsets.GenericViewSet,
 ):
-    queryset = ListingDraft.objects.select_related("product").prefetch_related("ordered_images").all()
+    queryset = ListingDraft.objects.select_related("product", "listing").prefetch_related("ordered_images").all()
     serializer_class = ListingDraftSerializer
     filterset_fields = ["product", "channel"]
 
@@ -343,3 +354,26 @@ class ListingDraftViewSet(
 
         draft = self.get_object()
         return Response(self._integracao(lambda: diagnosticar(draft)))
+
+    @extend_schema(
+        request=None,
+        responses=inline_serializer(
+            name="DraftPublication",
+            fields={
+                "item_id": serializers.CharField(),
+                "permalink": serializers.CharField(),
+                "status": serializers.CharField(),
+                "titulo": serializers.CharField(),
+                "fotos": serializers.IntegerField(),
+                "estoque": serializers.IntegerField(),
+                "avisos": serializers.ListField(child=serializers.CharField()),
+            },
+        ),
+    )
+    @action(detail=True, methods=["post"], permission_classes=[DraftPublishPermission])
+    def publish(self, request, pk=None):
+        """Publica de verdade no Mercado Livre. Valida de novo antes; nunca publica duas vezes."""
+        from apps.integrations.meli.publicacao import publicar
+
+        draft = self.get_object()
+        return Response(self._integracao(lambda: publicar(draft.pk, actor=request.user)), status=201)

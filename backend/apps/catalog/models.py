@@ -108,6 +108,8 @@ class ListingDraft(Entity):
 
     class Meta:
         ordering = ["-updated_at", "id"]
+        # publicar cria anúncio de verdade: permissão à parte de "alterar rascunho"
+        permissions = [("publish_listingdraft", "Pode publicar rascunho no marketplace")]
         constraints = [
             models.UniqueConstraint(fields=["product", "channel"], name="draft_product_channel_unique"),
             models.CheckConstraint(

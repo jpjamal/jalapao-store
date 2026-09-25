@@ -39,6 +39,16 @@ type Draft = {
   category_id: string;
   attributes: Atributos;
   image_ids: string[];
+  published_item_id: string | null;
+};
+type Publicacao = {
+  item_id: string;
+  permalink: string;
+  status: string;
+  titulo: string;
+  fotos: number;
+  estoque: number;
+  avisos: string[];
 };
 const channels: Record<Channel, string> = {
   mercado_livre: "Mercado Livre",
@@ -63,6 +73,8 @@ export default function Anuncios() {
   const [attributes, setAttributes] = useState<Atributos>({});
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [relatorio, setRelatorio] = useState<Relatorio | null>(null);
+  const [confirmando, setConfirmando] = useState(false);
+  const [publicacao, setPublicacao] = useState<Publicacao | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -104,6 +116,7 @@ export default function Anuncios() {
     setAttributes(draft?.attributes || {});
     setSelected(draft?.image_ids || []);
     setRelatorio(null);
+    setConfirmando(false);
   }, [draft, productId, channel]);
 
   async function upload(file: File) {
@@ -169,6 +182,24 @@ export default function Anuncios() {
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
+
+  // Publicar cria o anúncio de verdade. O backend valida de novo antes e recusa se o
+  // rascunho já foi publicado, então um segundo clique não duplica o anúncio.
+  async function publicar() {
+    if (!draft) return;
+    setBusy(true); setError(""); setNotice(""); setPublicacao(null);
+    try {
+      const r = await api<Publicacao>(`listing-drafts/${draft.id}/publish`, { method: "POST", body: "{}" });
+      setPublicacao(r);
+      setRelatorio(null);
+      setConfirmando(false);
+      await load();
+    } catch (e) { setError((e as Error).message); setConfirmando(false); }
+    finally { setBusy(false); }
+  }
+
+  const publicado = draft?.published_item_id || "";
+  const podePublicar = channel === "mercado_livre" && !publicado && relatorio?.pode_publicar;
 
   return <>
     <h1>Anúncios</h1>
@@ -279,14 +310,48 @@ export default function Anuncios() {
           Validar confere o rascunho e simula a publicação no Mercado Livre sem criar o anúncio.
         </p>}
         {relatorio && <RelatorioValidacao relatorio={relatorio} />}
+        {podePublicar && !confirmando && <Button className="mt-4" disabled={busy}
+          onClick={() => setConfirmando(true)}>Publicar no Mercado Livre</Button>}
+        {podePublicar && confirmando && <div role="alertdialog" aria-labelledby="confirma-titulo"
+          className="rounded-lg border border-primary p-4 mt-4">
+          <p id="confirma-titulo" className="font-semibold mb-1">Publicar de verdade?</p>
+          <p className="text-sm mb-3">
+            O anúncio fica ativo no Mercado Livre com {selected.length} foto{selected.length === 1 ? "" : "s"},
+            preço de R$ {price} e o estoque atual do produto como quantidade disponível. Para tirar
+            do ar depois, é pelo painel do Mercado Livre.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button disabled={busy} onClick={() => void publicar()}>
+              {busy ? "Publicando…" : "Confirmar publicação"}
+            </Button>
+            <Button variant="outline" disabled={busy} onClick={() => setConfirmando(false)}>Cancelar</Button>
+          </div>
+        </div>}
+        {publicacao && <div role="status" className="rounded-lg border border-[var(--success)] p-4 mt-4">
+          <p className="font-semibold">Publicado no Mercado Livre: {publicacao.item_id}</p>
+          <p className="text-sm">
+            {publicacao.fotos} foto{publicacao.fotos === 1 ? "" : "s"}, {publicacao.estoque} unidade
+            {publicacao.estoque === 1 ? "" : "s"} disponíve{publicacao.estoque === 1 ? "l" : "is"}
+            {publicacao.status ? ` · situação: ${publicacao.status}` : ""}.
+            {" "}A sincronização de estoque fica desligada até você ligar em Integrações.
+          </p>
+          {publicacao.permalink && <a className="underline text-sm" href={publicacao.permalink}
+            target="_blank" rel="noopener noreferrer">Ver o anúncio no Mercado Livre</a>}
+          {publicacao.avisos.map((a, i) => <p key={i} className="text-sm mt-1">! {a}</p>)}
+        </div>}
+        {publicado && !publicacao && <p className="text-sm mt-4">
+          Este rascunho já foi publicado como <b>{publicado}</b>. Alterar o rascunho não muda o
+          anúncio no Mercado Livre.
+        </p>}
       </Card>
     </> : <Card><Empty>Escolha um produto para preparar o anúncio.</Empty></Card>}
     {drafts.length > 0 && <Card className="mt-6">
       <h2>Rascunhos salvos</h2>
-      <div className="overflow-auto"><table><thead><tr><th>Produto</th><th>Canal</th><th>Título</th><th></th></tr></thead>
+      <div className="overflow-auto"><table><thead><tr><th>Produto</th><th>Canal</th><th>Título</th><th>Situação</th><th></th></tr></thead>
         <tbody>{drafts.map((item) => <tr key={item.id}>
           <td>{item.product_name}<span className="block text-xs text-muted-foreground">{item.product_sku}</span></td>
           <td>{channels[item.channel]}</td><td>{item.title || "Sem título"}</td>
+          <td>{item.published_item_id ? `Publicado · ${item.published_item_id}` : "Rascunho"}</td>
           <td><Button size="sm" variant="outline" onClick={() => { setProductId(item.product); setChannel(item.channel); window.scrollTo(0, 0); }}>Editar</Button></td>
         </tr>)}</tbody></table></div>
     </Card>}
