@@ -14,6 +14,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.integrations import base
+from apps.integrations.base import IntegrationError
 from apps.integrations.meli import pesquisa
 from apps.integrations.models import MarketplaceAccount
 
@@ -61,15 +62,20 @@ class Pesquisador:
                  "permalink": "https://produto.mercadolivre.com.br/MLB-500",
                  "pictures": [{"secure_url": "https://http2.mlstatic.com/suporte.jpg"}]}]
 
+    recusar_user_product = False
+
     def user_product(self, *, account, user_product_id):
         Pesquisador.chamadas.append(("user_product", user_product_id))
+        if Pesquisador.recusar_user_product:
+            # resposta real: 'caller is not allowed to access this user product'
+            raise IntegrationError("O Mercado Livre não liberou esta consulta para a sua conta (HTTP 403).")
         return {"id": user_product_id, "name": "Luminária 3D"}
 
 
 @contextmanager
 def mercado_livre_pesquisando():
     original = base._ADAPTADORES.get("mercado_livre")
-    Pesquisador.chamadas = []
+    Pesquisador.chamadas, Pesquisador.recusar_user_product = [], False
     base._ADAPTADORES["mercado_livre"] = Pesquisador
     try:
         yield Pesquisador
@@ -116,6 +122,16 @@ class PesquisaTests(Conta):
         self.assertEqual(itens[1]["nome"], "Fone Bluetooth")
         self.assertEqual(itens[2]["nome"], "Luminária 3D")
         self.assertIn(("items", ("MLB500",)), ml.chamadas)  # anúncios numa chamada só
+
+    def test_item_recusado_nao_derruba_a_lista(self):
+        with mercado_livre_pesquisando() as ml:
+            ml.recusar_user_product = True
+            r = pesquisa.mais_vendidos("MLB1000")
+        itens = r["itens"]
+        self.assertEqual(len(itens), 3)
+        self.assertEqual(itens[2]["nome"], "Produto de outro vendedor (detalhes não liberados)")
+        self.assertEqual(itens[2]["link"], "")
+        self.assertEqual(itens[0]["nome"], "Suporte de celular")  # os outros seguem normais
 
     def test_so_leitura(self):
         with mercado_livre_pesquisando() as ml:

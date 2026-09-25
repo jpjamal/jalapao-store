@@ -8,4 +8,6 @@
       ofertas, sem vendedor ganhando a página).
 - [x] Tela virou **Pesquisa de mercado**: sem preço e sem ofertas, com foto pelos `pickers` e link
       para a busca do site quando não há `permalink`. Mais vendidos passou a ser a aba inicial.
-- [ ] Publicar a revisão pelo GitHub, quando o dono pedir.
+- [x] Publicar a revisão pelo GitHub (a2e8712).
+- [x] Item do ranking recusado (403 em `/user-products`) não derruba a lista; 403 com mensagem própria.
+- [ ] Publicar a correção pelo GitHub, quando o dono pedir.

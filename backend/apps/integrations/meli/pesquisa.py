@@ -12,6 +12,7 @@ conferir o preço lá.
 
 import urllib.parse
 
+from ..base import IntegrationError
 from .anuncio import conta_do_mercado_livre
 
 BUSCA = "https://lista.mercadolivre.com.br/"
@@ -60,6 +61,15 @@ def _cartao(obj, ident, **extra):
     }
 
 
+def _detalhe(chamada):
+    """Detalhe de um item do ranking. O Mercado Livre recusa (403) o detalhe de produto de
+    outro vendedor; um item recusado não pode derrubar a lista inteira — fica sem detalhe."""
+    try:
+        return chamada() or {}
+    except IntegrationError:
+        return {}
+
+
 def produtos(q="", gtin=""):
     """Produtos do catálogo que batem com a busca."""
     from apps.integrations.services import chamar
@@ -84,7 +94,7 @@ def mais_vendidos(categoria_id):
     conta = conta_do_mercado_livre()
     destaques = chamar(conta, "best_sellers", category_id=categoria_id)
     ids_de_item = [d["id"] for d in destaques if d.get("type") == "ITEM" and d.get("id")]
-    itens = {i["id"]: i for i in chamar(conta, "items", ids=ids_de_item)} if ids_de_item else {}
+    itens = {i["id"]: i for i in _detalhe(lambda: chamar(conta, "items", ids=ids_de_item)) or []} if ids_de_item else {}
 
     linhas = []
     for d in sorted(destaques, key=lambda d: d.get("position") or 99):
@@ -92,8 +102,12 @@ def mais_vendidos(categoria_id):
         if tipo == "ITEM":
             fonte = itens.get(ident) or {}
         elif tipo == "PRODUCT":
-            fonte = chamar(conta, "product", product_id=ident) or {}
+            fonte = _detalhe(lambda: chamar(conta, "product", product_id=ident))
         else:  # USER_PRODUCT
-            fonte = chamar(conta, "user_product", user_product_id=ident) or {}
-        linhas.append(_cartao(fonte, ident, posicao=d.get("position"), tipo=tipo))
+            fonte = _detalhe(lambda: chamar(conta, "user_product", user_product_id=ident))
+        cartao = _cartao(fonte, ident, posicao=d.get("position"), tipo=tipo, detalhado=bool(fonte))
+        if not fonte:
+            cartao["nome"] = "Produto de outro vendedor (detalhes não liberados)"
+            cartao["link"] = ""  # sem nome não há o que buscar no site
+        linhas.append(cartao)
     return {"itens": linhas}

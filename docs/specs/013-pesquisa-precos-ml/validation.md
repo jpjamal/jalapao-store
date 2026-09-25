@@ -24,3 +24,13 @@ para isso.
 
 `ruff`, `manage.py check`, `makemigrations --check` e contrato OpenAPI sem avisos. Frontend
 compila com TypeScript limpo.
+
+## Em produção, versão a2e8712 (25/09/2026)
+- Mais vendidos de "Celulares e Telefones": 20 itens, todos com foto e link para a busca do site
+  pelo nome da família (ex.: `lista.mercadolivre.com.br/Samsung-Galaxy-A17`).
+- Mais vendidos de MLB1000: a lista inteira falhou com "autorização recusada ou expirou". O log
+  mostrou `GET /user-products/MLBU767944712 → 403 'caller is not allowed to access this user
+  product'`: o Mercado Livre não libera detalhe de produto de outro vendedor. O token estava
+  válido. Corrigido: item recusado fica na lista, na posição dele, como "Produto de outro
+  vendedor (detalhes não liberados)", sem link; e 403 passou a ter mensagem própria, separada da
+  de autorização vencida (401).

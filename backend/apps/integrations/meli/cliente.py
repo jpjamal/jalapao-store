@@ -90,8 +90,12 @@ class MercadoLivreAdapter(MarketplaceAdapter):
                 method, path.split("?")[0], response.status, str(body)[:800],
             )
             code = body.get("error", "") if isinstance(body, dict) else ""
-            if response.status in (401, 403):
+            if response.status == 401:
                 message = "A autorização do Mercado Livre foi recusada ou expirou."
+            elif response.status == 403:
+                # token válido, mas esta consulta não é liberada para a conta (ex.: produto de
+                # outro vendedor) — não é caso de reconectar
+                message = "O Mercado Livre não liberou esta consulta para a sua conta (HTTP 403)."
             elif response.status == 429:
                 message = "O Mercado Livre limitou as chamadas. Tente novamente mais tarde."
             elif response.status == 409:
