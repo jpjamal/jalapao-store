@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ErrorMessage } from "@/components/feedback";
+import { PageHeader } from "@/components/page-header";
 
 /* A conta vive em lib/ferramentas/custo3d.ts e é a mesma de antes.
    Esta tela só coleta os números e mostra o resultado. */
@@ -142,14 +143,12 @@ export default function Impressao3D() {
 
   return (
     <>
-      <p className="text-xs tracking-widest uppercase text-muted-foreground mb-3">
-        Ferramentas · simulação
-      </p>
-      <h1>Custo de impressão 3D</h1>
-      <p className="text-muted-foreground mb-8">
-        Filamento, energia, tempo e margem. A mesma conta que o catálogo usa para
-        sugerir o preço de uma peça.
-      </p>
+      <PageHeader
+        back={{ href: "/ferramentas", label: "Ferramentas" }}
+        eyebrow="Ferramentas · simulação"
+        title="Custo de impressão 3D"
+        description="Filamento, energia, tempo e margem. A mesma conta que o catálogo usa para sugerir o preço de uma peça."
+      />
 
       <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-start">
         <Card>
@@ -244,8 +243,8 @@ export default function Impressao3D() {
             </Link>
           </p>
         )}
-        <div className="flex flex-wrap gap-3 items-end">
-          <div className="grow min-w-60">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-end">
+          <div className="grow sm:min-w-60">
             <label htmlFor="nomeProduto">Nome do produto</label>
             <Input
               id="nomeProduto"

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ErrorMessage, Empty } from "@/components/feedback";
+import { FormActions } from "@/components/form-actions";
+import { PageHeader } from "@/components/page-header";
 
 type Account = {
   id: string;
@@ -75,14 +77,11 @@ export default function Integracoes() {
 
   return (
     <>
-      <p className="text-xs tracking-widest uppercase text-muted-foreground mb-3">
-        Canais de venda
-      </p>
-      <h1>Integrações</h1>
-      <p className="text-muted-foreground mb-8">
-        Conecte a loja do marketplace, espelhe os anúncios e escolha quais deles
-        recebem o saldo do seu estoque.
-      </p>
+      <PageHeader
+        eyebrow="Canais de venda"
+        title="Integrações"
+        description="Conecte a loja do marketplace, espelhe os anúncios e escolha quais deles recebem o saldo do seu estoque."
+      />
 
       <ErrorMessage message={erro} />
       {aviso && (
@@ -103,7 +102,7 @@ export default function Integracoes() {
           </>
         ) : (
           <div className="overflow-auto mb-4">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Canal</th>
@@ -111,16 +110,17 @@ export default function Integracoes() {
                   <th>Token</th>
                   <th>Autorização expira</th>
                   <th>Última sincronia</th>
-                  <th></th>
+                  <th><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody>
                 {contas.map((c) => (
                   <tr key={c.id}>
-                    <td>{c.channel_label}</td>
-                    <td>{c.name || c.external_id}</td>
-                    <td>{c.token_valido ? "válido" : "vai renovar"}</td>
-                    <td>
+                    <td data-role="title">{c.channel_label}</td>
+                    <td data-label="Loja">{c.name || c.external_id}</td>
+                    <td data-label="Token">{c.token_valido ? "válido" : "vai renovar"}</td>
+                    <td data-label="Autorização expira">
+                      <span>
                       {quando(c.authorization_expires_at)}
                       {c.authorization_days_left !== null && (
                         <span
@@ -134,9 +134,11 @@ export default function Integracoes() {
                           {c.authorization_days_left === 1 ? "" : "s"}
                         </span>
                       )}
+                      </span>
                     </td>
-                    <td>{quando(c.last_synced_at)}</td>
-                    <td className="whitespace-nowrap text-right">
+                    <td data-label="Última sincronia">{quando(c.last_synced_at)}</td>
+                    <td data-role="actions">
+                      <div className="flex flex-wrap gap-2 justify-end">
                       <Button
                         size="sm"
                         variant="outline"
@@ -159,7 +161,7 @@ export default function Integracoes() {
                         }
                       >
                         Importar anúncios
-                      </Button>{" "}
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -183,6 +185,7 @@ export default function Integracoes() {
                       >
                         Enviar estoque
                       </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -190,6 +193,7 @@ export default function Integracoes() {
             </table>
           </div>
         )}
+        <FormActions>
         <Button
           disabled={!!ocupado}
           onClick={() =>
@@ -203,7 +207,6 @@ export default function Integracoes() {
         >
           {ocupado === "conectar" ? "Abrindo…" : "Conectar loja da Shopee"}
         </Button>
-        {" "}
         <Button
           variant="outline"
           disabled={!!ocupado}
@@ -218,6 +221,7 @@ export default function Integracoes() {
         >
           {ocupado === "conectar-ml" ? "Abrindo…" : "Conectar Mercado Livre"}
         </Button>
+        </FormActions>
       </Card>
 
       {pendentes.length > 0 && (
@@ -229,7 +233,7 @@ export default function Integracoes() {
             ajuste o código do anúncio no marketplace, e importe de novo.
           </p>
           <div className="overflow-auto">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Anúncio</th>
@@ -240,9 +244,9 @@ export default function Integracoes() {
               <tbody>
                 {pendentes.map((p) => (
                   <tr key={p.item_id}>
-                    <td className="money">{p.item_id}</td>
-                    <td>{p.title}</td>
-                    <td className="money">{p.sku || "— sem código —"}</td>
+                    <td data-label="Anúncio" className="money">{p.item_id}</td>
+                    <td data-role="title">{p.title}</td>
+                    <td data-label="Código no anúncio" className="money">{p.sku || "— sem código —"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -262,7 +266,7 @@ export default function Integracoes() {
           <Empty>Nenhum anúncio vinculado.</Empty>
         ) : (
           <div className="overflow-auto">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Anúncio</th>
@@ -276,25 +280,28 @@ export default function Integracoes() {
               <tbody>
                 {vinculos.map((v) => (
                   <tr key={v.id}>
-                    <td>
+                    <td data-role="title">
                       {v.title || v.item_id}
-                      <span className="block text-xs text-muted-foreground">
+                      <span className="block text-xs text-muted-foreground font-normal">
                         {v.marketplace} · {v.item_id}
                       </span>
                     </td>
-                    <td>
-                      {v.product_name}
-                      <span className="block text-xs text-muted-foreground">
-                        {v.product_sku}
+                    <td data-label="Produto">
+                      <span>
+                        {v.product_name}
+                        <span className="block text-xs text-muted-foreground">
+                          {v.product_sku}
+                        </span>
                       </span>
                     </td>
-                    <td className="money">{v.local_stock ?? "—"}</td>
-                    <td className="money">{v.remote_stock ?? "—"}</td>
-                    <td>{quando(v.stock_pushed_at)}</td>
-                    <td>
-                      <label className="flex items-center gap-2">
+                    <td data-label="Saldo aqui" className="money">{v.local_stock ?? "—"}</td>
+                    <td data-label="Saldo lá" className="money">{v.remote_stock ?? "—"}</td>
+                    <td data-label="Último envio">{quando(v.stock_pushed_at)}</td>
+                    <td data-label="Sincronizar">
+                      <label className="flex items-center gap-2 min-h-11 md:min-h-0 cursor-pointer">
                         <input
                           type="checkbox"
+                          className="h-5 w-5 accent-[var(--primary)]"
                           checked={v.sync_enabled}
                           disabled={!!ocupado}
                           onChange={(e) =>
@@ -324,7 +331,7 @@ export default function Integracoes() {
       <Card className="mt-6">
         <h2>O que ainda não é feito por aqui</h2>
         <ul className="text-muted-foreground list-disc pl-5 space-y-1">
-          <li>Publicar ou editar anúncio — o cadastro continua sendo no painel do marketplace.</li>
+          <li>Publicar e editar anúncio: no Mercado Livre é pela tela Anúncios; na Shopee, ainda pelo painel dela.</li>
           <li>Importar pedido e taxa real da venda — entra em etapa própria.</li>
           <li>Empurrar preço — decisão comercial, fica fora por enquanto.</li>
           <li>Mercado Livre — conexão, importação e envio manual de estoque; anúncios com variações ou depósitos ambíguos exigem configuração posterior.</li>

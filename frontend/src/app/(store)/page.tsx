@@ -4,6 +4,7 @@ import Link from "next/link";
 import { api, brl } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { ErrorMessage } from "@/components/feedback";
+import { PageHeader } from "@/components/page-header";
 type Certificate = {
   expires_at: string;
   days_left: number;
@@ -104,13 +105,11 @@ export default function Dashboard() {
   }, []);
   return (
     <>
-      <p className="text-xs tracking-widest uppercase text-muted-foreground mb-3">
-        O dia a dia da sua loja
-      </p>
-      <h1>Visão geral</h1>
-      <p className="text-muted-foreground mb-8">
-        Acompanhe o que você tem, vendeu e recebeu.
-      </p>
+      <PageHeader
+        eyebrow="O dia a dia da sua loja"
+        title="Visão geral"
+        description="Acompanhe o que você tem, vendeu e recebeu."
+      />
       <ErrorMessage message={error} />
       {data?.authorization_alerts?.length ? (
         <AvisoAutorizacao avisos={data.authorization_alerts} />
@@ -120,7 +119,7 @@ export default function Dashboard() {
         <p role="status">Carregando indicadores…</p>
       ) : (
         data && (
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {[
               [
                 "Estoque a custo",
@@ -153,10 +152,10 @@ export default function Dashboard() {
                 "Catálogo disponível para venda",
               ],
             ].map(([title, value, help]) => (
-              <Card key={title}>
-                <p className="text-muted-foreground mb-4">{title}</p>
-                <p className="money text-3xl mb-3">{value}</p>
-                <p className="text-sm text-muted-foreground">{help}</p>
+              <Card key={title} className="p-3 sm:p-6">
+                <p className="text-sm sm:text-base text-muted-foreground mb-2 sm:mb-4">{title}</p>
+                <p className="money text-lg sm:text-3xl mb-1 sm:mb-3">{value}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{help}</p>
               </Card>
             ))}
           </div>
@@ -168,9 +167,9 @@ export default function Dashboard() {
           Os produtos antigos mantêm seus parâmetros. Informe as quantidades
           disponíveis antes de registrar a primeira venda.
         </p>
-        <div className="flex gap-5 text-primary font-semibold">
-          <Link href="/estoque">Movimentar estoque →</Link>
-          <Link href="/vendas">Registrar venda →</Link>
+        <div className="flex flex-col sm:flex-row gap-1 sm:gap-5 text-primary font-semibold">
+          <Link href="/estoque" className="py-2">Movimentar estoque →</Link>
+          <Link href="/vendas" className="py-2">Registrar venda →</Link>
         </div>
       </Card>
       {data?.certificate && !data.certificate.alert && (

@@ -7,6 +7,9 @@ import { Card } from "@/components/ui/card";
 import { Field } from "@/components/fields";
 import { Input } from "@/components/ui/input";
 import { ErrorMessage, Empty } from "@/components/feedback";
+import { FormActions } from "@/components/form-actions";
+import { PageHeader } from "@/components/page-header";
+import { Pagination } from "@/components/pagination";
 import { ProductPicker } from "@/components/product-picker";
 import Link from "next/link";
 type Movement = {
@@ -50,15 +53,14 @@ export default function Inventory() {
   useEffect(load, [load]);
   return (
     <>
-      <h1>Estoque</h1>
-      <p className="text-muted-foreground mb-7">
-        Para reposição, use{" "}
-        <Link href="/entradas" className="underline">
-          Compras / produção
-        </Link>
-        . Aqui ficam os ajustes de inventário. Vendas baixam o estoque
-        automaticamente.
-      </p>
+      <PageHeader
+        title="Estoque"
+        description={<>
+          Para reposição, use{" "}
+          <Link href="/entradas" className="underline">Compras / produção</Link>. Aqui ficam os
+          ajustes de inventário. Vendas baixam o estoque automaticamente.
+        </>}
+      />
       <ErrorMessage message={error} />
       {notice && (
         <p role="status" className="text-success mb-4">
@@ -141,7 +143,7 @@ export default function Inventory() {
                     key={m}
                     type="button"
                     aria-pressed={motivo === m}
-                    className={`rounded-full border px-3 py-1 text-sm cursor-pointer hover:bg-muted ${
+                    className={`rounded-full border px-4 min-h-10 sm:min-h-8 text-sm cursor-pointer hover:bg-muted ${
                       motivo === m ? "border-primary bg-muted" : ""
                     }`}
                     onClick={() => setMotivo(m)}
@@ -160,15 +162,17 @@ export default function Inventory() {
                 onChange={(e) => setMotivo(e.target.value)}
               />
             </div>
-            <Button disabled={busy || !products.length}>
-              {busy ? "Registrando…" : "Registrar movimento"}
-            </Button>
+            <FormActions>
+              <Button disabled={busy || !products.length}>
+                {busy ? "Registrando…" : "Registrar movimento"}
+              </Button>
+            </FormActions>
           </form>
         </Card>
         <Card>
           <h2>Posição atual</h2>
           <div className="overflow-auto">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Produto</th>
@@ -180,10 +184,10 @@ export default function Inventory() {
               <tbody>
                 {products.map((p) => (
                   <tr key={p.id}>
-                    <td>{p.name}</td>
-                    <td>{p.quantity}</td>
-                    <td className="money">{brl(p.stock_value)}</td>
-                    <td className="money">
+                    <td data-role="title">{p.name}</td>
+                    <td data-label="Unidades">{p.quantity}</td>
+                    <td data-label="Valor a custo" className="money">{brl(p.stock_value)}</td>
+                    <td data-label="Custo médio / un." className="money">
                       {p.quantity ? brl(p.average_cost) : "—"}
                     </td>
                   </tr>
@@ -202,7 +206,7 @@ export default function Inventory() {
           <Empty>Nenhuma movimentação registrada.</Empty>
         ) : (
           <div className="overflow-auto">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Data</th>
@@ -216,15 +220,15 @@ export default function Inventory() {
               <tbody>
                 {rows.results.map((m) => (
                   <tr key={m.id}>
-                    <td>{new Date(m.created_at).toLocaleString("pt-BR")}</td>
-                    <td>{m.product_name}</td>
-                    <td>
+                    <td data-label="Data">{new Date(m.created_at).toLocaleString("pt-BR")}</td>
+                    <td data-role="title">{m.product_name}</td>
+                    <td data-label="Variação">
                       {m.delta > 0 ? "+" : ""}
                       {m.delta}
                     </td>
-                    <td>{m.balance_after}</td>
-                    <td>{m.reason}</td>
-                    <td className="money">
+                    <td data-label="Saldo após">{m.balance_after}</td>
+                    <td data-label="Motivo">{m.reason}</td>
+                    <td data-label="Variação em R$" className="money">
                       {m.value_delta === null
                         ? "Anterior ao controle de custos"
                         : brl(m.value_delta)}
@@ -235,22 +239,13 @@ export default function Inventory() {
             </table>
           </div>
         )}
-        <div className="flex gap-2 mt-4">
-          <Button
-            variant="outline"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            disabled={!rows?.next}
-            onClick={() => setPage(page + 1)}
-          >
-            Próxima
-          </Button>
-        </div>
+        <Pagination
+          count={rows?.count || 0}
+          noun={["movimentação", "movimentações"]}
+          page={page}
+          hasNext={!!rows?.next}
+          onPage={setPage}
+        />
       </Card>
     </>
   );

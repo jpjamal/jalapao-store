@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Field, MoneyField } from "@/components/fields";
 import { ErrorMessage, Empty } from "@/components/feedback";
 import { ProductPicker } from "@/components/product-picker";
+import { FormActions } from "@/components/form-actions";
+import { PageHeader } from "@/components/page-header";
+import { Pagination } from "@/components/pagination";
 type Item = { product_name: string; quantity: number; unit_price: string };
 type Sale = {
   id: string;
@@ -78,17 +81,15 @@ export default function Sales() {
   }
   return (
     <>
-      <div className="flex justify-between gap-4">
-        <div>
-          <h1>Vendas</h1>
-          <p className="text-muted-foreground mb-7">
-            Da saída do produto ao dinheiro recebido.
-          </p>
-        </div>
-        <Button onClick={() => setOpen(!open)}>
-          {open ? "Fechar formulário" : "Nova venda"}
-        </Button>
-      </div>
+      <PageHeader
+        title="Vendas"
+        description="Da saída do produto ao dinheiro recebido."
+        actions={
+          <Button aria-expanded={open} onClick={() => setOpen(!open)}>
+            {open ? "Fechar formulário" : "Nova venda"}
+          </Button>
+        }
+      />
       <ErrorMessage message={error} />
       {notice && (
         <p role="status" className="text-success mb-4">
@@ -149,9 +150,9 @@ export default function Sales() {
               {items.map((item, index) => (
                 <div
                   key={index}
-                  className="grid md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-end border-b pb-4"
+                  className="grid grid-cols-2 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-end border-b pb-4"
                 >
-                  <div>
+                  <div className="col-span-2 md:col-span-1">
                     <label htmlFor={`item-${index}`}>Produto</label>
                     <ProductPicker
                       id={`item-${index}`}
@@ -199,6 +200,7 @@ export default function Sales() {
                   <Button
                     type="button"
                     variant="ghost"
+                    className="col-span-2 md:col-span-1"
                     disabled={items.length === 1}
                     onClick={() =>
                       setItems(items.filter((_, i) => i !== index))
@@ -212,7 +214,7 @@ export default function Sales() {
             <Button
               type="button"
               variant="outline"
-              className="my-4"
+              className="my-4 w-full sm:w-auto"
               onClick={() =>
                 setItems([
                   ...items,
@@ -244,9 +246,11 @@ export default function Sales() {
                 )}
               </strong>
             </p>
-            <Button disabled={busy}>
-              {busy ? "Registrando…" : "Confirmar venda e baixar estoque"}
-            </Button>
+            <FormActions>
+              <Button disabled={busy}>
+                {busy ? "Registrando…" : "Confirmar venda e baixar estoque"}
+              </Button>
+            </FormActions>
           </form>
         </Card>
       )}
@@ -258,7 +262,7 @@ export default function Sales() {
           <Empty>Nenhuma venda registrada.</Empty>
         ) : (
           <div className="overflow-auto">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Venda</th>
@@ -266,13 +270,13 @@ export default function Sales() {
                   <th>Bruto / líquido</th>
                   <th>Lucro</th>
                   <th>Situação</th>
-                  <th>Ações</th>
+                  <th><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.results.map((s) => (
                   <tr key={s.id}>
-                    <td>
+                    <td data-role="title">
                       <p>
                         {new Date(s.created_at).toLocaleDateString("pt-BR")}{" "}
                         {s.reference && `· ${s.reference}`}
@@ -283,22 +287,22 @@ export default function Sales() {
                         </p>
                       ))}
                     </td>
-                    <td>{channels[s.channel] || s.channel}</td>
-                    <td className="money">
+                    <td data-label="Canal">{channels[s.channel] || s.channel}</td>
+                    <td data-label="Bruto / líquido" className="money">
                       {brl(s.gross)}
                       <p className="text-xs text-muted-foreground">
                         Líquido {brl(s.net)}
                       </p>
                     </td>
-                    <td className="money">{brl(s.profit)}</td>
-                    <td>
+                    <td data-label="Lucro" className="money">{brl(s.profit)}</td>
+                    <td data-label="Situação">
                       {s.status === "cancelled"
                         ? "Cancelada"
                         : s.received_at
                           ? "Recebida"
                           : "A receber"}
                     </td>
-                    <td>
+                    <td data-role="actions">
                       <div className="flex gap-2">
                         {s.status !== "cancelled" && (
                           <>
@@ -329,22 +333,13 @@ export default function Sales() {
             </table>
           </div>
         )}
-        <div className="flex gap-2 mt-4">
-          <Button
-            variant="outline"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            disabled={!rows?.next}
-            onClick={() => setPage(page + 1)}
-          >
-            Próxima
-          </Button>
-        </div>
+        <Pagination
+          count={rows?.count || 0}
+          noun={["venda", "vendas"]}
+          page={page}
+          hasNext={!!rows?.next}
+          onPage={setPage}
+        />
       </Card>
     </>
   );

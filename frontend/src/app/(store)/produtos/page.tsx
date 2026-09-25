@@ -4,6 +4,9 @@ import Link from "next/link";
 import { api, brl, type Product, type Page, type Printing } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FormActions } from "@/components/form-actions";
+import { PageHeader } from "@/components/page-header";
+import { Pagination } from "@/components/pagination";
 import { Card } from "@/components/ui/card";
 import { ErrorMessage, Empty } from "@/components/feedback";
 import { Field, MoneyField } from "@/components/fields";
@@ -195,7 +198,7 @@ function ProductForm({
           />
           Produto ativo
         </label>
-        <div className="flex gap-3">
+        <FormActions>
           <Button disabled={busy}>
             {busy ? "Salvando…" : "Salvar produto"}
           </Button>
@@ -207,7 +210,7 @@ function ProductForm({
           >
             Cancelar
           </Button>
-        </div>
+        </FormActions>
       </form>
     </Card>
   );
@@ -229,15 +232,11 @@ export default function Products() {
   useEffect(load, [load]);
   return (
     <>
-      <div className="flex justify-between items-start gap-4">
-        <div>
-          <h1>Produtos</h1>
-          <p className="text-muted-foreground mb-7">
-            O custo de referência sugere novas compras ou produções. Alterá-lo não muda o estoque já adquirido.
-          </p>
-        </div>
-        <Button onClick={() => setEditing(null)}>Novo produto</Button>
-      </div>
+      <PageHeader
+        title="Produtos"
+        description="O custo de referência sugere novas compras ou produções. Alterá-lo não muda o estoque já adquirido."
+        actions={<Button onClick={() => setEditing(null)}>Novo produto</Button>}
+      />
       <ErrorMessage message={error} />
       {editing !== undefined && (
         <ProductForm
@@ -259,7 +258,8 @@ export default function Products() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="max-w-md mb-5"
+          type="search"
+          className="sm:max-w-md mb-5"
         />
         {!data ? (
           <p role="status">Carregando catálogo…</p>
@@ -267,7 +267,7 @@ export default function Products() {
           <Empty>Nenhum produto encontrado.</Empty>
         ) : (
           <div className="overflow-auto">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Produto</th>
@@ -284,18 +284,19 @@ export default function Products() {
               <tbody>
                 {data.results.map((p) => (
                   <tr key={p.id}>
-                    <td>
+                    <td data-role="title">
                       <strong>{p.name}</strong>
-                      <p className="text-xs text-muted-foreground">{p.sku}</p>
+                      <p className="text-xs text-muted-foreground font-normal">{p.sku}</p>
                     </td>
-                    <td>
+                    <td data-label="Tipo">
                       {p.kind === "printing" ? "Impressão 3D" : "Revenda"}
                     </td>
-                    <td className="money">{brl(p.cost_price)}</td>
-                    <td className="money">{brl(p.sale_price)}</td>
-                    <td>{p.quantity}</td>
-                    <td>{p.active ? "Ativo" : "Inativo"}</td>
-                    <td>
+                    <td data-label="Custo de referência" className="money">{brl(p.cost_price)}</td>
+                    <td data-label="Preço" className="money">{brl(p.sale_price)}</td>
+                    <td data-label="Estoque">{p.quantity}</td>
+                    <td data-label="Status">{p.active ? "Ativo" : "Inativo"}</td>
+                    <td data-role="actions">
+                      <div className="flex flex-wrap items-center justify-end md:justify-start gap-x-3 gap-y-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -303,10 +304,10 @@ export default function Products() {
                       >
                         Editar
                       </Button>
-                      {" "}
-                      <Link className="text-sm underline" href={`/anuncios?product=${p.id}`}>
+                      <Link className="text-sm underline py-2" href={`/anuncios?product=${p.id}`}>
                         Fotos e anúncios
                       </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -314,25 +315,13 @@ export default function Products() {
             </table>
           </div>
         )}
-        <div className="flex justify-between items-center mt-5 text-sm">
-          <span>{data?.count || 0} produtos</span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-            >
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!data?.next}
-              onClick={() => setPage(page + 1)}
-            >
-              Próxima
-            </Button>
-          </div>
-        </div>
+        <Pagination
+          count={data?.count || 0}
+          noun={["produto", "produtos"]}
+          page={page}
+          hasNext={!!data?.next}
+          onPage={setPage}
+        />
       </Card>
     </>
   );

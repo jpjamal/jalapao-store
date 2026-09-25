@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Field } from "@/components/fields";
 import { Empty, ErrorMessage } from "@/components/feedback";
 import { ProductPicker } from "@/components/product-picker";
+import { FormActions } from "@/components/form-actions";
+import { PageHeader } from "@/components/page-header";
+import { Pagination } from "@/components/pagination";
 
 type Receipt = {
   id: string;
@@ -49,11 +52,10 @@ export default function Receipts() {
   useEffect(() => setKey(crypto.randomUUID()), []);
   return (
     <>
-      <h1>Compras e produção</h1>
-      <p className="text-muted-foreground mb-7">
-        Cada entrada guarda seu próprio custo e atualiza a média do estoque. O
-        histórico das vendas é preservado.
-      </p>
+      <PageHeader
+        title="Compras e produção"
+        description="Cada entrada guarda seu próprio custo e atualiza a média do estoque. O histórico das vendas é preservado."
+      />
       <ErrorMessage message={error} />
       {notice && (
         <p role="status" className="text-success mb-4">
@@ -95,7 +97,7 @@ export default function Receipts() {
             }
           }}
         >
-          <fieldset disabled={busy} className="grid md:grid-cols-3 gap-4">
+          <fieldset disabled={busy} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label htmlFor="kind">Origem</label>
               <select
@@ -180,9 +182,11 @@ export default function Receipts() {
               : "Informe o custo de produzir cada unidade. Materiais e energia já pagos não devem ser lançados novamente no caixa."}{" "}
             A data é informativa: a média muda no momento do registro.
           </p>
-          <Button disabled={busy || !key || !products.length}>
-            {busy ? "Registrando…" : "Registrar entrada"}
-          </Button>
+          <FormActions>
+            <Button disabled={busy || !key || !products.length}>
+              {busy ? "Registrando…" : "Registrar entrada"}
+            </Button>
+          </FormActions>
         </form>
       </Card>
       {paying && (
@@ -224,7 +228,7 @@ export default function Receipts() {
               max={today()}
               required
             />
-            <div className="flex gap-2 mt-4">
+            <FormActions className="mt-4">
               <Button disabled={busy}>Confirmar pagamento</Button>
               <Button
                 type="button"
@@ -234,7 +238,7 @@ export default function Receipts() {
               >
                 Voltar
               </Button>
-            </div>
+            </FormActions>
           </form>
         </Card>
       )}
@@ -251,7 +255,7 @@ export default function Receipts() {
           <Empty>Nenhuma compra ou produção registrada.</Empty>
         ) : (
           <div className="overflow-auto">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Data / origem</th>
@@ -265,12 +269,14 @@ export default function Receipts() {
               <tbody>
                 {rows.results.map((r) => (
                   <tr key={r.id}>
-                    <td>
-                      {r.occurred_on.split("-").reverse().join("/")}
-                      <br />
-                      {r.kind === "purchase" ? "Compra" : "Produção"}
+                    <td data-label="Data / origem">
+                      <span>
+                        {r.occurred_on.split("-").reverse().join("/")}
+                        <br />
+                        {r.kind === "purchase" ? "Compra" : "Produção"}
+                      </span>
                     </td>
-                    <td>
+                    <td data-role="title">
                       {r.product_name}
                       <div className="text-xs text-muted-foreground">
                         {[r.supplier, r.reference, r.notes]
@@ -278,10 +284,10 @@ export default function Receipts() {
                           .join(" · ")}
                       </div>
                     </td>
-                    <td>{r.quantity}</td>
-                    <td className="money">{brl(r.unit_cost)}</td>
-                    <td className="money">{brl(r.total)}</td>
-                    <td>
+                    <td data-label="Quantidade">{r.quantity}</td>
+                    <td data-label="Custo unitário" className="money">{brl(r.unit_cost)}</td>
+                    <td data-label="Total" className="money">{brl(r.total)}</td>
+                    <td data-label="Pagamento">
                       {r.kind === "production" ? (
                         "Sem saída automática"
                       ) : r.paid_at ? (
@@ -302,22 +308,13 @@ export default function Receipts() {
             </table>
           </div>
         )}
-        <div className="flex gap-2 mt-4">
-          <Button
-            variant="outline"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            disabled={!rows?.next}
-            onClick={() => setPage(page + 1)}
-          >
-            Próxima
-          </Button>
-        </div>
+        <Pagination
+          count={rows?.count || 0}
+          noun={["entrada", "entradas"]}
+          page={page}
+          hasNext={!!rows?.next}
+          onPage={setPage}
+        />
       </Card>
     </>
   );

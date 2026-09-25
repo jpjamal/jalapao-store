@@ -125,8 +125,102 @@ a:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 4px;
 }
-img[alt="Jalapão Store"] {
+img[alt="Jalapão Store"],
+img.logo {
   background: var(--logo-background);
   padding: 0.5rem;
   border-radius: 0.5rem;
+}
+
+/* ---------- telas pequenas e toque ---------- */
+
+/* 16px nos campos: abaixo disso o Safari do iPhone dá zoom ao focar */
+input,
+select,
+textarea {
+  font-size: 1rem;
+}
+select {
+  min-height: 2.75rem;
+}
+@media (min-width: 640px) {
+  select {
+    min-height: 2.5rem;
+  }
+}
+/* respeita quem pediu menos movimento no sistema */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Tabela de dados: tabela no computador, cartões no celular.
+   Cada célula leva `data-label` com o nome da coluna; a célula que identifica a linha leva
+   `data-role="title"` e a de botões `data-role="actions"`. */
+@media (max-width: 767px) {
+  table.data-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  table.data-table,
+  table.data-table tbody,
+  table.data-table tr,
+  table.data-table td {
+    display: block;
+    width: 100%;
+  }
+  table.data-table tr {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--background);
+    padding: 0.5rem 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+  table.data-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.4rem 0;
+    border: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  table.data-table td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 45%;
+    text-align: left;
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
+  }
+  table.data-table td[data-role="title"] {
+    display: block;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  table.data-table td[data-role="title"]::before,
+  table.data-table td[data-role="actions"]::before {
+    content: none;
+  }
+  table.data-table td[data-role="actions"] {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    padding-top: 0.6rem;
+  }
+  table.data-table td:empty {
+    display: none;
+  }
 }

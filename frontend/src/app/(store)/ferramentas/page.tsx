@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 export default function Tools() {
   return (
     <>
-      <h1>Ferramentas da loja</h1>
-      <p className="text-muted-foreground mb-8">
-        As ferramentas que você já usa, com as mesmas regras de cálculo — agora
-        dentro do sistema, sem sair da sessão.
-      </p>
-      <div className="grid md:grid-cols-3 gap-5">
+      <PageHeader
+        title="Ferramentas da loja"
+        description="As ferramentas que você já usa, com as mesmas regras de cálculo — agora dentro do sistema, sem sair da sessão."
+      />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {[
           [
             "impressao-3d",
@@ -26,16 +26,17 @@ export default function Tools() {
             "ZPL da Shopee vira PDF nomeado pelo destinatário.",
           ],
         ].map(([slug, title, description]) => (
-          <Card key={slug}>
-            <h2>{title}</h2>
-            <p className="text-muted-foreground mb-6">{description}</p>
-            <Link
-              className="text-primary font-semibold"
-              href={`/ferramentas/${slug}`}
-            >
-              Abrir ferramenta →
-            </Link>
-          </Card>
+          <Link
+            key={slug}
+            href={`/ferramentas/${slug}`}
+            className="group rounded-xl focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            <Card className="h-full transition-colors group-hover:border-primary">
+              <h2>{title}</h2>
+              <p className="text-muted-foreground mb-6">{description}</p>
+              <span className="text-primary font-semibold">Abrir ferramenta →</span>
+            </Card>
+          </Link>
         ))}
       </div>
       <p className="text-sm text-muted-foreground mt-6">

@@ -117,7 +117,7 @@ export function CategoriaEAtributos({
   const pendentes = obrigatorios.filter((c) => !atributos[c.id]?.value_name && !atributos[c.id]?.value_id);
 
   return (
-    <div className="md:col-span-2 space-y-4">
+    <div className="sm:col-span-2 space-y-4">
       <div>
         <p className="font-medium mb-1">Categoria no Mercado Livre</p>
         <NavegadorCategorias categoryId={categoryId} onCategoria={onCategoria} />

@@ -9,6 +9,7 @@ import {
   type Market,
   type PlanoMeli,
 } from "@/lib/ferramentas/marketplace";
+import { PageHeader } from "@/components/page-header";
 
 /* As faixas e alíquotas vivem em lib/ferramentas/marketplace.ts e são as mesmas
    de antes. Isto aqui é simulação para escolher preço: na venda registrada valem
@@ -46,16 +47,14 @@ export default function Calculadora() {
 
   return (
     <>
-      <p className="text-xs tracking-widest uppercase text-muted-foreground mb-3">
-        Ferramentas · simulação
-      </p>
-      <h1>Taxas de marketplace</h1>
-      <p className="text-muted-foreground mb-8">
-        Quanto sobra no bolso depois do que a plataforma retém. Use para escolher
-        o preço antes de anunciar.
-      </p>
+      <PageHeader
+        back={{ href: "/ferramentas", label: "Ferramentas" }}
+        eyebrow="Ferramentas · simulação"
+        title="Taxas de marketplace"
+        description="Quanto sobra no bolso depois do que a plataforma retém. Use para escolher o preço antes de anunciar."
+      />
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6" role="group" aria-label="Marketplace">
         {(
           [
             ["shopee", "Shopee"],
@@ -67,7 +66,7 @@ export default function Calculadora() {
             type="button"
             aria-pressed={market === valor}
             onClick={() => setMarket(valor)}
-            className={`rounded-md px-4 h-10 text-sm font-medium cursor-pointer border ${
+            className={`rounded-md px-4 h-11 sm:h-10 grow sm:grow-0 text-sm font-medium cursor-pointer border ${
               market === valor
                 ? "bg-primary text-primary-foreground border-transparent"
                 : "border-input hover:bg-muted"
@@ -190,7 +189,7 @@ export default function Calculadora() {
         <h2>Regras e taxas</h2>
         {shopee ? (
           <>
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Faixa de preço</th>
@@ -201,45 +200,45 @@ export default function Calculadora() {
               </thead>
               <tbody>
                 <tr>
-                  <td>
+                  <td data-role="title">
                     Abaixo de R$ {t.limiteMetade},00{futuro}
                   </td>
-                  <td className="money">20%</td>
-                  <td>metade do preço</td>
-                  <td>—</td>
+                  <td data-label="Comissão" className="money">20%</td>
+                  <td data-label="Taxa fixa">metade do preço</td>
+                  <td data-label="Subsídio Pix">—</td>
                 </tr>
                 <tr>
-                  <td>Até R$ 79,99</td>
-                  <td className="money">20%</td>
-                  <td className="money">
+                  <td data-role="title">Até R$ 79,99</td>
+                  <td data-label="Comissão" className="money">20%</td>
+                  <td data-label="Taxa fixa" className="money">
                     <b className="text-destructive">{brl(t.taxaPrimeira)}</b>
                     {futuro}
                   </td>
-                  <td>—</td>
+                  <td data-label="Subsídio Pix">—</td>
                 </tr>
                 <tr>
-                  <td>R$ 80 a R$ 99,99</td>
-                  <td className="money">14%</td>
-                  <td className="money">R$ 16,00</td>
-                  <td className="money">5%</td>
+                  <td data-role="title">R$ 80 a R$ 99,99</td>
+                  <td data-label="Comissão" className="money">14%</td>
+                  <td data-label="Taxa fixa" className="money">R$ 16,00</td>
+                  <td data-label="Subsídio Pix" className="money">5%</td>
                 </tr>
                 <tr>
-                  <td>R$ 100 a R$ 199,99</td>
-                  <td className="money">14%</td>
-                  <td className="money">R$ 20,00</td>
-                  <td className="money">5%</td>
+                  <td data-role="title">R$ 100 a R$ 199,99</td>
+                  <td data-label="Comissão" className="money">14%</td>
+                  <td data-label="Taxa fixa" className="money">R$ 20,00</td>
+                  <td data-label="Subsídio Pix" className="money">5%</td>
                 </tr>
                 <tr>
-                  <td>R$ 200 a R$ 499,99</td>
-                  <td className="money">14%</td>
-                  <td className="money">R$ 26,00</td>
-                  <td className="money">5%</td>
+                  <td data-role="title">R$ 200 a R$ 499,99</td>
+                  <td data-label="Comissão" className="money">14%</td>
+                  <td data-label="Taxa fixa" className="money">R$ 26,00</td>
+                  <td data-label="Subsídio Pix" className="money">5%</td>
                 </tr>
                 <tr>
-                  <td>Acima de R$ 500</td>
-                  <td className="money">14%</td>
-                  <td className="money">R$ 26,00</td>
-                  <td className="money">até 8%</td>
+                  <td data-role="title">Acima de R$ 500</td>
+                  <td data-label="Comissão" className="money">14%</td>
+                  <td data-label="Taxa fixa" className="money">R$ 26,00</td>
+                  <td data-label="Subsídio Pix" className="money">até 8%</td>
                 </tr>
               </tbody>
             </table>
@@ -280,7 +279,7 @@ export default function Calculadora() {
           </>
         ) : (
           <>
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Tipo de anúncio</th>
@@ -290,17 +289,17 @@ export default function Calculadora() {
               </thead>
               <tbody>
                 <tr>
-                  <td>Clássico</td>
-                  <td className="money">~11% a 14%</td>
-                  <td>
+                  <td data-role="title">Clássico</td>
+                  <td data-label="Comissão média" className="money">~11% a 14%</td>
+                  <td data-label="Regra abaixo de R$ 79">
                     Abaixo de R$ 79 paga taxa fixa por unidade; acima, só
                     comissão.
                   </td>
                 </tr>
                 <tr>
-                  <td>Premium (12× sem juros)</td>
-                  <td className="money">~15% a 19%</td>
-                  <td>Inclui o custo do parcelamento sem juros ao comprador.</td>
+                  <td data-role="title">Premium (12× sem juros)</td>
+                  <td data-label="Comissão média" className="money">~15% a 19%</td>
+                  <td data-label="Regra abaixo de R$ 79">Inclui o custo do parcelamento sem juros ao comprador.</td>
                 </tr>
               </tbody>
             </table>

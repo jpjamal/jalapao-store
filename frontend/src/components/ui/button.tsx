@@ -13,7 +13,8 @@ const buttonVariants = cva(
         destructive: "bg-destructive text-primary-foreground hover:opacity-90",
         ghost: "hover:bg-muted",
       },
-      size: { default: "h-10 px-4 py-2", sm: "h-8 px-3", icon: "h-10 w-10" },
+      // no celular, alvos de toque de 44px; no computador, os tamanhos compactos
+      size: { default: "h-11 sm:h-10 px-4 py-2", sm: "h-10 sm:h-8 px-3", icon: "h-11 w-11 sm:h-10 sm:w-10" },
     },
     defaultVariants: { variant: "default", size: "default" },
   },

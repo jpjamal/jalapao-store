@@ -16,6 +16,7 @@ import {
   type Etiqueta,
   type Padrao,
 } from "@/lib/ferramentas/etiquetas";
+import { PageHeader } from "@/components/page-header";
 
 /* O ZPL da Shopee é uma imagem, não texto: o destinatário só sai por OCR sobre a
    etiqueta renderizada pelo Labelary. Toda essa lógica está em
@@ -176,14 +177,12 @@ export default function Etiquetas() {
 
   return (
     <>
-      <p className="text-xs tracking-widest uppercase text-muted-foreground mb-3">
-        Ferramentas · expedição
-      </p>
-      <h1>Gerador de etiquetas</h1>
-      <p className="text-muted-foreground mb-8">
-        Envie o .txt com o ZPL do pedido e receba o PDF já nomeado pelo
-        destinatário.
-      </p>
+      <PageHeader
+        back={{ href: "/ferramentas", label: "Ferramentas" }}
+        eyebrow="Ferramentas · expedição"
+        title="Gerador de etiquetas"
+        description="Envie o .txt com o ZPL do pedido e receba o PDF já nomeado pelo destinatário."
+      />
 
       <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
         <div className="min-w-0">

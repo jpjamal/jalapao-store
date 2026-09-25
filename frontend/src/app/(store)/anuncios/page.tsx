@@ -14,6 +14,9 @@ import {
   type Categoria,
   type Relatorio,
 } from "@/components/ml-anuncio";
+import { FormActions } from "@/components/form-actions";
+import { PageHeader } from "@/components/page-header";
+import { ChevronLeft, ChevronRight, ImagePlus } from "lucide-react";
 
 type Channel = "mercado_livre" | "shopee";
 type ProductImage = {
@@ -219,15 +222,17 @@ export default function Anuncios() {
   const podePublicar = channel === "mercado_livre" && !publicado && relatorio?.pode_publicar;
 
   return <>
-    <h1>Anúncios</h1>
-    <p className="text-muted-foreground mb-7">
-      Prepare um rascunho para cada canal. Salvar aqui não publica o anúncio.
-    </p>
+    <PageHeader
+      eyebrow="Marketplaces"
+      title="Anúncios"
+      description="Prepare um rascunho para cada canal. Salvar não publica; publicar e enviar alterações são ações à parte."
+    />
     <ErrorMessage message={error} />
     {notice && <p role="status" className="text-success mb-4">{notice}</p>}
-    <Card className="mb-6">
-      <h2>Escolha o produto e o canal</h2>
-      <div className="grid md:grid-cols-2 gap-4 mt-4">
+
+    <Card className="mb-5">
+      <h2>1. Produto e canal</h2>
+      <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label htmlFor="draft-product">Produto</label>
           <ProductPicker products={products} value={productId}
@@ -242,62 +247,40 @@ export default function Anuncios() {
           </select>
         </div>
       </div>
-      {product && <p className="text-sm text-muted-foreground mt-4">
-        SKU {product.sku} · estoque {product.quantity} un. · preço de referência {brl(product.sale_price)}
+      {product && <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground mt-4">
+        <div><dt className="inline">SKU </dt><dd className="inline">{product.sku}</dd></div>
+        <div><dt className="inline">Estoque </dt><dd className="inline">{product.quantity} un.</dd></div>
+        <div><dt className="inline">Preço de referência </dt><dd className="inline">{brl(product.sale_price)}</dd></div>
+      </dl>}
+      {publicado && <p className={`mt-4 rounded-md border px-3 py-2 text-sm ${
+        draft?.pending_changes ? "border-primary" : "border-[var(--success)]"}`}>
+        <b>Publicado no Mercado Livre · {publicado}</b>
+        <span className="block text-muted-foreground">
+          {draft?.pending_changes
+            ? "Há alterações no rascunho que ainda não foram enviadas ao anúncio."
+            : "O anúncio está igual ao rascunho."}
+        </span>
       </p>}
     </Card>
+
     {product ? <>
-      <Card className="mb-6">
-        <h2>Fotos do produto</h2>
+      <Card className="mb-5">
+        <h2>2. Conteúdo</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          JPG, PNG ou WebP, até 10 MB. Marque as fotos deste anúncio; use as setas para escolher a capa e a ordem.
+          Pode ficar incompleto enquanto você prepara o anúncio para {channels[channel]}.
         </p>
-        <label htmlFor="photo-file">Adicionar foto</label>
-        <Input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp"
-          disabled={busy} onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void upload(file);
-            e.target.value = "";
-          }} />
-        {images.length ? <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
-          {images.map((image) => {
-            const position = selected.indexOf(image.id);
-            return <div key={image.id} className="rounded-lg border p-2">
-              <img src={imageUrl(image.id)} alt={image.alt_text || `Foto do produto ${product.name}`}
-                className="w-full aspect-square object-contain" />
-              <label className="flex items-center gap-2 mt-2 text-sm">
-                <input type="checkbox" checked={position >= 0} onChange={() => setSelected((before) =>
-                  position >= 0 ? before.filter((id) => id !== image.id) : [...before, image.id]
-                )} /> Usar no anúncio
-              </label>
-              {position >= 0 && <div className="flex gap-2 items-center text-sm mt-2">
-                <span>{position === 0 ? "Capa" : `${position + 1}ª foto`}</span>
-                <Button size="sm" variant="outline" type="button" aria-label="Mover foto para antes"
-                  disabled={position === 0} onClick={() => move(image.id, -1)}>↑</Button>
-                <Button size="sm" variant="outline" type="button" aria-label="Mover foto para depois"
-                  disabled={position === selected.length - 1} onClick={() => move(image.id, 1)}>↓</Button>
-              </div>}
-            </div>;
-          })}
-        </div> : <Empty>Nenhuma foto cadastrada para este produto.</Empty>}
-      </Card>
-      <Card>
-        <h2>Rascunho para {channels[channel]}</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Todos os campos abaixo podem ficar vazios enquanto você prepara o anúncio.
-        </p>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="md:col-span-2"><label htmlFor="draft-title">Título sugerido</label>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2"><label htmlFor="draft-title">Título</label>
             <Input id="draft-title" maxLength={300} value={title} onChange={(e) => setTitle(e.target.value)} />
             {channel === "mercado_livre" && categoria?.max_title_length && <p
               className={`text-xs mt-1 ${title.length > categoria.max_title_length ? "text-destructive" : "text-muted-foreground"}`}>
               {title.length} de {categoria.max_title_length} caracteres aceitos pela categoria
             </p>}</div>
-          <div className="md:col-span-2"><label htmlFor="draft-description">Descrição</label>
+          <div className="sm:col-span-2"><label htmlFor="draft-description">Descrição</label>
             <textarea id="draft-description" rows={8} value={description}
               onChange={(e) => setDescription(e.target.value)} className="w-full rounded-md border bg-background p-3" /></div>
-          <div><label htmlFor="draft-price">Preço proposto (R$)</label>
-            <Input id="draft-price" type="number" min="0" step="0.01" value={price}
+          <div><label htmlFor="draft-price">Preço (R$)</label>
+            <Input id="draft-price" type="number" inputMode="decimal" min="0" step="0.01" value={price}
               onChange={(e) => setPrice(e.target.value)} /></div>
           <div><label htmlFor="draft-condition">Condição</label>
             <select id="draft-condition" value={condition} onChange={(e) => setCondition(e.target.value)}>
@@ -308,6 +291,59 @@ export default function Anuncios() {
             <Input id="draft-brand" maxLength={100} value={brand} onChange={(e) => setBrand(e.target.value)} /></div>
           <div><label htmlFor="draft-model">Modelo</label>
             <Input id="draft-model" maxLength={100} value={model} onChange={(e) => setModel(e.target.value)} /></div>
+        </div>
+      </Card>
+
+      <Card className="mb-5">
+        <h2>3. Fotos</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Toque na foto para usar ou tirar do anúncio. A primeira marcada é a capa; use as setas para
+          mudar a ordem. JPG ou PNG, até 10 MB.
+        </p>
+        <label htmlFor="photo-file"
+          className={`flex items-center justify-center gap-2 rounded-lg border border-dashed min-h-14 px-4 text-sm cursor-pointer hover:bg-muted ${busy ? "opacity-50 pointer-events-none" : ""}`}>
+          <ImagePlus size={18} aria-hidden /> Adicionar foto do produto
+        </label>
+        <input id="photo-file" type="file" className="sr-only" accept="image/jpeg,image/png,image/webp"
+          disabled={busy} onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void upload(file);
+            e.target.value = "";
+          }} />
+        {images.length ? <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mt-4">
+          {images.map((image) => {
+            const position = selected.indexOf(image.id);
+            const usada = position >= 0;
+            return <li key={image.id} className={`rounded-lg border-2 p-1.5 ${usada ? "border-primary" : "border-transparent bg-muted/40"}`}>
+              <button type="button" aria-pressed={usada}
+                aria-label={usada ? `Tirar a foto ${position + 1} do anúncio` : "Usar esta foto no anúncio"}
+                className="relative block w-full cursor-pointer rounded-md overflow-hidden"
+                onClick={() => setSelected((before) =>
+                  usada ? before.filter((id) => id !== image.id) : [...before, image.id])}>
+                <img src={imageUrl(image.id)} alt={image.alt_text || `Foto do produto ${product.name}`}
+                  className={`w-full aspect-square object-contain bg-background ${usada ? "" : "opacity-60"}`} />
+                <span className={`absolute top-1.5 left-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  usada ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border"}`}>
+                  {usada ? (position === 0 ? "Capa" : `${position + 1}ª`) : "Não usada"}
+                </span>
+              </button>
+              {usada && <div className="flex justify-center gap-2 mt-1.5">
+                <Button size="sm" variant="outline" type="button" aria-label="Mover foto para antes"
+                  disabled={position === 0} onClick={() => move(image.id, -1)}><ChevronLeft size={16} aria-hidden /></Button>
+                <Button size="sm" variant="outline" type="button" aria-label="Mover foto para depois"
+                  disabled={position === selected.length - 1} onClick={() => move(image.id, 1)}><ChevronRight size={16} aria-hidden /></Button>
+              </div>}
+            </li>;
+          })}
+        </ul> : <Empty>Nenhuma foto cadastrada para este produto.</Empty>}
+        {images.length > 0 && <p className="text-sm text-muted-foreground mt-3" aria-live="polite">
+          {selected.length} de {images.length} foto{images.length === 1 ? "" : "s"} no anúncio
+        </p>}
+      </Card>
+
+      <Card className="mb-5">
+        <h2>4. Categoria{channel === "mercado_livre" ? " e atributos" : ""}</h2>
+        <div className="grid sm:grid-cols-2 gap-4">
           {channel === "mercado_livre" ? <CategoriaEAtributos
             titulo={title} categoryId={categoryId} onCategoria={setCategoryId}
             atributos={attributes} onAtributos={setAttributes} onInfo={setCategoria} />
@@ -315,47 +351,49 @@ export default function Anuncios() {
             <Input id="draft-category" maxLength={80} value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)} /></div>}
         </div>
-        {publicado && <p className="text-sm mb-3">
-          Publicado no Mercado Livre como <b>{publicado}</b>
-          {draft?.pending_changes
-            ? " · há alterações no rascunho que ainda não foram enviadas ao anúncio."
-            : " · o anúncio está igual ao rascunho."}
-        </p>}
-        <div className="flex flex-wrap gap-3 mt-5">
-          <Button disabled={busy} onClick={() => void save()}>
-            {busy ? "Aguarde…" : "Salvar rascunho"}
-          </Button>
-          {channel === "mercado_livre" && !publicado && <Button variant="outline" disabled={busy}
-            onClick={() => void validar()}>Salvar e validar no Mercado Livre</Button>}
-          {channel === "mercado_livre" && publicado && <Button variant="outline" disabled={busy}
+      </Card>
+
+      {/* ações sempre à mão: no celular a barra fica presa ao pé da tela */}
+      <div className="sticky bottom-0 z-20 -mx-4 sm:mx-0 border-t sm:border bg-background/95 backdrop-blur px-4 py-3 sm:rounded-xl sm:bg-card sm:p-4 mb-5">
+        <FormActions>
+          {channel === "mercado_livre" && !publicado && <Button disabled={busy}
+            onClick={() => void validar()}>{busy ? "Aguarde…" : "Salvar e validar no Mercado Livre"}</Button>}
+          {channel === "mercado_livre" && publicado && <Button disabled={busy}
             onClick={() => void enviar()}>{busy ? "Enviando…" : "Salvar e enviar ao Mercado Livre"}</Button>}
-        </div>
-        {channel === "mercado_livre" && <p className="text-xs text-muted-foreground mt-2">
+          <Button variant={channel === "mercado_livre" ? "outline" : "default"} disabled={busy} onClick={() => void save()}>
+            {busy && channel !== "mercado_livre" ? "Salvando…" : "Salvar rascunho"}
+          </Button>
+        </FormActions>
+        {channel === "mercado_livre" && <p className="text-xs text-muted-foreground mt-2 hidden sm:block">
           {publicado
             ? "Enviar atualiza no anúncio o preço, as fotos, os atributos e a descrição. Categoria e estoque não mudam por aqui."
             : "Validar confere o rascunho e simula a publicação no Mercado Livre sem criar o anúncio."}
         </p>}
+        {/* o erro também aparece no topo, mas aqui fica à vista de quem acabou de clicar */}
+        {error && <p role="alert" className="text-sm text-destructive mt-2 whitespace-pre-wrap">{error}</p>}
+      </div>
+
+      {(relatorio || publicacao || podePublicar) && <Card className="mb-5">
+        <h2>Resultado</h2>
         {relatorio && <RelatorioValidacao relatorio={relatorio} />}
-        {podePublicar && !confirmando && <Button className="mt-4" disabled={busy}
-          onClick={() => setConfirmando(true)}>Publicar no Mercado Livre</Button>}
+        {podePublicar && !confirmando && <FormActions className="mt-4">
+          <Button disabled={busy} onClick={() => setConfirmando(true)}>Publicar no Mercado Livre</Button>
+        </FormActions>}
         {podePublicar && confirmando && <div role="alertdialog" aria-labelledby="confirma-titulo"
-          className="rounded-lg border border-primary p-4 mt-4">
+          aria-describedby="confirma-texto" className="rounded-lg border border-primary p-4 mt-4">
           <p id="confirma-titulo" className="font-semibold mb-1">Publicar de verdade?</p>
-          <p className="text-sm mb-3">
+          <p id="confirma-texto" className="text-sm mb-3">
             O anúncio fica ativo no Mercado Livre com {selected.length} foto{selected.length === 1 ? "" : "s"},
-            preço de R$ {price} e o estoque atual do produto como quantidade disponível. Para tirar
+            preço de {brl(price || 0)} e o estoque atual do produto como quantidade disponível. Para tirar
             do ar depois, é pelo painel do Mercado Livre.
           </p>
-          <div className="flex flex-wrap gap-3">
+          <FormActions>
             <Button disabled={busy} onClick={() => void publicar()}>
               {busy ? "Publicando…" : "Confirmar publicação"}
             </Button>
             <Button variant="outline" disabled={busy} onClick={() => setConfirmando(false)}>Cancelar</Button>
-          </div>
+          </FormActions>
         </div>}
-        {/* o erro também aparece no topo, mas aqui fica à vista de quem acabou de clicar */}
-        {error && (confirmando || relatorio || publicado) && <p role="alert"
-          className="text-sm text-destructive mt-3 whitespace-pre-wrap">{error}</p>}
         {publicacao && <div role="status" className="rounded-lg border border-[var(--success)] p-4 mt-4">
           <p className="font-semibold">
             {publicacao.acao === "publicado" ? "Publicado no Mercado Livre" : "Anúncio atualizado"}: {publicacao.item_id}
@@ -368,22 +406,27 @@ export default function Anuncios() {
             {publicacao.status ? ` · situação: ${publicacao.status}` : ""}.
             {publicacao.acao === "publicado" && " A sincronização de estoque fica desligada até você ligar em Integrações."}
           </p>
-          {publicacao.permalink && <a className="underline text-sm" href={publicacao.permalink}
+          {publicacao.permalink && <a className="inline-block underline text-sm py-2" href={publicacao.permalink}
             target="_blank" rel="noopener noreferrer">Ver o anúncio no Mercado Livre</a>}
           {publicacao.avisos.map((a, i) => <p key={i} className="text-sm mt-1">! {a}</p>)}
         </div>}
-      </Card>
-    </> : <Card><Empty>Escolha um produto para preparar o anúncio.</Empty></Card>}
-    {drafts.length > 0 && <Card className="mt-6">
+      </Card>}
+    </> : <Card className="mb-5"><Empty>Escolha um produto para preparar o anúncio.</Empty></Card>}
+
+    {drafts.length > 0 && <Card>
       <h2>Rascunhos salvos</h2>
-      <div className="overflow-auto"><table><thead><tr><th>Produto</th><th>Canal</th><th>Título</th><th>Situação</th><th></th></tr></thead>
+      <div className="overflow-auto"><table className="data-table">
+        <thead><tr><th>Produto</th><th>Canal</th><th>Título</th><th>Situação</th><th><span className="sr-only">Ações</span></th></tr></thead>
         <tbody>{drafts.map((item) => <tr key={item.id}>
-          <td>{item.product_name}<span className="block text-xs text-muted-foreground">{item.product_sku}</span></td>
-          <td>{channels[item.channel]}</td><td>{item.title || "Sem título"}</td>
-          <td>{item.published_item_id
+          <td data-role="title">{item.product_name}<span className="block text-xs text-muted-foreground font-normal">{item.product_sku}</span></td>
+          <td data-label="Canal">{channels[item.channel]}</td>
+          <td data-label="Título">{item.title || "Sem título"}</td>
+          <td data-label="Situação">{item.published_item_id
             ? `Publicado · ${item.published_item_id}${item.pending_changes ? " · alterações não enviadas" : ""}`
             : "Rascunho"}</td>
-          <td><Button size="sm" variant="outline" onClick={() => { setProductId(item.product); setChannel(item.channel); window.scrollTo(0, 0); }}>Editar</Button></td>
+          <td data-role="actions"><Button size="sm" variant="outline" onClick={() => {
+            setProductId(item.product); setChannel(item.channel); window.scrollTo({ top: 0, behavior: "smooth" });
+          }}>Editar</Button></td>
         </tr>)}</tbody></table></div>
     </Card>}
   </>;

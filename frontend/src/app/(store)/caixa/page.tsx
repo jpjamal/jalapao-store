@@ -5,6 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, MoneyField } from "@/components/fields";
 import { ErrorMessage, Empty } from "@/components/feedback";
+import { FormActions } from "@/components/form-actions";
+import { PageHeader } from "@/components/page-header";
+import { Pagination } from "@/components/pagination";
 type Entry = {
   id: string;
   direction: string;
@@ -28,11 +31,10 @@ export default function Cash() {
   useEffect(load, [load]);
   return (
     <>
-      <h1>Caixa</h1>
-      <p className="text-muted-foreground mb-7">
-        Recebimentos e despesas. Vendas pendentes só entram quando marcadas como
-        recebidas.
-      </p>
+      <PageHeader
+        title="Caixa"
+        description="Recebimentos e despesas. Vendas pendentes só entram quando marcadas como recebidas."
+      />
       <ErrorMessage message={error} />
       {notice && (
         <p role="status" className="text-success mb-4">
@@ -62,7 +64,7 @@ export default function Cash() {
             }
           }}
         >
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label htmlFor="direction">Tipo</label>
               <select id="direction" name="direction">
@@ -89,9 +91,11 @@ export default function Cash() {
             Lançamentos são preservados. Para corrigir um erro, registre um
             lançamento inverso com o motivo.
           </p>
-          <Button disabled={busy}>
-            {busy ? "Registrando…" : "Registrar lançamento"}
-          </Button>
+          <FormActions>
+            <Button disabled={busy}>
+              {busy ? "Registrando…" : "Registrar lançamento"}
+            </Button>
+          </FormActions>
         </form>
       </Card>
       <Card>
@@ -102,7 +106,7 @@ export default function Cash() {
           <Empty>Nenhum lançamento registrado.</Empty>
         ) : (
           <div className="overflow-auto">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Data</th>
@@ -114,10 +118,11 @@ export default function Cash() {
               <tbody>
                 {rows.results.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.occurred_on.split("-").reverse().join("/")}</td>
-                    <td>{r.description}</td>
-                    <td>{r.sale ? "Venda" : r.receipt ? "Compra de estoque" : "Manual"}</td>
+                    <td data-label="Data">{r.occurred_on.split("-").reverse().join("/")}</td>
+                    <td data-role="title">{r.description}</td>
+                    <td data-label="Origem">{r.sale ? "Venda" : r.receipt ? "Compra de estoque" : "Manual"}</td>
                     <td
+                      data-label="Valor"
                       className={`money ${r.direction === "in" ? "text-success" : "text-destructive"}`}
                     >
                       {r.direction === "in" ? "+" : "−"} {brl(r.amount)}
@@ -128,22 +133,13 @@ export default function Cash() {
             </table>
           </div>
         )}
-        <div className="flex gap-2 mt-4">
-          <Button
-            variant="outline"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            disabled={!rows?.next}
-            onClick={() => setPage(page + 1)}
-          >
-            Próxima
-          </Button>
-        </div>
+        <Pagination
+          count={rows?.count || 0}
+          noun={["lançamento", "lançamentos"]}
+          page={page}
+          hasNext={!!rows?.next}
+          onPage={setPage}
+        />
       </Card>
     </>
   );
