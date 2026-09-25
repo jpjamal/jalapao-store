@@ -327,6 +327,9 @@ export default function Anuncios() {
             <Button variant="outline" disabled={busy} onClick={() => setConfirmando(false)}>Cancelar</Button>
           </div>
         </div>}
+        {/* o erro também aparece no topo, mas aqui fica à vista de quem acabou de clicar */}
+        {error && (confirmando || relatorio || publicado) && <p role="alert"
+          className="text-sm text-destructive mt-3 whitespace-pre-wrap">{error}</p>}
         {publicacao && <div role="status" className="rounded-lg border border-[var(--success)] p-4 mt-4">
           <p className="font-semibold">Publicado no Mercado Livre: {publicacao.item_id}</p>
           <p className="text-sm">

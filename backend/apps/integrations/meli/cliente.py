@@ -3,6 +3,7 @@
 import base64
 import hashlib
 import json
+import logging
 import os
 import urllib.error
 import urllib.parse
@@ -13,6 +14,8 @@ from ..base import IntegrationError, MarketplaceAdapter, RemoteItem, Tokens, reg
 
 API = "https://api.mercadolibre.com"
 AUTH = "https://auth.mercadolivre.com.br/authorization"
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -279,9 +282,16 @@ class MercadoLivreAdapter(MarketplaceAdapter):
             "POST", "/pictures/items/upload", token=account.access_token,
             headers={"Content-Type": f"multipart/form-data; boundary={fronteira}"}, raw=corpo,
         )
-        foto_id = (response.body or {}).get("id") if isinstance(response.body, dict) else None
+        body = response.body if isinstance(response.body, dict) else {}
+        foto_id = body.get("id")
         if not foto_id:
-            raise IntegrationError("O Mercado Livre recebeu a foto mas não devolveu o id dela.")
+            # resposta fora do formato documentado: registra para ajustar com o caso real
+            logger.warning(
+                "upload de foto sem id: HTTP %s, corpo %s", response.status, str(response.body)[:800]
+            )
+            raise IntegrationError(
+                f"O Mercado Livre recebeu a foto mas não devolveu o id dela (HTTP {response.status})."
+            )
         return str(foto_id)
 
     def create_item(self, *, account, payload):
