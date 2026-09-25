@@ -332,7 +332,7 @@ export default function Integracoes() {
         <h2>O que ainda não é feito por aqui</h2>
         <ul className="text-muted-foreground list-disc pl-5 space-y-1">
           <li>Publicar e editar anúncio: no Mercado Livre é pela tela Anúncios; na Shopee, ainda pelo painel dela.</li>
-          <li>Importar pedido e taxa real da venda — entra em etapa própria.</li>
+          <li>Vendas do Mercado Livre entram pela tela Vendas → Importar do Mercado Livre, quando você mandar; as da Shopee, ainda à mão.</li>
           <li>Empurrar preço — decisão comercial, fica fora por enquanto.</li>
           <li>Mercado Livre — conexão, importação e envio manual de estoque; anúncios com variações ou depósitos ambíguos exigem configuração posterior.</li>
         </ul>

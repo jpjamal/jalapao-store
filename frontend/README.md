@@ -24,8 +24,10 @@ Produção standalone: Dockerfile copia `.next/standalone`, `.next/static` e pub
   pagamento de compra.
   Cadastro sugere custo; usuário confirma o valor real. Compra só gera caixa ao pagar;
   produção nunca gera despesa automática. Ajustes positivos exigem custo explícito.
-- /vendas: múltiplos itens, canal, descontos/taxas/frete, receber e cancelar. Produto de
-  cada item por busca digitada.
+- /vendas: múltiplos itens, canal (boca a boca, Site Jalapão, Mercado Livre, Shopee, outro),
+  descontos/taxas/frete, receber e cancelar. Produto de cada item por busca digitada.
+  "Importar do Mercado Livre" traz os pedidos pagos com taxa e frete reais, em prévia, e
+  cria as vendas só quando o dono manda (spec 015).
 - /caixa: entradas/saídas, origem automática/manual e histórico preservado.
 - /ferramentas: índice das três ferramentas.
 - /ferramentas/impressao-3d: custo da peça e botão de salvar no catálogo, com SKU gerado pelo backend.

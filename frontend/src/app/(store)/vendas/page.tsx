@@ -10,6 +10,7 @@ import { ErrorMessage, Empty } from "@/components/feedback";
 import { ProductPicker } from "@/components/product-picker";
 import { FormActions } from "@/components/form-actions";
 import { PageHeader } from "@/components/page-header";
+import { ImportarVendasML } from "@/components/importar-vendas-ml";
 import { Pagination } from "@/components/pagination";
 type Item = { product_name: string; quantity: number; unit_price: string };
 type Sale = {
@@ -27,6 +28,7 @@ type Sale = {
 type Draft = { product_id: string; quantity: number; unit_price: string };
 const channels: Record<string, string> = {
   direct: "Boca a boca",
+  site: "Site Jalapão",
   mercado_livre: "Mercado Livre",
   shopee: "Shopee",
   other: "Outro",
@@ -39,6 +41,7 @@ export default function Sales() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
+  const [importando, setImportando] = useState(false);
   const [key, setKey] = useState(() => crypto.randomUUID());
   const [items, setItems] = useState<Draft[]>([
     { product_id: "", quantity: 1, unit_price: "0" },
@@ -83,13 +86,18 @@ export default function Sales() {
     <>
       <PageHeader
         title="Vendas"
-        description="Da saída do produto ao dinheiro recebido."
-        actions={
-          <Button aria-expanded={open} onClick={() => setOpen(!open)}>
+        description="Da saída do produto ao dinheiro recebido. Venda de marketplace, do site ou direta: todas baixam o estoque e entram no caixa ao receber."
+        actions={<>
+          <Button aria-expanded={open} onClick={() => { setOpen(!open); setImportando(false); }}>
             {open ? "Fechar formulário" : "Nova venda"}
           </Button>
-        }
+          <Button variant="outline" aria-expanded={importando}
+            onClick={() => { setImportando(!importando); setOpen(false); }}>
+            {importando ? "Fechar importação" : "Importar do Mercado Livre"}
+          </Button>
+        </>}
       />
+      {importando && <ImportarVendasML onImportado={load} />}
       <ErrorMessage message={error} />
       {notice && (
         <p role="status" className="text-success mb-4">

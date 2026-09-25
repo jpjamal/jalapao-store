@@ -7,12 +7,15 @@ from apps.catalog.models import amount
 class Sale(Entity):
     class Channel(models.TextChoices):
         DIRECT = "direct", "Boca a boca"
+        SITE = "site", "Site Jalapão"
         ML = "mercado_livre", "Mercado Livre"
         SHOPEE = "shopee", "Shopee"
         OTHER = "other", "Outro"
 
     channel = models.CharField(max_length=20, choices=Channel.choices)
     reference = models.CharField(max_length=100, blank=True)
+    # código do pedido no marketplace, quando a venda foi importada de lá (spec 015)
+    external_id = models.CharField(max_length=40, blank=True)
     idempotency_key = models.UUIDField(unique=True)
     request_hash = models.CharField(max_length=64)
     gross = amount()
@@ -31,6 +34,14 @@ class Sale(Entity):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+        constraints = [
+            # um pedido do marketplace vira no máximo uma venda
+            models.UniqueConstraint(
+                fields=["channel", "external_id"],
+                condition=~models.Q(external_id=""),
+                name="sale_external_order_unique",
+            )
+        ]
 
 
 class SaleItem(Entity):

@@ -314,6 +314,29 @@ class MercadoLivreAdapter(MarketplaceAdapter):
     def user_product(self, *, account, user_product_id):
         return self._get(account, f"/user-products/{urllib.parse.quote(str(user_product_id), safe='')}") or {}
 
+    # ---------- pedidos (spec 015): só leitura, importação manual pelo dono ----------
+    # Caminhos da documentação oficial "Orders" (/orders/search, /orders/{id}) e de envios.
+
+    def orders_search(self, *, account, status, date_from, offset=0, limit=50):
+        """Pedidos do vendedor num estado, a partir de uma data (ISO 8601), mais novos primeiro."""
+        params = {
+            "seller": account.external_id,
+            "order.status": status,
+            "order.date_created.from": date_from,
+            "sort": "date_desc",
+            "offset": max(0, int(offset)),
+            "limit": max(1, min(int(limit), 50)),
+        }
+        body = self._get(account, f"/orders/search?{urllib.parse.urlencode(params)}")
+        return body if isinstance(body, dict) else {}
+
+    def order(self, *, account, order_id):
+        return self._get(account, f"/orders/{urllib.parse.quote(str(order_id), safe='')}") or {}
+
+    def shipment_costs(self, *, account, shipment_id):
+        """Custos do envio; o que cabe ao vendedor fica em `senders`."""
+        return self._get(account, f"/shipments/{urllib.parse.quote(str(shipment_id), safe='')}/costs") or {}
+
     # ---------- publicação (spec 012): as únicas chamadas que criam algo no Mercado Livre ----------
 
     def upload_picture(self, *, account, filename, content, mime_type):
