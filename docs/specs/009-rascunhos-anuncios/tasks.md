@@ -5,6 +5,6 @@
 - [x] API autenticada para fotos e rascunhos; rejeitar foto de outro produto.
 - [x] Tela de Anúncios e atalho em Produtos; edição de conteúdo e seleção/ordem de fotos.
 - [x] Backup do volume de fotos no procedimento de deploy e contrato OpenAPI atualizado.
-- [x] Validação dos atributos obrigatórios por categoria no Mercado Livre — spec 011.
+- [x] Validação dos atributos obrigatórios por categoria no Mercado Livre — spec 011; conferida com a conta real no Dummy Aranha em 24/09/2026.
 - [ ] Publicação explícita e vínculo do rascunho ao anúncio remoto.
 - [ ] Atributos e publicação próprios da Shopee.

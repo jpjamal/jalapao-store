@@ -42,8 +42,31 @@ compila com TypeScript limpo.
 
 ## Limites da evidência
 
-**Nada foi exercitado contra o Mercado Livre de verdade.** O ambiente local não tem conta
+Na entrega local, **nada foi exercitado contra o Mercado Livre de verdade** — o ambiente local não tem conta
 conectada. Os caminhos e formatos seguem a documentação oficial lida no dia, mas o que só a
 resposta real confirma — os campos exatos de `settings` da categoria, se a causa de fotos
 ausentes vem com o código esperado, as mensagens reais das causas — fica para o teste com o
 rascunho do Dummy Aranha na VPS.
+
+## Em produção, com a conta real (24/09/2026)
+
+Rascunho do Dummy Aranha em https://jpsys.duckdns.org, categoria escolhida pela árvore do
+Mercado Livre e atributos obrigatórios preenchidos, GTIN em branco.
+
+1. Primeira simulação (35b179f + ed9042c): **1 erro** do Mercado Livre,
+   `body.required_fields` — "The body does not contains some or none of the following
+   properties [family_name]". A conta está no modelo "produto do vendedor" (User Products).
+   Corrigido em 74c8708: a simulação reenvia com `family_name` e, se preciso, sem `title`.
+2. Segunda simulação (74c8708): **"Pronto para publicar no Mercado Livre."** Sem erros. Avisos:
+   - GTIN condicional — peça artesanal, sem código de barras; não bloqueia.
+   - `User has not mode me1` — a conta não usa Mercado Envios 1. O envio não é mandado na
+     simulação, então vale o frete configurado na conta. Fica para a entrega de publicação.
+
+Nenhum anúncio foi criado: só `POST /items/validate`, `GET /categories/…` e
+`GET /sites/MLB/…` foram chamados.
+
+O que a resposta real confirmou e o que continua em aberto:
+- confirmado: a causa vem com `code` e `message` no formato previsto; a árvore de categorias
+  (`/sites/MLB/categories` e `children_categories`) funciona com o token da conta;
+- em aberto: se esta conta recusa `title` quando manda `family_name` — a segunda simulação
+  passou, mas o relatório não diz em qual das tentativas.

@@ -17,4 +17,8 @@
       [family_name]`: a conta está no modelo "produto do vendedor". A simulação agora reenvia com
       `family_name` (= título) e, se o Mercado Livre recusar `title`, sem ele. Máximo de duas
       novas tentativas, só consulta.
-- [ ] Validar o rascunho real do Dummy Aranha contra o Mercado Livre, com a conta conectada.
+- [x] Validar o rascunho real do Dummy Aranha contra o Mercado Livre, com a conta conectada
+      (24/09/2026, depois do 74c8708): "Pronto para publicar", sem erros. Dois avisos, nenhum
+      bloqueia: GTIN condicional (peça artesanal, sem código) e `User has not mode me1` — a
+      conta não usa o Mercado Envios 1; como o envio não é mandado, o Mercado Livre aplica o
+      modo de frete da conta. Tratar frete na entrega de publicação.
