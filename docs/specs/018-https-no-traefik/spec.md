@@ -1,4 +1,7 @@
-# 007 — HTTPS no Traefik, não no Nginx
+# 018 — HTTPS no Traefik, não no Nginx
+
+Numerada 007 até 26/09/2026, quando se viu que o número repetia o da spec de tokens
+(`007-tokens-e-entrega-estoque`, anterior); renumerada sem mudar o conteúdo.
 
 > **Nota de 24/09/2026, depois desta validação:** o domínio `jalapao-store.duckdns.org`
 > citado aqui deixou de existir. O endereço atual é `jpsys.duckdns.org` — ver spec 008.

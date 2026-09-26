@@ -49,7 +49,7 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
 
 Todos os caminhos têm basePath /jalapao-store. Login protege tudo, ferramentas inclusive.
 As contas ficam em `src/features/tools/lib/`, portadas linha a linha do site anterior e sem
-nenhuma alteração de fórmula: `custo3d.ts` (a mesma conta de apps/catalog/domain.py),
+nenhuma alteração de fórmula: `custo3d.ts` (a mesma conta de apps/catalog/domain/pricing.py),
 `marketplace.ts` (faixas da Shopee e médias do Mercado Livre) e `etiquetas.ts` (fila do
 Labelary, recortes do OCR e regras de nome de arquivo). Os HTML originais seguem em ../site
 só para consulta e rollback — não são mais servidos nem copiados por script. Os endereços
@@ -91,4 +91,5 @@ Backend decide permissões. Front exibe erros 400/403 e envia 401 para login.
 `components.json` documenta aliases shadcn; componentes em src/shared/ui são fonte editável.
 Tokens semânticos mantêm as cores, tipografias e modo escuro do sistema anterior.
 
-Specs específicas em docs/specs; requisitos globais em ../docs/specs/001-platform.
+Todas as specs ficam em ../docs/specs (uma pasta por mudança); critérios gerais da interface
+em ../docs/specs/001-platform e ../docs/specs/002-stock-cost.

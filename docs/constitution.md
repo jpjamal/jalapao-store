@@ -11,3 +11,8 @@
 6. Documentação SDD é instrumento vivo, não geração irrestrita. Uma pasta por mudança:
    spec.md → plan.md → tasks.md → validation.md. Dúvidas e não objetivos explícitos.
 7. Commits com identidade jpjamal <jpfisica3@gmail.com>, sem atribuição de assistente.
+8. Código organizado por contexto (spec 017): regra pura em `domain/`, caso de uso em
+   `services.py`, borda HTTP em `api/`; frontend em `features/` e `shared/`. Ver
+   [arquitetura](architecture.md).
+
+Referências estudadas para estas regras: [references.md](references.md).

@@ -63,9 +63,10 @@ médio, preço e situação.
 
 | O quê | Onde |
 |---|---|
-| Tela | `frontend/src/app/(store)/produtos/page.tsx` |
+| Tela | `frontend/src/features/catalog/products-page.tsx` |
 | Modelo | `backend/apps/catalog/models.py` — `Product`, `PrintingProfile` |
-| Conta do 3D | `backend/apps/catalog/domain.py` e `frontend/src/lib/ferramentas/custo3d.ts` |
+| Conta do 3D | `backend/apps/catalog/domain/pricing.py` e `frontend/src/features/tools/lib/custo3d.ts` |
+| SKU automático | `backend/apps/catalog/domain/sku.py` (specs 010 e 016) |
 | API | `/jalapao-store/backend-api/products/` |
 | Importação do legado | `backend/apps/catalog/management/commands/import_legacy.py` |
 

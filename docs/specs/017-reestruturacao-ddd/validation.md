@@ -23,3 +23,16 @@
 As telas por dentro não foram abertas na cópia local (exigem login). O fluxo autenticado está
 coberto pelos testes do backend e pela compilação do frontend; a conferência visual fica para
 produção depois do deploy.
+
+## Publicação (26/09/2026)
+- **Primeiro envio (934b595) falhou no build do frontend no CI**, sem chegar ao ar. A regra
+  `lib/` do `.gitignore` da raiz (herdada de projetos Python) ignorava as pastas novas
+  `frontend/src/shared/lib/` e `features/tools/lib/`: os arquivos existiam na máquina do
+  desenvolvimento, por isso o build local passou, mas não foram para o commit.
+- Corrigido em c5baabb: o `.gitignore` deixa de valer para `frontend/src/**/lib/`. Conferido que
+  nenhum outro arquivo de código em `backend/apps`, `backend/config` e `frontend/src` estava
+  ignorado. Pipeline completo verde e deploy feito.
+- Produção depois do deploy: login e manifesto 200, telas protegidas 307 para o login, API sem
+  sessão 401.
+- Lição: conferir `git status --ignored` nas pastas de código depois de criar pastas novas.
+

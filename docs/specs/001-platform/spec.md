@@ -3,7 +3,9 @@
 Status: implementação autorizada em 2026-09-23. Monorepositório, uma loja, BRL.
 
 Evolução: a spec 002-stock-cost substitui a avaliação por custo corrente abaixo por
-custo médio móvel e acrescenta compras/produção. As demais regras permanecem válidas.
+custo médio móvel e acrescenta compras/produção. A integração com marketplaces, que aqui era
+só preparação (ML-01), foi implementada depois: specs 005, 006 e 011 a 015 (conexão, anúncios,
+publicação, pesquisa e importação de vendas). As demais regras permanecem válidas.
 
 ## Objetivo e limites
 Substituir o armazenamento JSON por PostgreSQL e oferecer uma interface Next.js com
@@ -46,3 +48,30 @@ Venda acima do saldo rejeitada sem efeitos; uma linha inválida reverte toda a v
 requisição repetida retorna venda existente; mesma chave com conteúdo diferente é rejeitada;
 cancelar duas vezes não repõe duas vezes; receber duas vezes não duplica caixa;
 trocar custo do produto não altera lucro anterior; usuário sem permissão recebe 403.
+
+## Contrato de implementação (backend)
+Antes em `backend/docs/specs/001-commerce.md`, consolidado aqui na spec 017.
+- Relações: User 1:N Sale, Movement e CashEntry (autor); Product 1:1 PrintingProfile e Stock;
+  Product 1:N Movement, SaleItem e Listing; Sale 1:N SaleItem e CashEntry. PK comercial UUID;
+  SKU e legacy_id únicos; IDs externos não substituem a PK local.
+- Nenhuma quantidade negativa; linha de venda com quantidade > 0. Venda, estoque e caixa em
+  transação única; bloqueio dos produtos em ordem fixa e trava de idempotência no PostgreSQL.
+- Histórico imutável na API e no Admin. Editar produto não recalcula vendas antigas.
+- Preço 3D calculado no backend em Decimal, arredondado HALF_UP a centavos.
+- Taxa estimada da calculadora nunca se soma à taxa real informada na venda.
+- OutboxEvent recebe quantidade absoluta e versão no mesmo commit de cada movimento.
+- Concorrência provada só em PostgreSQL: dois compradores da última unidade geram uma venda.
+
+## Critérios da interface
+Antes em `frontend/docs/specs/001-management-ui.md`, consolidado aqui na spec 017.
+- Login inválido mostra erro; válido leva ao painel. Anônimo é levado ao login.
+- Cadastro não aceita valores negativos; minutos entre 0 e 59. O backend valida tudo, mesmo
+  com o navegador contornado.
+- Formulário não é limpo em erro; botão de envio fica desabilitado durante a gravação.
+- Listas com estado vazio e paginação; quantidade indisponível mostra o motivo da recusa.
+- Nova venda usa chave UUID mantida entre tentativas e renovada após sucesso.
+- Lançamento manual de caixa não é apagado: correção por lançamento inverso.
+- Dados sensíveis fora do HTML estático e do armazenamento local. Moeda pt-BR; datas no fuso do
+  navegador; banco em UTC com contexto comercial America/Sao_Paulo.
+- Logotipo legível nos dois temas. Em telas pequenas as tabelas viram cartões (reorganização
+  para celular, commit 6563091).

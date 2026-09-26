@@ -15,4 +15,5 @@
       Livre** (`push`) manda preço, fotos novas, atributos e descrição; alteração pendente
       visível na tela e na lista. Substituiu o botão avulso de reenviar descrição, que chegou a
       ser feito e não foi publicado.
-- [ ] Primeiro envio real ao MLB7700023302 — deve gravar a descrição que faltou.
+- [x] Primeiro envio real ao MLB7700023302 (versão 071b2c2): a descrição foi gravada —
+      confirmado pelo dono em 25/09/2026.

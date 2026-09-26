@@ -172,13 +172,16 @@ Proteção dos tokens e entrega por anúncio em
 
 | O quê | Onde |
 |---|---|
-| Tela | `frontend/src/app/(store)/integracoes/page.tsx` |
-| Retorno da autorização | `frontend/src/app/callback/page.tsx` |
-| Contrato e registro | `backend/apps/integrations/base.py` |
-| Assinatura da Shopee | `backend/apps/integrations/shopee/assinatura.py` |
-| Adaptador da Shopee | `backend/apps/integrations/shopee/cliente.py` |
-| Adaptador do Mercado Livre | `backend/apps/integrations/meli/cliente.py` |
-| Casos de uso | `backend/apps/integrations/services.py` |
-| Testes | `backend/apps/common/test_integracoes.py` |
+| Tela | `frontend/src/features/integrations/integrations-page.tsx` |
+| Retorno da autorização | `frontend/src/features/integrations/oauth-callback-page.tsx` |
+| Pesquisa de mercado | `frontend/src/features/integrations/market-research-page.tsx` |
+| Contrato e registro | `backend/apps/integrations/domain/ports.py` |
+| Assinatura da Shopee | `backend/apps/integrations/infrastructure/shopee/assinatura.py` |
+| Adaptador da Shopee | `backend/apps/integrations/infrastructure/shopee/cliente.py` |
+| Adaptador do Mercado Livre | `backend/apps/integrations/infrastructure/mercado_livre/cliente.py` |
+| Cifra dos tokens | `backend/apps/integrations/infrastructure/crypto.py` |
+| Conectar, renovar, importar anúncios, enviar estoque | `backend/apps/integrations/services/sincronizacao.py` |
+| Anúncio, publicação, pesquisa e pedidos do Mercado Livre | `backend/apps/integrations/services/mercado_livre/` |
+| Testes | `backend/apps/integrations/tests/` (pedidos em `backend/apps/sales/tests/`) |
 
 Spec, plano e validação em [005-integracao-marketplaces](specs/005-integracao-marketplaces/spec.md).

@@ -9,50 +9,47 @@ Como o projeto é montado e onde mexer. Para publicar, escalar e recuperar, veja
 
 ## Estrutura
 
+Organizada por contexto desde a spec 017 — o mapa completo, as regras de dependência e onde
+cada arquivo antigo foi parar estão em [arquitetura](architecture.md).
+
 ```
 jalapao-store/
 ├── backend/            Django 5.2 + DRF, PostgreSQL, uv
-│   ├── apps/
-│   │   ├── accounts/     usuário e login JWT
-│   │   ├── catalog/      produtos e perfil de impressão 3D
-│   │   │   └── domain.py   a conta do custo 3D, pura
-│   │   ├── inventory/    estoque, entradas (compra/produção) e movimentos
-│   │   │   └── services.py casos de uso transacionais
-│   │   ├── sales/        vendas, itens e cancelamento
-│   │   ├── finance/      caixa
-│   │   ├── integrations/ marketplaces: contrato, adaptadores e outbox
-│   │   │   ├── base.py      o contrato que Shopee e Mercado Livre cumprem
-│   │   │   ├── shopee/      assinatura HMAC e cliente
-│   │   │   └── meli/        OAuth2/PKCE e cliente
-│   │   └── common/       dashboard, permissões, certificado e TESTES
-│   └── config/settings.py
+│   ├── apps/<contexto>/  accounts, catalog, inventory, sales, finance, integrations, common
+│   │   ├── domain/       regras puras, sem banco
+│   │   ├── models.py     entidades
+│   │   ├── services.py   casos de uso transacionais
+│   │   ├── api/          serializers, permissions, views, urls
+│   │   └── tests/        os testes do contexto
+│   ├── apps/integrations/  + domain/ports.py, infrastructure/ (clientes ML e Shopee),
+│   │                         services/ (sincronização e casos de uso do Mercado Livre)
+│   └── config/settings/  base, production (padrão), development, test
 ├── frontend/           Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui
 │   └── src/
-│       ├── app/(store)/  as telas, incluindo ferramentas/
-│       ├── app/api/      BFF: troca cookie por JWT e fala com o Django
-│       ├── components/   shell, campos, feedback e ui/
-│       └── lib/ferramentas/  as contas das três ferramentas
-├── infra/              nginx (http/https), deploy.sh e renovação de certificado
-├── docs/               constituição, specs, decisões, operação e por ferramenta
+│       ├── app/          só rotas (cada page.tsx reexporta a tela) e o BFF em app/api/
+│       ├── features/     telas e componentes por contexto; tools/lib/ tem as contas das ferramentas
+│       └── shared/       cliente da API, ui/, componentes comuns, layout (menu), format, PWA
+├── infra/              nginx (http/https/dev), deploy.sh e renovação de certificado
+├── docs/               constituição, arquitetura, specs, operação e por ferramenta
 ├── site/, api/         o sistema anterior, preservado para rollback
 └── manuais/            PDFs públicos, fora do repositório no servidor
 ```
 
 ## Onde mora cada responsabilidade
 
-A regra que vale para o backend inteiro:
+A regra que vale para todo contexto do backend:
 
-| Camada | Arquivo | O que pode ter |
+| Camada | Onde | O que pode ter |
 |---|---|---|
-| domínio | `domain.py` | conta pura, sem ORM e sem request |
+| domínio | `domain/` | conta e regra puras, sem ORM e sem request |
 | caso de uso | `services.py` | transação, trava, validação de regra |
-| borda | `api.py` | serialização, permissão, formato da resposta |
+| borda | `api/` | serialização, permissão, rota, formato da resposta |
 
 Serviço só roda dentro de `transaction.atomic`, e toda escrita de estoque passa por
 `adjust_stock` — é lá que moram a trava de concorrência e o razão de movimentos.
 
-No frontend a ideia é a mesma: as contas das ferramentas vivem em `src/lib/ferramentas/`
-e não tocam em DOM. As telas leem campo, chamam a função e desenham.
+No frontend a ideia é a mesma: as contas das ferramentas vivem em
+`src/features/tools/lib/` e não tocam em DOM. As telas leem campo, chamam a função e desenham.
 
 ## As ferramentas
 
@@ -61,9 +58,9 @@ portadas linha a linha dos arquivos antigos, **sem alterar nenhuma fórmula**:
 
 | Módulo | Veio de | Cuidado |
 |---|---|---|
-| `lib/ferramentas/custo3d.ts` | `site/assets/custo-3d.js` | precisa dar o mesmo número que `apps/catalog/domain.py` |
-| `lib/ferramentas/marketplace.ts` | o miolo de `site/calculadora.html` | as faixas de taxa são regra de negócio do dono |
-| `lib/ferramentas/etiquetas.ts` | o miolo de `site/etiquetas.html` | os recortes do OCR são calibrados; mexer quebra a leitura |
+| `features/tools/lib/custo3d.ts` | `site/assets/custo-3d.js` | precisa dar o mesmo número que `apps/catalog/domain/pricing.py` |
+| `features/tools/lib/marketplace.ts` | o miolo de `site/calculadora.html` | as faixas de taxa são regra de negócio do dono |
+| `features/tools/lib/etiquetas.ts` | o miolo de `site/etiquetas.html` | os recortes do OCR são calibrados; mexer quebra a leitura |
 
 O Tesseract continua vindo de CDN, carregado sob demanda na primeira leitura. A etiqueta é
 desenhada pela API pública do Labelary, limitada a 3 requisições por segundo — daí a fila
@@ -94,9 +91,12 @@ pequeno sobre bloco colorido, use o laranja queimado.
 1. Escreva a spec antes: `docs/specs/<numero>-<nome>/spec.md`, depois plan, tasks e
    validation. É o que a [constituição](constitution.md) exige, e vale também para mudança
    pequena.
-2. Backend: modelo → migration → serviço → api → rota em `config/urls.py`.
-3. Frontend: página em `src/app/(store)/`, link em `src/components/shell.tsx`.
-4. Teste em `backend/apps/common/` — a suíte inteira mora lá.
+2. Backend, no app do contexto: regra pura em `domain/` → modelo → migration → caso de uso em
+   `services.py` → `api/serializers.py`, `api/views.py` e a rota em `api/urls.py`. Contexto
+   novo entra na lista `CONTEXTOS` de `config/urls.py`.
+3. Frontend: tela em `src/features/<contexto>/<nome>-page.tsx`, rota em `src/app/(store)/<rota>/page.tsx`
+   com uma linha (`export { default } from "@/features/...";`) e link em `src/shared/layout/shell.tsx`.
+4. Testes em `backend/apps/<contexto>/tests/`; regra pura com `SimpleTestCase`, sem banco.
 5. Atualize o README da pasta e o documento da ferramenta em `docs/`.
 
 ## Testar antes de dar por pronto
@@ -118,7 +118,7 @@ uv run ruff check . --exclude migrations
 uv run python manage.py check
 uv run python manage.py makemigrations --check --dry-run
 uv run python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi.yml
-uv run python manage.py test apps.common --noinput
+DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py test apps --noinput
 ```
 
 Sem PostgreSQL à mão, `TEST_SQLITE=1` roda a suíte em SQLite — mas os quatro testes de

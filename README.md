@@ -19,7 +19,7 @@ Frontend: `npm ci` dentro de frontend. Consulte os READMEs de cada pasta para co
 | frontend/ | Next.js: rotas em app/, telas por contexto em features/, comum em shared/, PWA, Dockerfile |
 | docs/ | Constituição SDD, decisões, specs, validação e operação |
 | infra/ | Nginx interno, Certbot do IP e script de publicação |
-| site/, api/ | Fontes legadas preservadas para consulta/rollback; fora da nova stack |
+| site/, api/, Dockerfile e nginx-site.conf da raiz | Sistema anterior (site estático + API de produtos) preservado para consulta/rollback; nenhum workflow, compose ou deploy os usa |
 | manuais/ | PDFs públicos da loja, fora do rsync de código |
 
 Produção: https://jpsys.duckdns.org/jalapao-store (também pelo IP, https://217.216.82.25/jalapao-store)
@@ -33,9 +33,15 @@ loja é proxy interno na 8080, servindo rotas e arquivos. Ver [operação](docs/
 Comece por [constituição](docs/constitution.md), [especificação](docs/specs/001-platform/spec.md),
 [plano](docs/specs/001-platform/plan.md) e [tarefas](docs/specs/001-platform/tasks.md).
 Cada mudança futura deve declarar comportamento, aceitação, plano e evidência de validação.
+Índice de todas as specs, com o que ainda está pendente: [docs/specs](docs/specs/README.md).
 Documentação própria: [backend](backend/README.md) e [frontend](frontend/README.md).
 [Operação e recuperação](docs/operations.md). [Decisão monorepo](docs/adr/001-monorepo-modular.md).
 [Arquitetura, organização do código e relações do banco](docs/architecture.md).
+
+Guias: [manutenção (onde mexer)](docs/manutencao.md) · [produtos](docs/produtos.md) ·
+[integrações](docs/integracoes.md) · ferramentas: [taxas de marketplace](docs/calculadora-marketplace.md),
+[custo de impressão 3D](docs/custo-impressao-3d.md), [etiquetas](docs/gerador-de-etiquetas.md).
+Versões antigas guardadas: [originais/LEIA-ME.md](originais/LEIA-ME.md).
 
 ## Escopo
 Preço/custo decimal, histórico de estoque, venda por canal, descontos/taxas/frete reais,

@@ -1,6 +1,8 @@
 # Calculadora de marketplace
 
-`calculadora.html` — quanto sobra no bolso depois que o marketplace tira a parte dele.
+Tela **Ferramentas → Taxas de marketplace** (`/jalapao-store/ferramentas/calculadora`) —
+quanto sobra no bolso depois que o marketplace tira a parte dele. Até 23/09/2026 era a página
+`site/calculadora.html`; virou tela do app sem mudar nenhuma fórmula (spec 003).
 
 ## O que você preenche
 
@@ -132,14 +134,14 @@ Se algum destes valer para você, tire na mão:
 
 ## Quando a Shopee mudar a tabela
 
-Três lugares em `calculadora.html`:
+Três lugares, todos em `frontend/src/features/tools/`:
 
-1. `tabelaVigente(hoje)` — guarda a taxa fixa da primeira faixa e o teto do meio-preço, e a
+1. `lib/marketplace.ts`, `tabelaVigente(hoje)` — guarda a taxa fixa da primeira faixa e o teto do meio-preço, e a
    data em que os valores novos entram (`AJUSTE_OUTUBRO`). É aqui que se programa uma
    mudança anunciada com antecedência.
-2. `faixaShopee(preco, hoje)` — as faixas em si; devolve comissão, taxa fixa e o nome da
+2. `lib/marketplace.ts`, `faixaShopee(preco, hoje)` — as faixas em si; devolve comissão, taxa fixa e o nome da
    faixa. Aceita uma data para dar para testar o futuro sem mexer no relógio.
-3. `atualizarTabela()` — o texto que aparece em "Ver tabela de regras e taxas".
+3. `fees-calculator-page.tsx`, o bloco "Regras e taxas" — a tabela que aparece na tela.
 
 Mudou uma, mude as outras, senão a tela passa a mentir.
 

@@ -3,7 +3,8 @@
 ## Publicação
 GitHub main → workflow deploy.yml. Job test antigo preservado; job quality executa testes
 Django em PostgreSQL real e build Next; job build valida e constrói imagens. Deploy rsync
-preserva `.env*`, dados/, data/, manuais/ e não envia dependências locais.
+preserva `.env*`, dados/, data/, manuais/ e não envia dependências locais. O que é a pasta
+`dados/` do servidor e quando ela pode sair: [dados-LEIA-ME.md](../dados-LEIA-ME.md).
 
 Pré-requisitos na VPS: `.env.backend` modo 600 com DJANGO_SECRET_KEY e POSTGRES_PASSWORD
 aleatórios. `.env.production` continua sendo gerado pelo workflow. `.env.bootstrap` modo600
@@ -44,7 +45,7 @@ configuração ativa após a migração.
 Certbot verifica renovação a cada 12h. Validar periodicamente os logs do certbot e a data
 de expiração servida. Não foi contratado serviço adicional; o domínio é gratuito (DuckDNS).
 
-### TLS no Traefik (spec 007, concluída em 24/09/2026)
+### TLS no Traefik (spec 018, concluída em 24/09/2026)
 
 O Traefik, que já era o proxy da VPS e serve o Portainer, termina o HTTPS: um ponto de
 entrada só, para 80 e 443. O Nginx da loja deixou de ter porta pública e ficou como proxy

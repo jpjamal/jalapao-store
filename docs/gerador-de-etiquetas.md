@@ -1,7 +1,11 @@
 # Gerador de etiquetas
 
-`etiquetas.html` — o `.txt` de ZPL que a Shopee gera vira um PDF por etiqueta, já com o
-nome do cliente no nome do arquivo.
+Tela **Ferramentas → Etiquetas** (`/jalapao-store/ferramentas/etiquetas`) — o `.txt` de
+ZPL que a Shopee gera vira um PDF por etiqueta, já com o nome do cliente no nome do arquivo.
+
+Até 23/09/2026 era a página `site/etiquetas.html`; virou tela do app com as mesmas regras
+(spec 003). O código está em `frontend/src/features/tools/labels-page.tsx` e as regras de
+OCR, fila e nome de arquivo em `frontend/src/features/tools/lib/etiquetas.ts`.
 
 ## O caminho do arquivo
 
@@ -71,13 +75,12 @@ Se o OCR não achar o nome, o arquivo cai para `<nome do txt>_<número>`, e o ca
 
 ## No celular
 
-O botão **Usar no celular** explica: copie a pasta `sistema jalapao store` inteira
-(OneDrive, Drive ou cabo) e abra o `etiquetas.html` com o Chrome. A pasta precisa ir junto
-por causa do estilo e do logo — se quiser mandar um arquivo só, use
-`originais/etiquetas-arquivo-unico.html`, que é autossuficiente.
+Abra a tela no navegador do celular, ou pelo app instalado (spec 014), com o mesmo login.
+O botão de escolher pasta depende do navegador; sem ele, os PDFs vão para Downloads.
 
-Se a página estiver sendo servida na rede local, o mesmo botão mostra um QR code do
-endereço.
+Para usar **sem login e sem o sistema**, existe a versão antiga num arquivo só,
+`originais/etiquetas-arquivo-unico.html`: mande o arquivo para o celular (OneDrive, Drive ou
+WhatsApp) e abra no Chrome. Ela não recebe as melhorias feitas no app.
 
 ## Configuração
 

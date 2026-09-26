@@ -10,4 +10,4 @@
       para a busca do site quando não há `permalink`. Mais vendidos passou a ser a aba inicial.
 - [x] Publicar a revisão pelo GitHub (a2e8712).
 - [x] Item do ranking recusado (403 em `/user-products`) não derruba a lista; 403 com mensagem própria.
-- [ ] Publicar a correção pelo GitHub, quando o dono pedir.
+- [x] Publicar a correção pelo GitHub (f6e95a8, 25/09/2026).

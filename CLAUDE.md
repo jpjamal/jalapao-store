@@ -3,9 +3,11 @@
 O pedido de 2026-09-23 autoriza migração para Django/DRF/PostgreSQL e Next.js/Tailwind/shadcn.
 Substitui as antigas restrições sem build, framework, banco ou login.
 
-- Ler docs/constitution.md, docs/specs/001-platform e READMEs backend/frontend.
+- Ler docs/constitution.md, docs/architecture.md, docs/specs/001-platform e READMEs backend/frontend.
 - Backend com uv, pyproject.toml, uv.lock e .venv; não Poetry nem Python global.
-- Monólito modular por domínio. Serviços transacionais para estoque, vendas e caixa.
+- Monólito modular por contexto (spec 017): no backend `domain/`, `models.py`, `services.py`,
+  `api/`, `tests/` por app; no frontend `app/` só rotas, `features/<contexto>/` e `shared/`.
+  Serviços transacionais para estoque, vendas e caixa.
 - Dinheiro Decimal, relações explícitas, migrations versionadas, permissões Django.
 - Preservar paleta/tokens, ferramentas, produtos e manuais existentes.
 - Taxas de marketplace não mudam sozinhas; distinguir estimativas de valores reais.
@@ -14,6 +16,8 @@ Substitui as antigas restrições sem build, framework, banco ou login.
 - Job test placeholder preservado; testes reais estão no job quality.
 - Autor exclusivo dos commits: jpjamal <jpfisica3@gmail.com>, sem coautores ou IA.
 - Contexto original e segredos fora do Git. Admin/jpmorais não têm senha em código ou docs.
-- Integração Mercado Livre ainda não ativada; não declarar sincronização concluída.
+- Mercado Livre conectado: valida, publica e edita anúncio, pesquisa mercado e importa vendas
+  sob comando do dono (specs 011–015). Nada é automático; envio de estoque e importação de
+  vendas são manuais. Shopee ainda sem conta conectada.
 - Produção em https://jpsys.duckdns.org/jalapao-store. HTTPS no Traefik do repositório
   `traefikproxy` (privado); Nginx da loja só interno. Por SSH, só parar/reiniciar container.

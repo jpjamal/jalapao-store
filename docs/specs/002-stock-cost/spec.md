@@ -33,3 +33,26 @@ via lançamento inverso, preservando o documento original.
 lucro desconta R$24, caixa recebe somente líquido da venda. Alterar referência não muda
 saldo. Cancelar devolve R$24. Pagar duas vezes cria uma saída. Produção não cria caixa.
 Entrada inválida/sem permissão não tem efeitos; concorrência e arredondamento conservam valor.
+
+## Contrato da API
+Antes em `backend/docs/specs/002-stock-cost.md`, consolidado aqui na spec 017.
+- `POST receipts/`: `idempotency_key` UUID, `product_id` UUID, `kind` purchase/production,
+  `quantity` 1..1000000, `unit_cost` decimal não negativo, `occurred_on` até hoje,
+  `supplier`/`reference`/`notes` opcionais. 201 com o registro e o total. A mesma chave com
+  outro conteúdo ou outro autor: 400. Bloqueia o produto, soma valor e quantidade e grava
+  Movement e Outbox na mesma transação. Não altera `cost_price` do catálogo.
+- `POST receipts/{id}/pay/`: `occurred_on` até hoje; só compra. Idempotente: uma saída no
+  caixa, sem nova alteração de estoque.
+- Leitura exige `view_receipt`. Sem PATCH/DELETE na API nem edição no Admin.
+- Corte da migração: backup e pausa da API antes de migrar; não voltar ao código anterior de
+  custos sem restaurar um backup consistente.
+
+## Critérios da interface
+Antes em `frontend/docs/specs/002-stock-cost.md`, consolidado aqui na spec 017.
+- Menu Compras / produção → `/entradas`, um produto por entrada. O custo de referência é
+  sugerido ao escolher o produto e pode ser trocado pelo custo real.
+- O total na tela é prévia; quem calcula é o backend. Erros da API visíveis, botão bloqueado
+  durante o envio, chave idempotente mantida em nova tentativa e renovada após sucesso.
+- Pagar pede data e confirma o total. Produção não oferece pagamento.
+- Estoque mostra `stock_value`/`average_cost` do backend; ajuste positivo exige custo. O caixa
+  identifica a origem "Compra de estoque"; o catálogo mostra "Custo de referência".

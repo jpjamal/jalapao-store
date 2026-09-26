@@ -76,7 +76,8 @@ se ausentes, não redefine senhas. Django armazena hash. Nunca commitar arquivo 
 Interface Django Admin em `/jalapao-store/admin/`; estoque/caixa/vendas são apenas leitura
 no Admin para não contornar os serviços. Usuários e grupos continuam administráveis.
 
-Specs específicas em docs/specs; especificação compartilhada em ../docs/specs/001-platform.
+Todas as specs ficam em ../docs/specs (uma pasta por mudança); as regras gerais estão em
+../docs/specs/001-platform e ../docs/specs/002-stock-cost.
 
 Contrato OpenAPI versionado: docs/openapi.yml. Validar com
 `uv run python manage.py spectacular --validate --fail-on-warn --file docs/openapi.yml`.

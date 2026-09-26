@@ -1,7 +1,10 @@
 # Custo de impressão 3D
 
-`impressao-3d.html` — o que a peça custou de filamento, energia e trabalho, e por quanto
-sai com margem.
+Tela **Ferramentas → Custo de impressão 3D** (`/jalapao-store/ferramentas/impressao-3d`) — o
+que a peça custou de filamento, energia e trabalho, e por quanto sai com margem. Até
+23/09/2026 era a página `site/impressao-3d.html`. A conta está em
+`frontend/src/features/tools/lib/custo3d.ts` e, igual, no backend em
+`backend/apps/catalog/domain/pricing.py` (que calcula o preço salvo no catálogo).
 
 A conta é a mesma da [calculadora da 3D Prime](https://3dprime.com.br/calculadora-de-custo-de-impressao-3d/),
 lida direto do código da página deles em 14/09/2026. A parte de gerar orçamento em PDF

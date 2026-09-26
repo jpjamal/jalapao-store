@@ -11,4 +11,5 @@
 - [x] Nginx de desenvolvimento: faltava `$jalapao_forwarded_proto` (erro anterior, visto ao
       recriar a cópia local).
 - [x] Documentação: docs/architecture.md (organização, camadas, mapa antigo → novo), READMEs.
-- [ ] Publicar pelo GitHub, quando o dono pedir, e conferir as telas em produção.
+- [x] Publicar pelo GitHub (934b595 + c5baabb, 26/09/2026).
+- [ ] Conferir as telas em produção por dentro, com login.
