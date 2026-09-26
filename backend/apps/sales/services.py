@@ -5,12 +5,13 @@ from django.db import transaction, connection
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from apps.catalog.models import Product
-from apps.catalog.domain import money
+from apps.common.domain.money import money
+from apps.sales.domain.totals import sale_totals
 from apps.inventory.services import adjust_stock
 from apps.inventory.models import Stock
 from apps.inventory.services import outgoing_cost
 from apps.finance.models import CashEntry
-from .models import Sale, SaleItem
+from apps.sales.models import Sale, SaleItem
 
 
 @transaction.atomic
@@ -36,7 +37,6 @@ def create_sale(*, data, actor):
     products = {p.id: p for p in Product.objects.select_for_update().filter(id__in=ids).order_by("id")}
     if len(products) != len(ids) or any(not p.active for p in products.values()):
         raise ValidationError({"items": "Produto inexistente ou inativo."})
-    gross = money(sum(row["unit_price"] * row["quantity"] for row in rows))
     item_costs = {
         row["product_id"]: outgoing_cost(Stock.objects.get(product_id=row["product_id"]), row["quantity"])
         for row in rows
@@ -45,9 +45,8 @@ def create_sale(*, data, actor):
     discount, fee, shipping = (
         data.get(key, Decimal(0)) for key in ("discount", "platform_fee", "shipping_cost")
     )
-    net = money(gross - discount - fee - shipping)
-    if discount > gross or net < 0:
-        raise ValidationError({"discount": "Descontos, taxas e frete não podem superar o valor bruto."})
+    totals = sale_totals(items=rows, discount=discount, fee=fee, shipping=shipping)
+    gross, net = totals.gross, totals.net
     sale = Sale.objects.create(
         channel=data["channel"],
         reference=data.get("reference", ""),

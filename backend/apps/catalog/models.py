@@ -1,25 +1,17 @@
 from decimal import Decimal
-import re
-import unicodedata
 import uuid
 from django.db import models
 from django.db import transaction
 from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.common.models import Entity
-from .domain import printing_cost
+from apps.catalog.domain.pricing import printing_cost
+from apps.catalog.domain.sku import sku, sku_initials
 
 
 def amount(default=0):
     return models.DecimalField(
         max_digits=14, decimal_places=2, default=default, validators=[MinValueValidator(0)]
     )
-
-
-def sku_initials(name):
-    normalized = unicodedata.normalize("NFKD", name)
-    words = re.findall(r"[A-Z0-9]+", "".join(c for c in normalized if not unicodedata.combining(c)).upper())
-    initials = "".join(word[0] for word in words if word not in {"A", "AS", "DA", "DAS", "DE", "DO", "DOS", "E", "O", "OS", "PARA"})
-    return initials[:6] or "PRD"
 
 
 class SkuSequence(models.Model):
@@ -58,7 +50,7 @@ class Product(Entity):
             with transaction.atomic():
                 while True:
                     number = SkuSequence.objects.create().pk
-                    candidate = f"SKU-{sku_initials(self.name)}-{number:04d}"
+                    candidate = sku(sku_initials(self.name), number)
                     if not Product.objects.filter(sku=candidate).exists():
                         self.sku = candidate
                         return super().save(*args, **kwargs)

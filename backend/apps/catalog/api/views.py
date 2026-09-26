@@ -1,0 +1,271 @@
+from django.http import FileResponse, Http404
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from rest_framework import mixins, serializers, viewsets
+from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.response import Response
+
+from apps.catalog.api.permissions import DraftChangePermission, DraftPublishPermission
+from apps.catalog.api.serializers import (
+    ListingDraftSerializer,
+    ProductImageSerializer,
+    ProductImageUploadSerializer,
+    ProductSerializer,
+)
+from apps.catalog.models import ListingDraft, Product, ProductImage
+
+
+class ProductViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = Product.objects.select_related("printing", "stock").all()
+    serializer_class = ProductSerializer
+    filterset_fields = ["kind", "active"]
+    search_fields = ["name", "sku"]
+
+
+class ProductImageViewSet(
+    mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet
+):
+    queryset = ProductImage.objects.select_related("product").all()
+    filterset_fields = ["product"]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_serializer_class(self):
+        return ProductImageUploadSerializer if self.action == "create" else ProductImageSerializer
+
+    @extend_schema(request=ProductImageUploadSerializer, responses={201: ProductImageSerializer})
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        image = serializer.save()
+        return Response(ProductImageSerializer(image).data, status=201)
+
+    def destroy(self, request, *args, **kwargs):
+        image = self.get_object()
+        if image.drafts.exists():
+            raise serializers.ValidationError({"image": "Retire a foto dos rascunhos antes de excluí-la."})
+        file = image.file
+        image.delete()
+        file.delete(save=False)
+        return Response(status=204)
+
+    @extend_schema(responses={200: OpenApiTypes.BINARY})
+    @action(detail=True, methods=["get"], url_path="content")
+    def content(self, request, pk=None):
+        image = self.get_object()
+        try:
+            return FileResponse(image.file.open("rb"), content_type=image.mime_type)
+        except FileNotFoundError as exc:
+            raise Http404("Foto não encontrada no armazenamento.") from exc
+
+
+PUBLICACAO = inline_serializer(
+    name="DraftPublication",
+    fields={
+        "item_id": serializers.CharField(),
+        "permalink": serializers.CharField(),
+        "status": serializers.CharField(),
+        "titulo": serializers.CharField(),
+        "fotos": serializers.IntegerField(),
+        "fotos_novas": serializers.IntegerField(),
+        "estoque": serializers.IntegerField(allow_null=True),
+        "avisos": serializers.ListField(child=serializers.CharField()),
+    },
+)
+
+
+class ListingDraftViewSet(
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
+    mixins.UpdateModelMixin, viewsets.GenericViewSet,
+):
+    queryset = ListingDraft.objects.select_related("product", "listing").prefetch_related("ordered_images").all()
+    serializer_class = ListingDraftSerializer
+    filterset_fields = ["product", "channel"]
+
+    # ---------- entrega 2: consultar categoria e validar, sem publicar (spec 011) ----------
+
+    @staticmethod
+    def _integracao(chamada):
+        """Erro vindo do marketplace vira 400 legível, não 500."""
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        from apps.integrations.domain.ports import IntegrationError
+
+        try:
+            return chamada()
+        except IntegrationError as exc:
+            raise DjangoValidationError({"integration": str(exc)}) from exc
+
+    @extend_schema(
+        parameters=[OpenApiParameter("q", str, required=True, description="Título do anúncio")],
+        responses=inline_serializer(
+            name="MlCategorySuggestion",
+            fields={
+                "category_id": serializers.CharField(),
+                "category_name": serializers.CharField(),
+                "domain_name": serializers.CharField(),
+            },
+            many=True,
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="ml-categories")
+    def ml_categories(self, request):
+        from apps.integrations.services.mercado_livre.anuncio import conta_do_mercado_livre
+        from apps.integrations.services.sincronizacao import chamar
+
+        q = (request.query_params.get("q") or "").strip()
+        if len(q) < 3:
+            raise serializers.ValidationError({"q": "Digite ao menos 3 letras do título."})
+
+        def buscar():
+            conta = conta_do_mercado_livre()
+            return chamar(conta, "suggest_categories", q=q[:200], limit=3)
+
+        sugestoes = self._integracao(buscar)
+        return Response([
+            {
+                "category_id": s.get("category_id") or "",
+                "category_name": s.get("category_name") or "",
+                "domain_name": s.get("domain_name") or "",
+            }
+            for s in sugestoes if s.get("category_id")
+        ])
+
+    @staticmethod
+    def _categoria_valida(categoria_id):
+        if not categoria_id or len(categoria_id) > 40 or not categoria_id.replace("-", "").isalnum():
+            raise serializers.ValidationError({"category_id": "Informe um código de categoria válido."})
+
+    @extend_schema(
+        parameters=[OpenApiParameter(
+            "category_id", str, required=False, description="Vazio devolve o primeiro nível"
+        )],
+        responses=inline_serializer(
+            name="MlCategoryTree",
+            fields={
+                "id": serializers.CharField(),
+                "name": serializers.CharField(),
+                "path": serializers.ListField(child=serializers.DictField()),
+                "listing_allowed": serializers.BooleanField(),
+                "children": serializers.ListField(child=serializers.DictField()),
+            },
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="ml-category-tree")
+    def ml_category_tree(self, request):
+        """Um nível da árvore de categorias do Mercado Livre, para escolher navegando."""
+        from apps.integrations.services.mercado_livre.anuncio import conta_do_mercado_livre
+        from apps.integrations.services.sincronizacao import chamar
+
+        categoria_id = (request.query_params.get("category_id") or "").strip()
+        if categoria_id:
+            self._categoria_valida(categoria_id)
+
+        def buscar():
+            conta = conta_do_mercado_livre()
+            if not categoria_id:
+                return {"id": "", "name": "", "children_categories": chamar(conta, "site_categories")}
+            return chamar(conta, "category", category_id=categoria_id)
+
+        categoria = self._integracao(buscar)
+        filhas = categoria.get("children_categories") or []
+        return Response({
+            "id": categoria.get("id") or categoria_id,
+            "name": categoria.get("name") or "",
+            "path": [
+                {"id": p.get("id") or "", "name": p.get("name") or ""}
+                for p in (categoria.get("path_from_root") or [])
+            ],
+            # sem filhas é folha: é nela que o anúncio entra, salvo se a categoria recusar
+            "listing_allowed": bool(categoria_id) and not filhas
+            and (categoria.get("settings") or {}).get("listing_allowed", True) is not False,
+            "children": [{"id": f.get("id") or "", "name": f.get("name") or ""} for f in filhas if f.get("id")],
+        })
+
+    @extend_schema(
+        parameters=[OpenApiParameter("category_id", str, required=True)],
+        responses=inline_serializer(
+            name="MlCategoryAttributes",
+            fields={
+                "category": serializers.DictField(),
+                "attributes": serializers.ListField(child=serializers.DictField()),
+            },
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="ml-attributes")
+    def ml_attributes(self, request):
+        from apps.integrations.services.mercado_livre.anuncio import (
+            atributos_do_formulario,
+            conta_do_mercado_livre,
+        )
+        from apps.integrations.services.sincronizacao import chamar
+
+        categoria_id = (request.query_params.get("category_id") or "").strip()
+        self._categoria_valida(categoria_id)
+
+        def buscar():
+            conta = conta_do_mercado_livre()
+            categoria = chamar(conta, "category", category_id=categoria_id)
+            atributos = chamar(conta, "category_attributes", category_id=categoria_id)
+            return categoria, atributos
+
+        categoria, atributos = self._integracao(buscar)
+        settings = categoria.get("settings") or {}
+        return Response({
+            "category": {
+                "id": categoria.get("id") or categoria_id,
+                "name": categoria.get("name") or "",
+                "path": [p.get("name") for p in (categoria.get("path_from_root") or [])],
+                "listing_allowed": settings.get("listing_allowed", True),
+                "max_title_length": settings.get("max_title_length"),
+                "max_pictures_per_item": settings.get("max_pictures_per_item"),
+                "minimum_price": settings.get("minimum_price"),
+            },
+            "attributes": atributos_do_formulario(atributos),
+        })
+
+    @extend_schema(
+        request=None,
+        responses=inline_serializer(
+            name="DraftValidation",
+            fields={
+                "pode_publicar": serializers.BooleanField(),
+                "simulado_no_mercado_livre": serializers.BooleanField(),
+                "causas_de_foto_retiradas": serializers.IntegerField(),
+                "categoria": serializers.DictField(allow_null=True),
+                "erros": serializers.ListField(child=serializers.DictField()),
+                "avisos": serializers.ListField(child=serializers.DictField()),
+            },
+        ),
+    )
+    @action(detail=True, methods=["post"], permission_classes=[DraftChangePermission])
+    def validate(self, request, pk=None):
+        from apps.integrations.services.mercado_livre.anuncio import diagnosticar
+
+        draft = self.get_object()
+        return Response(self._integracao(lambda: diagnosticar(draft)))
+
+    @extend_schema(request=None, responses=PUBLICACAO)
+    @action(detail=True, methods=["post"], permission_classes=[DraftPublishPermission])
+    def publish(self, request, pk=None):
+        """Publica de verdade no Mercado Livre. Valida de novo antes; nunca publica duas vezes."""
+        from apps.integrations.services.mercado_livre.publicacao import publicar
+
+        draft = self.get_object()
+        return Response(self._integracao(lambda: publicar(draft.pk, actor=request.user)), status=201)
+
+    @extend_schema(request=None, responses=PUBLICACAO)
+    @action(detail=True, methods=["post"], permission_classes=[DraftPublishPermission])
+    def push(self, request, pk=None):
+        """Envia ao anúncio já publicado o que mudou no rascunho: preço, fotos, atributos e
+        descrição."""
+        from apps.integrations.services.mercado_livre.publicacao import enviar_alteracoes
+
+        draft = self.get_object()
+        return Response(self._integracao(lambda: enviar_alteracoes(draft.pk, actor=request.user)))

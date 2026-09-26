@@ -15,8 +15,8 @@ Frontend: `npm ci` dentro de frontend. Consulte os READMEs de cada pasta para co
 ## Organização
 | Pasta | Finalidade |
 |---|---|
-| backend/ | Django, apps por domínio, migrations, uv.lock, testes, Dockerfile e compose com DB |
-| frontend/ | Next.js, componentes, as três ferramentas, package-lock e Dockerfile |
+| backend/ | Django: um app por contexto (domain, models, services, api, tests), settings por ambiente, uv.lock, Dockerfile |
+| frontend/ | Next.js: rotas em app/, telas por contexto em features/, comum em shared/, PWA, Dockerfile |
 | docs/ | Constituição SDD, decisões, specs, validação e operação |
 | infra/ | Nginx interno, Certbot do IP e script de publicação |
 | site/, api/ | Fontes legadas preservadas para consulta/rollback; fora da nova stack |
@@ -35,7 +35,7 @@ Comece por [constituição](docs/constitution.md), [especificação](docs/specs/
 Cada mudança futura deve declarar comportamento, aceitação, plano e evidência de validação.
 Documentação própria: [backend](backend/README.md) e [frontend](frontend/README.md).
 [Operação e recuperação](docs/operations.md). [Decisão monorepo](docs/adr/001-monorepo-modular.md).
-[Arquitetura e relações do banco](docs/architecture.md).
+[Arquitetura, organização do código e relações do banco](docs/architecture.md).
 
 ## Escopo
 Preço/custo decimal, histórico de estoque, venda por canal, descontos/taxas/frete reais,
@@ -46,8 +46,10 @@ antigas: não substituir taxas reais das vendas por esses valores.
 Marketplaces (Shopee e Mercado Livre): conectar a loja por autorização, espelhar anúncios
 vinculando por SKU e enviar o saldo do estoque, com interruptor por anúncio e desligado por
 padrão. O envio é sempre daqui para lá — saldo do marketplace nunca sobrescreve o local.
-Fora do escopo por enquanto: publicar ou editar anúncio, importar pedido e taxa real,
-empurrar preço, campanha e Ads. Não há worker automático: a sincronia é a pedido.
+No Mercado Livre também: validar, publicar e editar anúncio a partir do rascunho (specs
+011–012), pesquisa de mercado (013) e importar vendas com taxa e frete reais sob comando do
+dono (015). Fora do escopo por enquanto: empurrar preço, campanha e Ads, e pedidos da Shopee.
+Não há worker automático: a sincronia é a pedido.
 A conta Mercado Livre foi conectada no domínio anterior. O token existente pode ser
 renovado sem novo callback; uma nova autorização no domínio `jpsys.duckdns.org` ainda
 depende de conferir o retorno cadastrado no DevCenter. Importação e envio remoto de

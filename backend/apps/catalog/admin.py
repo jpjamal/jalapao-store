@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, PrintingProfile
+from apps.catalog.models import Product, PrintingProfile
 
 
 class PrintingInline(admin.StackedInline):

@@ -1,24 +1,18 @@
 import hashlib
 import json
-from decimal import Decimal
 from django.db import transaction, connection
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from apps.catalog.models import Product
-from apps.catalog.domain import money
+from apps.common.domain.money import money
+from apps.inventory.domain.costing import check_value, outgoing_value
 from apps.integrations.models import OutboxEvent
-from .models import Stock, Movement, Receipt
-
-
-def check_value(value):
-    if value < 0 or value > Decimal("999999999999.99"):
-        raise ValidationError({"unit_cost": "Valor fora do limite suportado."})
+from apps.inventory.models import Stock, Movement, Receipt
 
 
 def outgoing_cost(stock, quantity):
-    if quantity > stock.quantity:
-        raise ValidationError({"quantity": f"Estoque insuficiente. Disponível: {stock.quantity}."})
-    return stock.value if quantity == stock.quantity else money(stock.value * quantity / stock.quantity)
+    """Custo das unidades que saem deste estoque (regra em `domain.costing`)."""
+    return outgoing_value(available=stock.quantity, value=stock.value, quantity=quantity)
 
 
 @transaction.atomic

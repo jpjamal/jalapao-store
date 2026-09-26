@@ -8,6 +8,16 @@ Desenvolvimento: definir BACKEND_URL=http://127.0.0.1:8000, APP_ORIGIN=http://lo
 COOKIE_SECURE=false; executar `npm run dev`. Abrir http://localhost:3000/jalapao-store.
 Produção standalone: Dockerfile copia `.next/standalone`, `.next/static` e public.
 
+## Estrutura (spec 017)
+Organizado pelos mesmos contextos do backend — detalhes em ../docs/architecture.md.
+- `src/app/`: só rotas. Cada `page.tsx` tem uma linha que reexporta a tela da feature.
+- `src/features/<contexto>/`: `*-page.tsx` (tela), `components/`, `types.ts`, `api.ts` ou `lib/`.
+  Contextos: auth, dashboard, catalog, listings, inventory, sales, finance, integrations, tools.
+- `src/shared/`: `api/client.ts` (cliente do BFF), `api/types.ts`, `ui/` (shadcn),
+  `components/` (page-header, form-actions, pagination, fields, feedback), `layout/shell.tsx`,
+  `lib/format.ts` e `lib/utils.ts`, `pwa/service-worker.tsx`.
+- Regra: feature usa `shared/` e o que outra feature exporta; `shared/` não importa de features.
+
 ## Telas
 - /login: usuário e senha, erros recebidos da API.
 - /: estoque a custo, faturamento, lucro estimado, caixa, a receber, produtos ativos.
@@ -38,7 +48,7 @@ Produção standalone: Dockerfile copia `.next/standalone`, `.next/static` e pub
 - /callback: retorno da autorização; troca o código por tokens assim que abre.
 
 Todos os caminhos têm basePath /jalapao-store. Login protege tudo, ferramentas inclusive.
-As contas ficam em `src/lib/ferramentas/`, portadas linha a linha do site anterior e sem
+As contas ficam em `src/features/tools/lib/`, portadas linha a linha do site anterior e sem
 nenhuma alteração de fórmula: `custo3d.ts` (a mesma conta de apps/catalog/domain.py),
 `marketplace.ts` (faixas da Shopee e médias do Mercado Livre) e `etiquetas.ts` (fila do
 Labelary, recortes do OCR e regras de nome de arquivo). Os HTML originais seguem em ../site
@@ -46,16 +56,16 @@ só para consulta e rollback — não são mais servidos nem copiados por script
 antigos (`/calculadora.html`, `/ferramentas/calculadora.html` e afins) redirecionam para as
 páginas novas, em next.config.ts.
 
-`components/product-picker.tsx` é o campo de produto com busca: filtra por nome ou SKU
+`features/catalog/components/product-picker.tsx` é o campo de produto com busca: filtra por nome ou SKU
 ignorando acento, navega por teclado e impede envio com nome digitado sem seleção.
 Usado em vendas, entradas e estoque — ver ../docs/specs/004-busca-de-produto.
 
 ## Layout e componentes de tela
 Pensado para celular e computador (reorganização no commit 6563091):
-- `components/shell.tsx`: menu lateral agrupado no computador; no celular, barra fina no topo
+- `shared/layout/shell.tsx`: menu lateral agrupado no computador; no celular, barra fina no topo
   com menu em gaveta (fecha com Esc, ao tocar fora e ao trocar de página).
-- `components/page-header.tsx`: título, descrição, ações e link de volta, iguais em toda página.
-- `components/form-actions.tsx` e `components/pagination.tsx`: botões de formulário e
+- `shared/components/page-header.tsx`: título, descrição, ações e link de volta, iguais em toda página.
+- `shared/components/form-actions.tsx` e `shared/components/pagination.tsx`: botões de formulário e
   paginação padronizados — empilhados e com largura total no celular.
 - Tabelas com `className="data-table"` viram cartões no celular: cada `<td>` leva
   `data-label` (nome da coluna), a célula que identifica a linha `data-role="title"` e a de
@@ -68,7 +78,7 @@ colorido da marca — spec 014.
 - `src/app/manifest.ts`: manifesto servido em /jalapao-store/manifest.webmanifest.
 - `public/icons/`: ícones gerados por `npm run icons` (`scripts/gerar-icones.mjs`) a partir de
   `brand/logo-jalapao-colorido.png`. Trocou o logo? Substitua o arquivo em `brand/` e rode de novo.
-- `public/sw.js` + `components/service-worker.tsx`: service worker mínimo, registrado só em
+- `public/sw.js` + `shared/pwa/service-worker.tsx`: service worker mínimo, registrado só em
   produção. Não guarda dados nem API — só a página `public/offline.html`, mostrada sem internet.
   Ao mudar essa página ou o ícone, trocar `VERSAO` em sw.js.
 - Arquivos de public/ referenciados no manifesto e nos metadados levam o basePath à mão.
@@ -78,7 +88,7 @@ BFF valida Origin nas mutações, limita corpo e usa destinos de API permitidos.
 HttpOnly/Secure/SameSite=Lax, nunca em localStorage. Refresh com coalescência de concorrência
 no processo Node; ao escalar para múltiplas réplicas, introduzir coordenação compartilhada.
 Backend decide permissões. Front exibe erros 400/403 e envia 401 para login.
-`components.json` documenta aliases shadcn; componentes em src/components/ui são fonte editável.
+`components.json` documenta aliases shadcn; componentes em src/shared/ui são fonte editável.
 Tokens semânticos mantêm as cores, tipografias e modo escuro do sistema anterior.
 
 Specs específicas em docs/specs; requisitos globais em ../docs/specs/001-platform.

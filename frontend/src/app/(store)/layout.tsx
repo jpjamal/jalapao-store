@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Shell } from "@/components/shell";
+import { Shell } from "@/shared/layout/shell";
 export default async function StoreLayout({
   children,
 }: {

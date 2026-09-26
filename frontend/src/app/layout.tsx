@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { BASE } from "@/lib/api";
-import { ServiceWorker } from "@/components/service-worker";
+import { BASE } from "@/shared/api/client";
+import { ServiceWorker } from "@/shared/pwa/service-worker";
 import "./globals.css";
 
 export const metadata: Metadata = {

@@ -78,7 +78,7 @@ jobs:
           uv run python manage.py check
           uv run python manage.py makemigrations --check --dry-run
           uv run python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi.yml
-          uv run python manage.py test apps.common --verbosity 2
+          DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py test apps --verbosity 2
       - uses: actions/setup-node@v4
         with:
           node-version: '24'

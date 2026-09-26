@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Listing, MarketplaceAccount, OutboxEvent
+from apps.integrations.models import Listing, MarketplaceAccount, OutboxEvent
 
 
 @admin.register(MarketplaceAccount)

@@ -1,6 +1,6 @@
 from django.db import migrations, models
 
-from apps.integrations import fields as token_fields
+from apps.integrations.infrastructure import crypto as token_fields
 
 
 def cifrar_legado(apps, schema_editor):

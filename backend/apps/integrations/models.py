@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from apps.common.models import Entity
-from .fields import EncryptedTextField
+from apps.integrations.infrastructure.crypto import EncryptedTextField
 
 
 class MarketplaceAccount(Entity):

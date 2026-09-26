@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { BASE } from "@/lib/api";
+import { BASE } from "@/shared/api/client";
 
 /* Manifesto do app instalável (spec 014). O Next serve em /jalapao-store/manifest.webmanifest e
    põe o <link rel="manifest"> em todas as páginas. Caminhos de arquivos de public/ levam o

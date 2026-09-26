@@ -7,16 +7,25 @@ Gerenciador: **uv**; dependências exatas em `uv.lock`. Nunca instalar no Python
 Na pasta backend, `uv sync --frozen` cria `.venv`. Configurar DJANGO_SECRET_KEY,
 POSTGRES_HOST, POSTGRES_PASSWORD, POSTGRES_DB=jalapao e POSTGRES_USER=jalapao no ambiente.
 Executar `uv run python manage.py migrate` e `uv run python manage.py runserver`.
+Settings por ambiente em `config/settings/`: `production` é o padrão; para DEBUG local use
+`DJANGO_SETTINGS_MODULE=config.settings.development`; os testes usam `config.settings.test`.
 Banco isolado com backend/compose.yml (`docker compose --env-file ../.env up --build`).
 Stack completa: compose da raiz. `.env.example` contém apenas valores de desenvolvimento.
 
 `TEST_SQLITE=1` permite testes rápidos locais; não usar em produção. Concorrência é
-testada somente em PostgreSQL no CI. Rodar `uv run python manage.py test apps.common`.
+testada somente em PostgreSQL no CI. Rodar
+`DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py test apps` — os testes
+ficam em `apps/<contexto>/tests/`.
 Rodar `uv run ruff check . --exclude migrations` e `uv run python manage.py makemigrations --check`.
 
 ## Organização e contratos
+Cada app é um contexto com as camadas `domain/` (regra pura), `models.py`, `services.py`
+(casos de uso), `api/` (`serializers`, `permissions`, `views`, `urls`) e `tests/`. Mapa
+completo e regras de dependência em [../docs/architecture.md](../docs/architecture.md).
+
 - accounts: usuário Django extensível, grupos/permissões, JWT e bootstrap explícito.
-- catalog: Product e PrintingProfile 1:1; cálculos em domain.py.
+- common: núcleo compartilhado — entidade base, `domain/money.py`, permissões, erros e painel.
+- catalog: Product e PrintingProfile 1:1; cálculos em `domain/pricing.py`, SKU em `domain/sku.py`.
 - catalog: ProductImage guarda fotos privadas por produto; ListingDraft guarda conteúdo
   opcional por produto e canal, com ordem de fotos própria. Salvar não publica anúncio.
 - Novos produtos recebem SKU automático `SKU-<iniciais>-<sequência>` (ex.: `SKU-LP-0001`).
@@ -33,6 +42,9 @@ Rodar `uv run ruff check . --exclude migrations` e `uv run python manage.py make
   de estoque enviada, para não encerrar eventos de outras contas nem reenviar saldo antigo.
 
 App por domínio; ORM é persistência, services são casos de uso, api é camada HTTP.
+integrations separa ainda `domain/ports.py` (contrato do adaptador), `infrastructure/`
+(clientes HTTP do Mercado Livre e da Shopee, cifra dos tokens) e `services/`
+(sincronização e os casos de uso do Mercado Livre: anúncio, publicação, pesquisa, pedidos).
 Históricos usam PROTECT. Sem DELETE comercial. Desativar produtos pelo campo active.
 
 API interna `/api/v1/`; pública via `/jalapao-store/backend-api/`.
