@@ -29,88 +29,70 @@ Trocar a chave sem migrar os tokens exige autorizar novamente as contas conectad
 A migração 0004 não possui reversão automática para texto claro; para voltar a uma versão
 anterior do código, restaurar o backup do banco feito antes dessa migração.
 
-infra/deploy.sh constrói, faz pg_dump quando há banco anterior, aplica migrations, interrompe
-somente a API JSON antiga para importar uma cópia estável, sobe a stack e verifica HTTPS.
+infra/deploy.sh constrói, para a API, faz pg_dump quando há banco anterior, aplica
+migrations, leva as fotos e os manuais para o servidor de arquivos, interrompe somente a API
+JSON antiga para importar uma cópia estável, sobe a stack e confere as rotas pelo Traefik
+(front 200, admin 200, API sem rota pública, HTTP redirecionando para HTTPS, um manual 200).
 Backup JSON a cada importação; backup de código anterior no workflow. Arquivos sob
-~/backups/jalapao-store com permissões restritas. Manuais públicos preservados em volume.
-As fotos privadas dos produtos ficam no volume `product_media`, separado do banco.
-O deploy cria `media-<data>.tar.gz` na mesma pasta de backups após parar a API;
-para restauração, recuperar o dump do banco e o arquivo de fotos da mesma data.
+~/backups/jalapao-store com permissões restritas.
 
-## HTTPS
-Certbot 5.4 com webroot e perfil shortlived para o certificado por IP, que dura cerca de
-seis dias. O endereço principal da loja é `https://jpsys.duckdns.org/jalapao-store`;
-o acesso por IP permanece disponível. O `sslip.io` temporário foi retirado da
-configuração ativa após a migração.
-Certbot verifica renovação a cada 12h. Validar periodicamente os logs do certbot e a data
-de expiração servida. Não foi contratado serviço adicional; o domínio é gratuito (DuckDNS).
+## Arquivos: fotos e manuais (spec 020)
 
-### TLS no Traefik (spec 018, concluída em 24/09/2026)
+Ficam no **SILO**, o servidor de arquivos S3 do traefikproxy (fork AGPLv3 mantido do MinIO):
 
-O Traefik, que já era o proxy da VPS e serve o Portainer, termina o HTTPS: um ponto de
-entrada só, para 80 e 443. O Nginx da loja deixou de ter porta pública e ficou como proxy
-interno em HTTP na 8080. Além de servir o manual em PDF e o webroot do desafio ACME do
-certificado de IP, ele encaminha as páginas Next.js, o Django Admin, os estáticos e a API.
+| Bucket | Conteúdo | Acesso |
+|---|---|---|
+| `jalapao-media` | fotos dos produtos | privado: saem pelo Django, com login |
+| `jalapao-manuais` | manuais em PDF | público por objeto em `/manuais/<arquivo>`; listar não |
 
-Dois certificados, duas origens, e é assim de propósito:
+A chave da loja no SILO é gerada na VPS pelo deploy do traefikproxy, em
+`~/traefikproxy/.env.silo.jalapao-store`, e o `deploy.sh` a entrega ao compose por
+`--env-file`: nunca passa pelo GitHub. Sem `S3_ENDPOINT_URL` (desenvolvimento e testes), as
+fotos ficam no disco, como antes.
 
-| Nome | Emitido por | Validade | Por quê |
-|---|---|---|---|
-| `jpsys.duckdns.org` | Traefik, ACME HTTP-01 | 90 dias | o caminho normal |
-| `217.216.82.25` | Certbot da loja, perfil *shortlived* | ~6 dias | certificado de IP exige esse perfil, que o Traefik não emite |
+- **Manual novo:** subir pelo painel do SILO (`https://jpsys.duckdns.org/silo`, bucket
+  `jalapao-manuais`). A pasta `manuais/` da VPS ainda alimenta o bucket, mas só com o que
+  falta: um PDF trocado pelo painel não é sobrescrito.
+- **Migração:** o volume antigo `product_media` fica montado só para leitura em
+  `/app/media-disco`; a cada deploy, `migrate_media_to_storage` copia o que ainda não está no
+  bucket. Sai do compose depois de conferido em produção.
+- **Backup:** `export_media` grava `media-<data>.tar.gz` lido do bucket, com a API parada, na
+  mesma janela do dump do banco. Para restaurar, usar o dump e o arquivo de fotos da mesma data.
 
-O do IP entra no Traefik como certificado padrão (`tls.stores.default`), lido do volume
-compartilhado. Como o Traefik só relê certificado quando a configuração dinâmica muda, o
-`--deploy-hook` do Certbot toca o `dynamic.yml` do traefikproxy — **por bind mount do
-diretório, nunca do arquivo**: o rsync do outro deploy troca o inode, e um mount de arquivo
-ficaria preso no antigo, deixando a renovação sem efeito e em silêncio. O `deploy.sh` recusa
-rodar se a pasta vizinha `~/traefikproxy/traefik` não existir.
+## Proxy e HTTPS (spec 019)
 
-O backend já usa o retorno da Shopee no domínio atual, mas o cadastro no Console da
-Shopee ainda precisa ser feito antes da primeira conexão. O acesso HTTPS por IP continua
-disponível; só retirar seu certificado e o Certbot quando esse acesso deixar de ser necessário.
+Um único proxy na VPS: o **Traefik central** do repositório `traefikproxy`, que também traz
+o Portainer. A loja não tem Nginx nem Certbot: só declara as rotas dela em labels no
+`docker-compose.deploy.yml`, e o Traefik as lê pelo Docker.
 
-**A virada, em ordem.** Código e configuração só mudam por deploy. Por SSH, apenas parar ou
-reiniciar container — nada que altere arquivo. Duas variáveis de repositório no GitHub
-decidem quem termina TLS, e ambas começam no lado seguro:
+| Caminho | Vai para | Observação |
+|---|---|---|
+| `/jalapao-store/admin/`, `/jalapao-store/django-static/` | `jalapao-backend:8000` | única parte do backend na internet (Django Admin) |
+| `/jalapao-store/callback` | `jalapao-frontend:3000` | `Referrer-Policy: no-referrer` (o código da autorização vai na URL) |
+| `/jalapao-store` (resto) | `jalapao-frontend:3000` | cabeçalhos de segurança; envio limitado a 11 MB |
+| `/manuais/<arquivo>` | SILO, bucket `jalapao-manuais` | leitura pública de objeto; listar não (spec 020) |
+| `http://…/jalapao-store…`, `http://…/manuais/…` | redirecionamento 301 para HTTPS | middleware central `redirect-to-https@file` |
 
-| Variável | Repositório | Padrão | Na virada |
-|---|---|---|---|
-| `JALAPAO_TLS` | jalapao-store | `nginx` | `traefik` |
-| `TRAEFIK_HTTPS_BIND` | traefikproxy | `127.0.0.1:8443` | `0.0.0.0:443` |
+A API do Django **não tem rota pública**: o navegador fala só com o front, e o BFF do Next
+chama `http://jalapao-backend:8000` pela rede interna do Docker. A documentação da API
+(Swagger) fica para o ambiente local. Os serviços têm nomes únicos (`jalapao-db`,
+`jalapao-backend`, `jalapao-frontend`) porque a rede `traefik_proxy` é compartilhada.
 
-`TRAEFIK_HTTPS_BIND` precisa levar a porta junto: o compose monta `"${TRAEFIK_HTTPS_BIND}:443"`, e
-`0.0.0.0` sozinho vira `0.0.0.0:443`, que o Docker lê como *porta do host = 0.0.0.0* —
-`invalid hostPort`. Foi o que falhou na primeira tentativa da virada.
+Certificados, ambos na infraestrutura central:
 
-1. **Publicar a loja.** Cria o proxy HTTP na 8080 e as rotas HTTPS no Traefik. O Nginx
-   continua na 443; nada muda para quem acessa.
-2. **Publicar o traefikproxy.** Sobe o Traefik com a 443 só no loopback e valida os dois
-   certificados por dentro. Nada muda para quem acessa.
-3. **Trocar as duas variáveis** no GitHub.
-4. **Parar o Nginx TLS por SSH:** `docker stop jalapao-store-tls-1`. A partir daqui o HTTPS
-   está fora do ar — por isso o passo seguinte vem logo em seguida.
-5. **Publicar o traefikproxy de novo.** Ele confere que a 443 está livre, assume e valida.
-   Fim da janela de indisponibilidade.
-6. **Publicar a loja de novo.** Com `JALAPAO_TLS=traefik`, remove o container do Nginx TLS
-   e valida o HTTPS pelo Traefik.
+| Nome | Emitido por | Validade |
+|---|---|---|
+| `jpsys.duckdns.org` | o próprio Traefik (ACME HTTP-01, resolver `duckdns`) | 90 dias |
+| `217.216.82.25` | o `certbot` do traefikproxy (perfil *shortlived*, modo standalone) | ~6 dias |
 
-Três travas protegem a sequência:
+O Traefik ainda não emite certificado para IP (a correção está prevista para a v3.7), por
+isso o Certbot continua existindo — mas centralizado. Ele renova a cada 12 h, avisa o Traefik
+e deixa uma cópia pública do certificado no volume `infra_certificates`, que a loja monta só
+para leitura: é de lá que o painel lê quantos dias faltam. O `deploy.sh` da loja recusa rodar
+se a rede `traefik_proxy` ou esse volume não existirem — publique o traefikproxy antes.
 
-- **O Traefik recusa assumir a 443 se ela estiver ocupada**, e nesse caso nem é recriado.
-  Isso importa porque ele é compartilhado: se subisse pedindo uma porta ocupada, falharia
-  ao iniciar e derrubaria a porta 80 de todos os projetos, Portainer incluído.
-- **A loja recusa `JALAPAO_TLS=nginx` com o Traefik já na 443**, em vez de tentar subir o
-  Nginx numa porta ocupada no meio do deploy.
-- **Quem publica a 443 é lido da porta de verdade**, não procurado no texto. `grep '443->443'`
-  casaria com a pré-validação `127.0.0.1:8443->443/tcp` e desligaria o HTTPS por engano.
-
-Voltar atrás é o inverso: as variáveis nos valores padrão, parar o Traefik não é
-necessário — publicar o traefikproxy (volta ao loopback) e depois a loja (sobe o Nginx).
-
-Depois da primeira renovação do certificado de IP, **conferir a data servida na 443**: se o
-aviso ao Traefik falhar, a renovação acontece e ele segue com a chave velha — falha
-silenciosa que só aparece quando o certificado antigo vence.
+A migração do Nginx para o Traefik e a história da 443 estão na spec 018; a retirada do Nginx
+e do Certbot da loja, na spec 019.
 
 Callback principal do Mercado Livre: `https://jpsys.duckdns.org/jalapao-store/callback`.
 Desde a spec 005 a rota é funcional:
@@ -125,13 +107,12 @@ de domínio. Para a Shopee, o URI ainda precisa ser cadastrado no Console antes 
 
 ## Comandos na VPS
 Na pasta ~/jalapao-store, usar:
-`docker compose -f docker-compose.deploy.yml --env-file .env.production --env-file .env.backend --env-file .env.marketplace`
-seguido de `ps`, `logs --tail 100 backend`, `logs --tail 100 certbot`, etc. O perfil
-`nginx-https` é apenas a reserva para retornar temporariamente ao Nginx na porta 443;
-não deve ser usado na operação atual com `JALAPAO_TLS=traefik`.
+`docker compose -f docker-compose.deploy.yml --env-file .env.production --env-file .env.backend --env-file ~/traefikproxy/.env.silo.jalapao-store --env-file .env.marketplace`
+seguido de `ps`, `logs --tail 100 jalapao-backend`, `logs --tail 100 jalapao-frontend`, etc.
+Logs do proxy e do certificado ficam no traefikproxy (`logs traefik`, `logs certbot`).
 Se `.env.marketplace` ainda não existir, omita apenas essa opção; o script `infra/deploy.sh`
 faz isso automaticamente.
-Backup: `exec -T db pg_dump -U jalapao -d jalapao -Fc > backup.dump` em diretório privado.
+Backup: `exec -T jalapao-db pg_dump -U jalapao -d jalapao -Fc > backup.dump` em diretório privado.
 Restauração deve ser ensaiada em banco separado antes de substituir dados da produção.
 Nunca executar `down -v` em produção.
 

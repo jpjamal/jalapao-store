@@ -19,5 +19,8 @@ Substitui as antigas restrições sem build, framework, banco ou login.
 - Mercado Livre conectado: valida, publica e edita anúncio, pesquisa mercado e importa vendas
   sob comando do dono (specs 011–015). Nada é automático; envio de estoque e importação de
   vendas são manuais. Shopee ainda sem conta conectada.
-- Produção em https://jpsys.duckdns.org/jalapao-store. HTTPS no Traefik do repositório
-  `traefikproxy` (privado); Nginx da loja só interno. Por SSH, só parar/reiniciar container.
+- Produção em https://jpsys.duckdns.org/jalapao-store. Proxy único: o Traefik central do
+  repositório `traefikproxy` (privado), com HTTPS e certificados; a loja só declara rotas em
+  labels, sem Nginx nem Certbot. Só o front e o /admin são públicos; API só na rede interna.
+  Fotos e manuais no SILO, o servidor de arquivos S3 da mesma stack (spec 020); a chave da
+  loja é gerada na VPS e nunca entra no Git. Por SSH, só parar/reiniciar container.

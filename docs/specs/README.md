@@ -24,6 +24,8 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [015](015-vendas-marketplace/spec.md) | Canais da venda e importação de vendas do Mercado Livre | primeira venda real; Shopee |
 | [016](016-padronizar-sku/spec.md) | Padronizar o SKU dos produtos antigos | — |
 | [017](017-reestruturacao-ddd/spec.md) | Reestruturação do código por contexto (DDD) | conferir as telas com login |
-| [018](018-https-no-traefik/spec.md) | HTTPS no Traefik (antes numerada 007) | renovação do certificado do IP; certificados órfãos |
+| [018](018-https-no-traefik/spec.md) | HTTPS no Traefik (antes numerada 007) | certificados órfãos |
+| [019](019-traefik-unico/spec.md) | Traefik como único proxy (sem Nginx; Certbot central) | apagar o volume antigo de certificados |
+| [020](020-servidor-de-arquivos/spec.md) | Servidor de arquivos (SILO): fotos e manuais em buckets | tirar o volume antigo de fotos; backup fora da VPS |
 
-Próxima spec: **019**.
+Próxima spec: **021**.

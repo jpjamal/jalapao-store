@@ -29,10 +29,10 @@ jalapao-store/
 │       ├── app/          só rotas (cada page.tsx reexporta a tela) e o BFF em app/api/
 │       ├── features/     telas e componentes por contexto; tools/lib/ tem as contas das ferramentas
 │       └── shared/       cliente da API, ui/, componentes comuns, layout (menu), format, PWA
-├── infra/              nginx (http/https/dev), deploy.sh e renovação de certificado
+├── infra/              deploy.sh e traefik/local.yml (rotas do proxy da cópia local)
 ├── docs/               constituição, arquitetura, specs, operação e por ferramenta
 ├── site/, api/         o sistema anterior, preservado para rollback
-└── manuais/            PDFs públicos, fora do repositório no servidor
+└── manuais/            PDFs públicos na VPS, fora do repositório; alimentam o bucket do SILO
 ```
 
 ## Onde mora cada responsabilidade
@@ -142,8 +142,11 @@ documentados em [calculadora de marketplace](calculadora-marketplace.md) e
 - **O Traefik não roteia container fora de `healthy`.** Ele some da tabela sem erro no log;
   o sintoma é 404 com `"-"` na coluna de router do access log.
 - **`localhost` em healthcheck de Alpine** resolve `::1` primeiro. Use `127.0.0.1`.
-- **Arquivo em bind mount troca de inode no rsync.** Por isso o `deploy.sh` recria
-  `gateway` e `tls` com `--force-recreate` depois de publicar.
+- **Arquivo em bind mount troca de inode no rsync.** Foi o que obrigava a recriar o Nginx a
+  cada deploy; hoje o único caso é o certbot central, que monta o diretório do `dynamic.yml`.
+- **Nome de serviço genérico na rede compartilhada.** O Docker registra o nome do serviço em
+  todas as redes dele; um `backend` na `traefik_proxy` pode responder por outro projeto.
+  Por isso `jalapao-backend`, `jalapao-frontend`, `jalapao-db`.
 - **Regra de negócio não muda sozinha.** As taxas de marketplace só mudam com pedido
   explícito e, de preferência, conferidas contra um pedido real do painel.
 

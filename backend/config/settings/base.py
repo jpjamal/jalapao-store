@@ -79,6 +79,29 @@ USE_I18N = USE_TZ = True
 STATIC_URL = "/jalapao-store/django-static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_ROOT = BASE_DIR / "media"
+# Fotos dos produtos: em produção, no bucket privado do servidor de arquivos da VPS (SILO, S3
+# compatível, do traefikproxy — spec 020); sem S3_ENDPOINT_URL, no disco (desenvolvimento e
+# testes). O bucket não é público: a foto sai pelo Django, depois do login.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+if os.getenv("S3_ENDPOINT_URL"):
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "endpoint_url": os.environ["S3_ENDPOINT_URL"],
+            "bucket_name": os.environ["S3_BUCKET"],
+            "access_key": os.environ["S3_ACCESS_KEY"],
+            "secret_key": os.environ["S3_SECRET_KEY"],
+            "region_name": "us-east-1",
+            "addressing_style": "path",
+            "signature_version": "s3v4",
+            # sem ACL por objeto (o acesso é pela política do bucket) e sem sobrescrever
+            "default_acl": None,
+            "file_overwrite": False,
+        },
+    }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = not DEBUG
 SECURE_CONTENT_TYPE_NOSNIFF = True

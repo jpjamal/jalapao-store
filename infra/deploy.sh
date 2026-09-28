@@ -1,134 +1,107 @@
 #!/usr/bin/env bash
+# Publicação na VPS, chamada pelo GitHub Actions depois do rsync. Proxy, HTTPS e certificados
+# são do traefikproxy (spec 019); aqui só a aplicação: backup, migrações, subida e conferência.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 test -s .env.backend
+# Chave da loja no servidor de arquivos (SILO): gerada na VPS pelo traefikproxy, lida de lá.
+silo_env="$HOME/traefikproxy/.env.silo.jalapao-store"
 dc() {
-    local env_files=(--env-file .env.production --env-file .env.backend)
+    local env_files=(--env-file .env.production --env-file .env.backend --env-file "$silo_env")
     if [ -s .env.marketplace ]; then
         env_files+=(--env-file .env.marketplace)
     fi
     docker compose -f docker-compose.deploy.yml "${env_files[@]}" "$@"
 }
-# Quem termina TLS é decisão, não adivinhação: JALAPAO_TLS, variável do repositório no
-# GitHub, que chega aqui pelo .env.production.
-#   nginx   (padrão) → o Nginx da loja segura a 443
-#   traefik          → o Nginx da loja solta a 443 para o Traefik assumir
-# A virada acontece só por deploy, nunca por comando na VPS.
-JALAPAO_TLS=$(grep -m1 '^JALAPAO_TLS=' .env.production 2>/dev/null | cut -d= -f2- | tr -d "\"' \r" || true)
-JALAPAO_TLS=${JALAPAO_TLS:-nginx}
-case "$JALAPAO_TLS" in nginx|traefik) ;; *)
-    echo "JALAPAO_TLS inválido: '$JALAPAO_TLS'. Use nginx ou traefik." >&2
-    exit 1
-esac
 
-# A porta que o Traefik publica é lida do container. Procurar "443->443" no texto das
-# portas casaria também com a pré-validação "127.0.0.1:8443->443/tcp"; por isso exige
-# HostPort 443 fora do loopback.
-traefik_publica_443() {
-    docker inspect traefikproxy-traefik-1 \
-        --format '{{range index .NetworkSettings.Ports "443/tcp"}}{{.HostIp}} {{.HostPort}}{{"\n"}}{{end}}' \
-        2>/dev/null \
-      | awk '$2 == "443" && $1 != "127.0.0.1" && $1 != "::1" { achou = 1 } END { exit !achou }'
-}
-
-if [ "$JALAPAO_TLS" = nginx ]; then
-    # Configuração inconsistente: pedir o Nginx na 443 com o Traefik já nela faria o
-    # container falhar ao subir no meio do deploy. Melhor recusar com o motivo.
-    if traefik_publica_443; then
-        echo "JALAPAO_TLS=nginx, mas o Traefik já publica a 443." >&2
-        echo "Troque para JALAPAO_TLS=traefik, ou volte o Traefik para a pré-validação." >&2
+# A loja depende da infraestrutura central: as redes do Traefik e do SILO, o volume do
+# certificado do IP e a chave do SILO. Sem elas o compose falharia no meio do deploy, com a
+# API já parada. Melhor recusar antes.
+for requisito in "network:traefik_proxy" "network:infra_storage" "volume:infra_certificates"; do
+    tipo=${requisito%%:*}; nome=${requisito#*:}
+    if ! docker "$tipo" inspect "$nome" >/dev/null 2>&1; then
+        echo "Falta o $tipo '$nome' do traefikproxy. Publique o traefikproxy antes." >&2
         exit 1
     fi
-    echo "   HTTPS: Nginx da loja na 443 (JALAPAO_TLS=nginx)."
-    export COMPOSE_PROFILES=nginx-https
-else
-    echo "   HTTPS: Traefik assume a 443 (JALAPAO_TLS=traefik); o Nginx TLS sai."
-fi
-# O Certbot avisa o Traefik tocando o dynamic.yml do projeto vizinho. Se a pasta não
-# estiver onde se espera, o certificado do IP renovaria sem o Traefik reler — falha
-# silenciosa, do tipo que só aparece quando o site cai. Melhor recusar agora.
-if [ ! -d ../traefikproxy/traefik ]; then
-    echo "Esperava ~/traefikproxy/traefik ao lado deste projeto e não encontrei." >&2
-    echo "O Certbot precisa dela para avisar o Traefik depois de renovar o certificado do IP." >&2
+done
+if [ ! -s "$silo_env" ]; then
+    echo "Falta $silo_env (chave da loja no SILO). Publique o traefikproxy antes." >&2
     exit 1
 fi
+
 mkdir -p "$HOME/backups/jalapao-store"
 chmod 700 "$HOME/backups/jalapao-store"
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 dc build
-# Freeze commercial writes before the backup and valuation migrations.
-# On failure leave the API stopped for inspection; never serve old valuation logic.
-dc stop backend
-if dc ps --status running --services | grep -qx db; then
-    dc exec -T db pg_dump -U jalapao -d jalapao -Fc > "$HOME/backups/jalapao-store/db-$stamp.dump"
+
+# Congela as escritas comerciais antes do backup e das migrações. Na troca de nome dos
+# serviços (spec 019) os containers antigos ainda se chamam db/backend: para eles também.
+dc stop jalapao-backend 2>/dev/null || true
+docker stop jalapao-store-backend-1 2>/dev/null || true
+banco=$(docker ps --format '{{.Names}}' | grep -E '^jalapao-store-(jalapao-)?db-1$' | head -1 || true)
+if [ -n "$banco" ]; then
+    docker exec "$banco" pg_dump -U jalapao -d jalapao -Fc > "$HOME/backups/jalapao-store/db-$stamp.dump"
     test -s "$HOME/backups/jalapao-store/db-$stamp.dump"
     chmod 600 "$HOME/backups/jalapao-store/db-$stamp.dump"
 fi
-# As fotos não ficam no PostgreSQL. Guardar o volume na mesma janela de escrita congelada.
-dc run --rm --no-deps -T --entrypoint python backend -c \
-    'import sys, tarfile; archive = tarfile.open(fileobj=sys.stdout.buffer, mode="w|gz"); archive.add("/app/media", arcname="media"); archive.close()' \
-    > "$HOME/backups/jalapao-store/media-$stamp.tar.gz"
-test -s "$HOME/backups/jalapao-store/media-$stamp.tar.gz"
+
+# Troca de nome: o banco antigo solta o volume antes de o novo subir com ele.
+docker stop jalapao-store-db-1 2>/dev/null || true
+dc up -d --wait jalapao-db
+dc run --rm jalapao-backend python manage.py migrate --noinput
+
+# Fotos (spec 020): moram no bucket jalapao-media do SILO. As de antes estão no volume antigo,
+# montado só para leitura; a cópia é idempotente (o que já está no bucket fica) e nunca apaga o
+# disco. Ainda com a escrita congelada, o backup das fotos sai do bucket, junto com o do banco.
+dc run --rm -T jalapao-backend python manage.py migrate_media_to_storage /app/media-disco
+dc run --rm -T jalapao-backend python manage.py export_media > "$HOME/backups/jalapao-store/media-$stamp.tar.gz"
 tar -tzf "$HOME/backups/jalapao-store/media-$stamp.tar.gz" >/dev/null
 chmod 600 "$HOME/backups/jalapao-store/media-$stamp.tar.gz"
-dc up -d --wait db
-dc run --rm backend python manage.py migrate --noinput
+
+# Manuais em PDF: a pasta manuais/ da VPS alimenta o bucket público jalapao-manuais. Só entra o
+# que ainda não está lá — um PDF trocado pelo painel do SILO não é sobrescrito pelo do disco.
+if [ -d manuais ] && [ -n "$(ls -A manuais)" ]; then
+    docker run --rm --network infra_storage -v "$PWD/manuais:/manuais:ro" --env-file "$silo_env" \
+        --entrypoint sh pgsty/mc:RELEASE.2026-09-16T00-00-00Z -c \
+        'export MC_HOST_silo="http://$S3_ACCESS_KEY:$S3_SECRET_KEY@silo:9000"; mc mirror --quiet /manuais silo/jalapao-manuais'
+fi
 legacy_running=$(docker ps -q --filter name='^jalapao-api$')
 if [ -n "$legacy_running" ]; then docker stop jalapao-api; fi
 trap 'if [ -n "$legacy_running" ]; then docker start jalapao-api; fi' ERR
 if [ -s dados/produtos.json ]; then
     cp dados/produtos.json "$HOME/backups/jalapao-store/products-$stamp.json"
     chmod 600 "$HOME/backups/jalapao-store/products-$stamp.json"
-    dc run --rm backend python manage.py import_legacy /legacy/produtos.json
+    dc run --rm jalapao-backend python manage.py import_legacy /legacy/produtos.json
 fi
 if [ -s .env.bootstrap ]; then
-    dc run --rm --env-from-file .env.bootstrap backend python manage.py bootstrap_users
+    dc run --rm --env-from-file .env.bootstrap jalapao-backend python manage.py bootstrap_users
 fi
-dc up -d --wait --remove-orphans db backend frontend gateway
-test "$(dc exec -T gateway wget -qO- http://127.0.0.1:8080/health)" = ok
+# --remove-orphans tira os serviços que saíram: gateway, tls, certbot e os de nome antigo.
+dc up -d --wait --remove-orphans
 legacy_running=''
 trap - ERR
-if ! dc run --rm --no-deps --entrypoint sh certbot -c 'test -s /etc/letsencrypt/live/jalapao-ip/fullchain.pem'; then
-    dc run --rm --no-deps --entrypoint certbot certbot certonly \
-      --webroot -w /var/www/certbot --ip-address 217.216.82.25 \
-      --preferred-profile shortlived --cert-name jalapao-ip --non-interactive \
-      --agree-tos --register-unsafely-without-email
-fi
-if [ "${COMPOSE_PROFILES:-}" = nginx-https ] && ! dc run --rm --no-deps --entrypoint sh certbot -c 'test -s /etc/letsencrypt/live/jpsys-duckdns/fullchain.pem'; then
-    dc run --rm --no-deps --entrypoint certbot certbot certonly \
-      --webroot -w /var/www/certbot -d jpsys.duckdns.org \
-      --cert-name jpsys-duckdns --non-interactive \
-      --agree-tos --register-unsafely-without-email
-fi
-dc up -d --wait --remove-orphans
-# Bind-mounted config files can keep an old inode after rsync replaces the host file.
-# Recreate only this project's proxies, also refreshing upstream DNS after app replacement.
-dc up -d --wait --force-recreate --no-deps gateway
-if [ "$JALAPAO_TLS" = nginx ]; then
-    dc up -d --wait --force-recreate --no-deps tls
-else
-    # `up --remove-orphans` não garante parar um serviço cujo perfil foi desligado:
-    # ele continua definido no arquivo. Tirar da 443 precisa ser explícito.
-    dc --profile nginx-https rm -sf tls || true
-fi
 
-# Na virada, a loja solta a 443 antes de o Traefik assumir — os dois não podem segurar a
-# porta ao mesmo tempo. Nesse intervalo não há HTTPS, e verificar agora só daria um erro
-# enganoso. O deploy do traefikproxy é quem completa a virada e valida.
-if [ "$JALAPAO_TLS" = traefik ] && ! traefik_publica_443; then
-    echo "" >&2
-    echo "ATENÇÃO: o Nginx soltou a 443 e o Traefik ainda não assumiu. HTTPS fora do ar." >&2
-    echo "Publique agora o traefikproxy com TRAEFIK_HTTPS_BIND=0.0.0.0:443 para completar." >&2
-    dc ps
-    exit 0
-fi
-
-curl --fail --silent --show-error --retry 6 --retry-delay 3 https://217.216.82.25/health
-# Domínio novo: o Traefik só emite o certificado quando a rota aparece, e até lá entrega
-# o certificado do IP. --retry sozinho não repete erro de certificado; --retry-all-errors sim.
-curl --fail --silent --show-error --retry 20 --retry-delay 3 --retry-all-errors https://jpsys.duckdns.org/health
-dc run --rm --no-deps --entrypoint sh certbot -c 'touch /var/www/certbot/.https-ready'
-curl --fail --silent --show-error --output /dev/null https://217.216.82.25/jalapao-store/login
-curl --fail --silent --show-error --output /dev/null https://jpsys.duckdns.org/jalapao-store/login
-test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://217.216.82.25/jalapao-store/login)" = 308
+# Conferência pelo caminho real (Traefik). O Traefik descobre as rotas pelos labels em
+# segundos e, até lá, responde 404: por isso cada checagem espera o código certo (até 60 s).
+espera() {
+    local esperado=$1 url=$2 codigo=000
+    for _ in $(seq 1 20); do
+        codigo=$(curl --silent --output /dev/null --write-out '%{http_code}' "$url" || true)
+        case " $esperado " in *" $codigo "*) return 0 ;; esac
+        sleep 3
+    done
+    echo "Esperava $esperado em $url e recebi $codigo." >&2
+    return 1
+}
+# um manual qualquer da pasta, para provar a rota /manuais/ → bucket (espaço vira %20)
+manual=$(ls manuais 2>/dev/null | head -1 | sed 's/ /%20/g' || true)
+for host in 217.216.82.25 jpsys.duckdns.org; do
+    espera 200 "https://$host/jalapao-store/login"
+    espera 200 "https://$host/jalapao-store/admin/login/"
+    # a API não tem mais rota pública: o caminho cai no front, que responde 404
+    espera 404 "https://$host/jalapao-store/backend-api/products"
+    espera "301 308" "http://$host/jalapao-store/login"
+    if [ -n "${manual:-}" ]; then espera 200 "https://$host/manuais/$manual"; fi
+done
+echo "   rotas conferidas: front 200, admin 200, API sem rota pública, HTTP → HTTPS, manuais"
 dc ps

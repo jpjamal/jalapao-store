@@ -2,24 +2,30 @@
 
 ```mermaid
 flowchart LR
-  Browser[Navegador] -->|HTTPS 443| Traefik[Traefik compartilhado]
-  Traefik -->|HTTP 8080 na rede Docker| Proxy[Nginx interno da loja]
-  Proxy --> Next[Next.js / BFF]
-  Next -->|JWT interno| API[Django REST Framework]
-  Proxy --> Admin[Django Admin]
-  API --> DB[(PostgreSQL exclusivo)]
+  Browser[Navegador] -->|HTTPS 443| Traefik[Traefik central - traefikproxy]
+  Traefik -->|/jalapao-store| Next[jalapao-frontend: Next.js + BFF]
+  Traefik -->|/jalapao-store/admin/| Admin[jalapao-backend: Django Admin]
+  Next -->|rede interna, JWT| API[jalapao-backend: DRF]
+  API --> DB[(jalapao-db: PostgreSQL exclusivo)]
   Admin --> DB
   Traefik -->|ACME HTTP-01| DomainCert[Certificado do domínio]
-  Certbot[Certbot: certificado do IP] --> Certs[Volume de certificados]
+  Certbot[certbot central: certificado do IP] --> Certs[volume infra_certificates]
   Certs --> Traefik
+  Traefik -->|/manuais/ leitura pública| Manuais[(SILO: bucket jalapao-manuais)]
+  API -->|rede infra_storage, S3| Fotos[(SILO: bucket jalapao-media, privado)]
 ```
 
-O Traefik compartilhado atende as portas públicas 80 e 443 e termina o HTTPS. O Nginx
-da Jalapão não publica porta no host: recebe HTTP do Traefik, encaminha as rotas da
-aplicação, do Admin e da API, serve os manuais em PDF e o desafio ACME do certificado
-por IP. O certificado do domínio `jpsys.duckdns.org` é emitido pelo Traefik; o do IP
-continua sendo renovado pelo Certbot e servido pelo Traefik. Banco e API não publicam
-portas no host. Código, segredos e dados têm ciclos separados.
+Um único proxy na VPS (spec 019): o Traefik central do repositório `traefikproxy` atende as
+portas públicas 80 e 443, termina o HTTPS e roteia pelos labels que cada sistema declara no
+seu compose. Da loja, só o front e o Django Admin têm rota; a API é consumida pelo BFF do
+Next na rede interna do Docker. O certificado do domínio é emitido pelo Traefik; o do IP,
+pelo certbot da mesma stack central. Banco e API não publicam portas no host. Código,
+segredos e dados têm ciclos separados.
+
+Os arquivos ficam no SILO, o servidor de arquivos S3 da mesma stack central (spec 020): as
+fotos num bucket privado, que só o Django lê e devolve depois do login; os manuais num bucket
+de leitura pública, roteado pelo Traefik em `/manuais/`. Sem servidor S3 configurado
+(desenvolvimento e testes), as fotos ficam no disco.
 
 ```mermaid
 erDiagram

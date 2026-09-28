@@ -18,16 +18,18 @@ Frontend: `npm ci` dentro de frontend. Consulte os READMEs de cada pasta para co
 | backend/ | Django: um app por contexto (domain, models, services, api, tests), settings por ambiente, uv.lock, Dockerfile |
 | frontend/ | Next.js: rotas em app/, telas por contexto em features/, comum em shared/, PWA, Dockerfile |
 | docs/ | Constituição SDD, decisões, specs, validação e operação |
-| infra/ | Nginx interno, Certbot do IP e script de publicação |
+| infra/ | script de publicação e o Traefik da cópia local; proxy e certificados de produção ficam no repositório `traefikproxy` |
 | site/, api/, Dockerfile e nginx-site.conf da raiz | Sistema anterior (site estático + API de produtos) preservado para consulta/rollback; nenhum workflow, compose ou deploy os usa |
-| manuais/ | PDFs públicos da loja, fora do rsync de código |
+| manuais/ | PDFs públicos da loja, fora do rsync de código; o deploy os leva ao bucket do SILO (spec 020) |
 
 Produção: https://jpsys.duckdns.org/jalapao-store (também pelo IP, https://217.216.82.25/jalapao-store)
 Admin Django: https://jpsys.duckdns.org/jalapao-store/admin/
 Retorno OAuth dos marketplaces: https://jpsys.duckdns.org/jalapao-store/callback
 
-HTTPS terminado pelo Traefik compartilhado da VPS (repositório `traefikproxy`); o Nginx da
-loja é proxy interno na 8080, servindo rotas e arquivos. Ver [operação](docs/operations.md).
+Um único proxy na VPS: o Traefik central (repositório `traefikproxy`, com o Portainer), que
+termina o HTTPS e roteia pelos labels do compose da loja. Só o front e o Django Admin têm rota
+pública; a API é consumida pelo front na rede interna. Fotos dos produtos e manuais em PDF
+ficam no SILO, o servidor de arquivos da mesma stack. Ver [operação](docs/operations.md).
 
 ## Desenvolvimento orientado por especificação
 Comece por [constituição](docs/constitution.md), [especificação](docs/specs/001-platform/spec.md),

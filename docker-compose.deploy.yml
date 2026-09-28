@@ -1,6 +1,21 @@
+# Produção na VPS — https://jpsys.duckdns.org/jalapao-store (e pelo IP).
+#
+# Proxy, HTTPS e certificados são do projeto traefikproxy (Traefik central, spec 019): este
+# arquivo só declara, em labels, as rotas da loja. Não há Nginx nem Certbot aqui.
+#
+#   Internet → Traefik → jalapao-frontend (Next, único exposto) → jalapao-backend (rede interna)
+#                      → jalapao-backend só em /jalapao-store/admin/ e /django-static/
+#
+# A rede traefik_proxy é dividida com outros sistemas, e o Docker registra o nome de cada
+# serviço como nome de rede em todas as redes dele. Por isso os serviços têm nomes únicos:
+# um "backend" ou "db" genérico poderia responder no lugar do container de outro projeto.
 name: jalapao-store
+
+# Endereços públicos: o domínio (certificado do Traefik) e o IP (certificado do certbot central).
+x-origens: &origens https://217.216.82.25,https://jpsys.duckdns.org
+
 services:
-  db:
+  jalapao-db:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
@@ -14,15 +29,16 @@ services:
       timeout: 5s
       retries: 20
     networks: [internal]
-  backend:
+
+  jalapao-backend:
     build: ./backend
     restart: unless-stopped
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Configure DJANGO_SECRET_KEY}
-      DJANGO_ALLOWED_HOSTS: 217.216.82.25,jpsys.duckdns.org,localhost,127.0.0.1,backend
+      DJANGO_ALLOWED_HOSTS: 217.216.82.25,jpsys.duckdns.org,localhost,127.0.0.1,jalapao-backend
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_HOST: db
-      CSRF_TRUSTED_ORIGINS: https://217.216.82.25,https://jpsys.duckdns.org
+      POSTGRES_HOST: jalapao-db
+      CSRF_TRUSTED_ORIGINS: *origens
       # credenciais do marketplace: vêm do .env.backend, nunca do repositório
       SHOPEE_PARTNER_ID: ${SHOPEE_PARTNER_ID:-}
       SHOPEE_PARTNER_KEY: ${SHOPEE_PARTNER_KEY:-}
@@ -32,128 +48,135 @@ services:
       ML_CLIENT_SECRET: ${ML_CLIENT_SECRET:-}
       ML_REDIRECT_URI: ${ML_REDIRECT_URI:-https://jpsys.duckdns.org/jalapao-store/callback}
       ML_PKCE_ENABLED: ${ML_PKCE_ENABLED:-0}
+      # fotos dos produtos no servidor de arquivos (SILO, do traefikproxy; spec 020). A chave é
+      # gerada lá, na VPS, e o deploy.sh a entrega por --env-file: nunca passa pelo GitHub.
+      S3_ENDPOINT_URL: http://silo:9000
+      S3_BUCKET: jalapao-media
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Falta a credencial do SILO (.env.silo.jalapao-store)}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?Falta a credencial do SILO (.env.silo.jalapao-store)}
     volumes:
       - './dados:/legacy:ro'
-      - 'product_media:/app/media'
-      # somente leitura, só para avisar no painel antes do certificado vencer
-      - 'certificates:/certs:ro'
+      # as fotos de antes do SILO, só para leitura: fonte da migração (migrate_media_to_storage)
+      - 'product_media:/app/media-disco:ro'
+      # certificado do IP, do certbot central, só para avisar no painel antes de vencer
+      - 'infra_certificates:/certs:ro'
     depends_on:
-      db: {condition: service_healthy}
+      jalapao-db: {condition: service_healthy}
     healthcheck:
       test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/')"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 20s
-    networks: [internal]
-  frontend:
+    # traefik_proxy só por causa do Django Admin; a API não tem rota pública (o front usa a
+    # rede interna). A documentação da API fica para o ambiente local. infra_storage: o SILO.
+    networks: [internal, traefik_proxy, infra_storage]
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: traefik_proxy
+      traefik.http.services.jalapao-backend.loadbalancer.server.port: '8000'
+      traefik.http.routers.jalapao-admin-duckdns.rule: Host(`jpsys.duckdns.org`) && (PathPrefix(`/jalapao-store/admin/`) || PathPrefix(`/jalapao-store/django-static/`))
+      traefik.http.routers.jalapao-admin-duckdns.entrypoints: websecure
+      traefik.http.routers.jalapao-admin-duckdns.tls: 'true'
+      traefik.http.routers.jalapao-admin-duckdns.tls.certresolver: duckdns
+      traefik.http.routers.jalapao-admin-duckdns.priority: '200'
+      traefik.http.routers.jalapao-admin-duckdns.middlewares: secure-headers@file
+      traefik.http.routers.jalapao-admin-duckdns.service: jalapao-backend
+      traefik.http.routers.jalapao-admin-ip.rule: Host(`217.216.82.25`) && (PathPrefix(`/jalapao-store/admin/`) || PathPrefix(`/jalapao-store/django-static/`))
+      traefik.http.routers.jalapao-admin-ip.entrypoints: websecure
+      traefik.http.routers.jalapao-admin-ip.tls: 'true'
+      traefik.http.routers.jalapao-admin-ip.priority: '200'
+      traefik.http.routers.jalapao-admin-ip.middlewares: secure-headers@file
+      traefik.http.routers.jalapao-admin-ip.service: jalapao-backend
+
+  jalapao-frontend:
     build: ./frontend
     restart: unless-stopped
     environment:
-      BACKEND_URL: http://backend:8000
-      APP_ORIGIN: https://217.216.82.25,https://jpsys.duckdns.org
+      BACKEND_URL: http://jalapao-backend:8000
+      APP_ORIGIN: *origens
       COOKIE_SECURE: 'true'
     depends_on:
-      backend: {condition: service_healthy}
+      jalapao-backend: {condition: service_healthy}
     healthcheck:
       test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/jalapao-store/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 20s
-    networks: [internal]
-  gateway:
-    image: nginx:stable-alpine
-    restart: unless-stopped
-    volumes:
-      - ./infra/nginx/http.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./infra/nginx/proxy.conf:/etc/nginx/conf.d/proxy.conf:ro
-      - ./infra/nginx/locations.conf:/etc/nginx/jalapao-locations.conf:ro
-      - ./manuais:/srv/manuais:ro
-      - acme_webroot:/var/www/certbot:ro
-      - certificates:/etc/letsencrypt:ro
-    depends_on:
-      frontend: {condition: service_healthy}
-    healthcheck:
-      test: [CMD-SHELL, 'wget -q -O /dev/null http://127.0.0.1/health']
-      interval: 10s
-      timeout: 3s
-      retries: 5
     networks: [internal, traefik_proxy]
     labels:
       traefik.enable: 'true'
       traefik.docker.network: traefik_proxy
-      traefik.http.routers.jalapao-store.rule: 'PathPrefix(`/jalapao-store`)'
-      traefik.http.routers.jalapao-store.entrypoints: web
-      traefik.http.routers.jalapao-store.service: jalapao-store
-      traefik.http.routers.jalapao-manuais.rule: 'PathPrefix(`/manuais`)'
-      traefik.http.routers.jalapao-manuais.entrypoints: web
-      traefik.http.routers.jalapao-manuais.service: jalapao-store
-      traefik.http.routers.jalapao-acme.rule: 'Host(`217.216.82.25`) && PathPrefix(`/.well-known/acme-challenge/`)'
-      traefik.http.routers.jalapao-acme.entrypoints: web
-      traefik.http.routers.jalapao-acme.service: jalapao-store
-      traefik.http.services.jalapao-store.loadbalancer.server.port: '80'
-      traefik.http.routers.jalapao-duckdns-https.rule: 'Host(`jpsys.duckdns.org`) && (PathPrefix(`/jalapao-store`) || PathPrefix(`/manuais/`) || Path(`/health`))'
-      traefik.http.routers.jalapao-duckdns-https.entrypoints: websecure
-      traefik.http.routers.jalapao-duckdns-https.tls: 'true'
-      traefik.http.routers.jalapao-duckdns-https.tls.certresolver: duckdns
-      traefik.http.routers.jalapao-duckdns-https.service: jalapao-https
-      traefik.http.routers.jalapao-ip-https.rule: 'Host(`217.216.82.25`) && (PathPrefix(`/jalapao-store`) || PathPrefix(`/manuais/`) || Path(`/health`))'
-      traefik.http.routers.jalapao-ip-https.entrypoints: websecure
-      traefik.http.routers.jalapao-ip-https.tls: 'true'
-      traefik.http.routers.jalapao-ip-https.service: jalapao-https
-      traefik.http.services.jalapao-https.loadbalancer.server.port: '8080'
-  tls:
-    image: nginx:stable-alpine
-    profiles: [nginx-https]
-    restart: unless-stopped
-    ports: ['443:443']
-    volumes:
-      - ./infra/nginx/https.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./infra/nginx/locations.conf:/etc/nginx/jalapao-locations.conf:ro
-      - ./infra/renew-nginx.sh:/renew-nginx.sh:ro
-      - ./manuais:/srv/manuais:ro
-      - certificates:/etc/letsencrypt:ro
-    command: [sh, /renew-nginx.sh]
-    depends_on:
-      frontend: {condition: service_healthy}
-    healthcheck:
-      test: [CMD-SHELL, 'wget --no-check-certificate -q -O /dev/null https://127.0.0.1/health']
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    networks: [internal]
-  certbot:
-    image: certbot/certbot:v5.4.0
-    restart: unless-stopped
-    volumes:
-      - certificates:/etc/letsencrypt
-      - acme_webroot:/var/www/certbot
-      # Um renew do certificado por IP precisa avisar o Traefik, que só relê os
-      # certificados quando o arquivo de configuração dinâmica muda.
-      #
-      # Monta o DIRETÓRIO, não o arquivo: o deploy do traefikproxy reescreve o
-      # dynamic.yml por rsync e o inode muda. Bind mount de arquivo continuaria
-      # apontando para o inode velho, e o "touch" iria para um arquivo que ninguém
-      # lê — renovação silenciosamente sem efeito.
-      - ../traefikproxy/traefik:/traefik-config
-    entrypoint: /bin/sh
-    # Depois de cada tentativa de renovação, deixa uma cópia legível do certificado em
-    # publico/: o certbot cria live/ como 0700 de root e o backend roda sem privilégio,
-    # então não alcançaria a validade para avisar no painel. O certificado é público —
-    # é o mesmo que o proxy entrega a qualquer visitante.
-    command:
-      - '-c'
-      - 'trap exit TERM; mkdir -p /etc/letsencrypt/publico; while :; do certbot renew --quiet --cert-name jalapao-ip --deploy-hook "touch /traefik-config/dynamic.yml";
-         cp -f /etc/letsencrypt/live/jalapao-ip/cert.pem /etc/letsencrypt/publico/cert.pem 2>/dev/null
-         && chmod 644 /etc/letsencrypt/publico/cert.pem; sleep 43200 & wait $$!; done'
-    networks: [internal]
+      traefik.http.services.jalapao-frontend.loadbalancer.server.port: '3000'
+      # fotos de produto sobem pelo BFF do front: mesmo limite que o backend aceita (10 MB + margem)
+      traefik.http.middlewares.jalapao-uploads.buffering.maxRequestBodyBytes: '11534336'
+      # o retorno da autorização leva o código na URL: não vazar por Referer
+      traefik.http.middlewares.jalapao-callback-headers.headers.referrerPolicy: no-referrer
+      traefik.http.middlewares.jalapao-callback-headers.headers.contentTypeNosniff: 'true'
+      traefik.http.middlewares.jalapao-callback-headers.headers.customFrameOptionsValue: SAMEORIGIN
+      # HTTP → HTTPS (domínio ou IP), pelo middleware central
+      traefik.http.routers.jalapao-http.rule: PathPrefix(`/jalapao-store`)
+      traefik.http.routers.jalapao-http.entrypoints: web
+      traefik.http.routers.jalapao-http.middlewares: redirect-to-https@file
+      traefik.http.routers.jalapao-http.service: jalapao-frontend
+      traefik.http.routers.jalapao-duckdns.rule: Host(`jpsys.duckdns.org`) && PathPrefix(`/jalapao-store`)
+      traefik.http.routers.jalapao-duckdns.entrypoints: websecure
+      traefik.http.routers.jalapao-duckdns.tls: 'true'
+      traefik.http.routers.jalapao-duckdns.tls.certresolver: duckdns
+      traefik.http.routers.jalapao-duckdns.middlewares: secure-headers@file,jalapao-uploads
+      traefik.http.routers.jalapao-duckdns.service: jalapao-frontend
+      # pelo IP vale o certificado padrão do Traefik (o do IP)
+      traefik.http.routers.jalapao-ip.rule: Host(`217.216.82.25`) && PathPrefix(`/jalapao-store`)
+      traefik.http.routers.jalapao-ip.entrypoints: websecure
+      traefik.http.routers.jalapao-ip.tls: 'true'
+      traefik.http.routers.jalapao-ip.middlewares: secure-headers@file,jalapao-uploads
+      traefik.http.routers.jalapao-ip.service: jalapao-frontend
+      traefik.http.routers.jalapao-callback-duckdns.rule: Host(`jpsys.duckdns.org`) && Path(`/jalapao-store/callback`)
+      traefik.http.routers.jalapao-callback-duckdns.entrypoints: websecure
+      traefik.http.routers.jalapao-callback-duckdns.tls: 'true'
+      traefik.http.routers.jalapao-callback-duckdns.tls.certresolver: duckdns
+      traefik.http.routers.jalapao-callback-duckdns.priority: '300'
+      traefik.http.routers.jalapao-callback-duckdns.middlewares: jalapao-callback-headers
+      traefik.http.routers.jalapao-callback-duckdns.service: jalapao-frontend
+      traefik.http.routers.jalapao-callback-ip.rule: Host(`217.216.82.25`) && Path(`/jalapao-store/callback`)
+      traefik.http.routers.jalapao-callback-ip.entrypoints: websecure
+      traefik.http.routers.jalapao-callback-ip.tls: 'true'
+      traefik.http.routers.jalapao-callback-ip.priority: '300'
+      traefik.http.routers.jalapao-callback-ip.middlewares: jalapao-callback-headers
+      traefik.http.routers.jalapao-callback-ip.service: jalapao-frontend
+      # Manuais em PDF (link do QR code do produto): /manuais/<arquivo> é o objeto de mesmo nome
+      # no bucket jalapao-manuais do SILO, que só aceita leitura de objeto por anônimo (listar
+      # não). O serviço silo-s3 é declarado no traefikproxy.
+      traefik.http.middlewares.jalapao-manuais-bucket.replacepathregex.regex: ^/manuais/(.+)$$
+      traefik.http.middlewares.jalapao-manuais-bucket.replacepathregex.replacement: /jalapao-manuais/$$1
+      traefik.http.routers.jalapao-manuais-http.rule: PathPrefix(`/manuais/`)
+      traefik.http.routers.jalapao-manuais-http.entrypoints: web
+      traefik.http.routers.jalapao-manuais-http.middlewares: redirect-to-https@file
+      traefik.http.routers.jalapao-manuais-http.service: silo-s3@docker
+      traefik.http.routers.jalapao-manuais-duckdns.rule: Host(`jpsys.duckdns.org`) && PathPrefix(`/manuais/`)
+      traefik.http.routers.jalapao-manuais-duckdns.entrypoints: websecure
+      traefik.http.routers.jalapao-manuais-duckdns.tls: 'true'
+      traefik.http.routers.jalapao-manuais-duckdns.tls.certresolver: duckdns
+      traefik.http.routers.jalapao-manuais-duckdns.middlewares: secure-headers@file,jalapao-manuais-bucket
+      traefik.http.routers.jalapao-manuais-duckdns.service: silo-s3@docker
+      traefik.http.routers.jalapao-manuais-ip.rule: Host(`217.216.82.25`) && PathPrefix(`/manuais/`)
+      traefik.http.routers.jalapao-manuais-ip.entrypoints: websecure
+      traefik.http.routers.jalapao-manuais-ip.tls: 'true'
+      traefik.http.routers.jalapao-manuais-ip.middlewares: secure-headers@file,jalapao-manuais-bucket
+      traefik.http.routers.jalapao-manuais-ip.service: silo-s3@docker
+
 volumes:
   postgres_data:
+  # fotos de antes do SILO: fica até a migração ser conferida em produção (spec 020)
   product_media:
-  certificates:
-  acme_webroot:
+  # do traefikproxy: precisa existir antes (o deploy.sh confere)
+  infra_certificates:
+    external: true
+
 networks:
   internal:
   traefik_proxy:
+    external: true
+  infra_storage:
     external: true
