@@ -3,7 +3,7 @@
 ## Publicação
 GitHub main → workflow deploy.yml. Job test antigo preservado; job quality executa testes
 Django em PostgreSQL real e build Next; job build valida e constrói imagens. Deploy rsync
-preserva `.env*`, dados/, data/, manuais/ e não envia dependências locais. O que é a pasta
+preserva `.env*`, dados/ e data/ e não envia dependências locais. O que é a pasta
 `dados/` do servidor e quando ela pode sair: [dados-LEIA-ME.md](../dados-LEIA-ME.md).
 
 Pré-requisitos na VPS: `.env.backend` modo 600 com DJANGO_SECRET_KEY e POSTGRES_PASSWORD
@@ -51,13 +51,11 @@ A chave da loja no SILO é gerada na VPS pelo deploy do traefikproxy, em
 fotos ficam no disco, como antes.
 
 - **Manual novo:** subir pelo painel do SILO (`https://jpsys.duckdns.org/silo`, bucket
-  `jalapao-manuais`). A pasta `manuais/` da VPS ainda alimenta o bucket, mas só com o que
-  falta: um PDF trocado pelo painel não é sobrescrito.
-- **Migração:** o volume antigo `product_media` fica montado só para leitura em
-  `/app/media-disco`; a cada deploy, `migrate_media_to_storage` copia o que ainda não está no
-  bucket. Sai do compose depois de conferido em produção.
-- **Backup:** `export_media` grava `media-<data>.tar.gz` lido do bucket, com a API parada, na
-  mesma janela do dump do banco. Para restaurar, usar o dump e o arquivo de fotos da mesma data.
+  `jalapao-manuais`); fica em `/manuais/<nome>` na hora, sem deploy. O bucket é a única fonte:
+  a pasta `manuais/` da VPS e o volume `product_media` foram apagados em 28/09/2026.
+- **Sem backup de arquivos:** por decisão do dono (28/09/2026), o deploy não copia os buckets.
+  O dump do banco antes das migrations continua. `migrate_media_to_storage <pasta>` leva fotos
+  de uma pasta para o bucket, se um dia for preciso.
 
 ## Proxy e HTTPS (spec 019)
 
@@ -125,5 +123,5 @@ snapshot sobre dados novos. Manter volumes PostgreSQL/certificados e backups mes
 ## Limitações assumidas
 Uma loja/uma moeda; sem fiscal ou integração automática ativa. Quantidades inteiras.
 Financeiro é controle gerencial, não contabilidade. Custo corrente avalia estoque, lucro usa
-snapshot por venda. Backup automático ocorre no deploy; agendamento diário e backup externo
-são próxima tarefa operacional. Monitoramento externo de expiração ainda não configurado.
+snapshot por venda. Backup só do banco, no deploy; arquivos (buckets do SILO) sem backup, por
+decisão do dono. Monitoramento externo de expiração ainda não configurado.

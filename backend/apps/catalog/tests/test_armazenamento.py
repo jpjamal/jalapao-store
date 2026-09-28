@@ -1,14 +1,11 @@
-"""Migração das fotos do disco para o armazenamento configurado e backup delas (spec 020).
+"""Migração das fotos do disco para o armazenamento configurado (spec 020).
 
 O armazenamento de destino aqui é outra pasta: o comando só usa a API de Storage, então o que
 vale para o disco vale para o bucket. O bucket de verdade foi conferido no ensaio com o SILO."""
 
-import tarfile
-from io import BytesIO, StringIO
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from types import SimpleNamespace
-from unittest.mock import patch
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -57,19 +54,3 @@ class MediaStorageTests(TestCase):
     def test_missing_source_folder_is_an_error(self):
         with self.assertRaises(CommandError):
             call_command("migrate_media_to_storage", str(self.old_disk / "nao-existe"))
-
-    def test_export_writes_every_photo_to_the_archive(self):
-        self.photo(f"products/{self.product.pk}/a.png", b"conteudo-a")
-        self.photo(f"products/{self.product.pk}/sumiu.png", on_disk=False)
-        self.migrate()
-        out, err = BytesIO(), StringIO()
-        # o comando escreve binário em sys.stdout.buffer (o deploy redireciona para o arquivo)
-        with patch("sys.stdout", SimpleNamespace(buffer=out)):
-            call_command("export_media", stderr=err)
-        out.seek(0)
-        with tarfile.open(fileobj=out, mode="r:gz") as archive:
-            names = archive.getnames()
-            content = archive.extractfile(f"media/products/{self.product.pk}/a.png").read()
-        self.assertEqual(names, [f"media/products/{self.product.pk}/a.png"])
-        self.assertEqual(content, b"conteudo-a")
-        self.assertIn("1 foto(s) ficaram fora do backup", err.getvalue())

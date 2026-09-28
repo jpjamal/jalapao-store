@@ -26,6 +26,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [017](017-reestruturacao-ddd/spec.md) | Reestruturação do código por contexto (DDD) | conferir as telas com login |
 | [018](018-https-no-traefik/spec.md) | HTTPS no Traefik (antes numerada 007) | certificados órfãos |
 | [019](019-traefik-unico/spec.md) | Traefik como único proxy (sem Nginx; Certbot central) | apagar o volume antigo de certificados |
-| [020](020-servidor-de-arquivos/spec.md) | Servidor de arquivos (SILO): fotos e manuais em buckets | tirar o volume antigo de fotos; backup fora da VPS |
+| [020](020-servidor-de-arquivos/spec.md) | Servidor de arquivos (SILO): fotos e manuais em buckets | — |
 
 Próxima spec: **021**.

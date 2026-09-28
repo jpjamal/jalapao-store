@@ -12,7 +12,7 @@ Substitui as antigas restrições sem build, framework, banco ou login.
 - Preservar paleta/tokens, ferramentas, produtos e manuais existentes.
 - Taxas de marketplace não mudam sozinhas; distinguir estimativas de valores reais.
 - Código na VPS somente pelo GitHub Actions. Não publicar app por SSH.
-- Preservar dados/, manuais/, .env* e volumes em deploy e rollback.
+- Preservar dados/, .env*, volumes e os buckets do SILO em deploy e rollback.
 - Job test placeholder preservado; testes reais estão no job quality.
 - Autor exclusivo dos commits: jpjamal <jpfisica3@gmail.com>, sem coautores ou IA.
 - Contexto original e segredos fora do Git. Admin/jpmorais não têm senha em código ou docs.

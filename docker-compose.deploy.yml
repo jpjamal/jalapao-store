@@ -56,8 +56,6 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:?Falta a credencial do SILO (.env.silo.jalapao-store)}
     volumes:
       - './dados:/legacy:ro'
-      # as fotos de antes do SILO, só para leitura: fonte da migração (migrate_media_to_storage)
-      - 'product_media:/app/media-disco:ro'
       # certificado do IP, do certbot central, só para avisar no painel antes de vencer
       - 'infra_certificates:/certs:ro'
     depends_on:
@@ -168,8 +166,6 @@ services:
 
 volumes:
   postgres_data:
-  # fotos de antes do SILO: fica até a migração ser conferida em produção (spec 020)
-  product_media:
   # do traefikproxy: precisa existir antes (o deploy.sh confere)
   infra_certificates:
     external: true

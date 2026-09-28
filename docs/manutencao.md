@@ -31,9 +31,11 @@ jalapao-store/
 │       └── shared/       cliente da API, ui/, componentes comuns, layout (menu), format, PWA
 ├── infra/              deploy.sh e traefik/local.yml (rotas do proxy da cópia local)
 ├── docs/               constituição, arquitetura, specs, operação e por ferramenta
-├── site/, api/         o sistema anterior, preservado para rollback
-└── manuais/            PDFs públicos na VPS, fora do repositório; alimentam o bucket do SILO
+└── site/, api/         o sistema anterior, preservado para rollback
 ```
+
+Os manuais em PDF e as fotos dos produtos não moram em pasta nenhuma: ficam nos buckets do
+SILO (spec 020).
 
 ## Onde mora cada responsabilidade
 

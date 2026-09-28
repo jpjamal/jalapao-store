@@ -33,13 +33,14 @@ Django não muda — qualquer servidor S3 serve, trocando só o endereço e a ch
 - **Migração sem perda:** o volume antigo fica montado só para leitura; o deploy copia para o
   bucket o que ainda não está lá (idempotente) e nunca apaga o disco. A pasta `manuais/` da VPS
   alimenta o bucket só com o que falta — um PDF trocado pelo painel não é sobrescrito.
-- **Backup** das fotos a cada deploy, lido do bucket, na mesma janela de escrita congelada do
-  backup do banco (`media-<data>.tar.gz`).
+- ~~Backup das fotos a cada deploy~~ — retirado a pedido do dono em 28/09/2026: sem backup
+  de arquivos; só o dump do banco antes das migrations.
 
 ## Não objetivos
 - Não servir foto por URL assinada nem pública: continua pelo Django, com login.
 - Não apagar ainda o volume `product_media` nem a pasta `manuais/` da VPS: saem depois de a
-  migração ser conferida em produção.
+  migração ser conferida em produção. *(Conferida e apagados no mesmo dia, 28/09/2026, a
+  pedido do dono.)*
 
 ## Aceitação
 Foto antiga visível depois da migração; foto nova grava no bucket e apaga dele; foto

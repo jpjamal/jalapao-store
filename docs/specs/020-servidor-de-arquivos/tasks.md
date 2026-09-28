@@ -9,6 +9,7 @@
 - [x] `deploy.sh`: migração, backup do bucket, espelho dos manuais, conferência.
 - [x] Ensaio com SILO de verdade atrás do Traefik local.
 - [x] Publicar e conferir em produção (fotos migradas, manual pelo QR code).
-- [ ] Depois de conferido: tirar o volume `product_media` do compose e apagar a pasta
-      `manuais/` da VPS (a fonte passa a ser só o bucket).
-- [ ] Backup para fora da VPS (os buckets e os dumps ainda moram na mesma máquina).
+- [x] Tirar o volume `product_media` do compose e apagar o volume e a pasta `manuais/` da VPS
+      (a fonte passa a ser só o bucket) — pedido do dono em 28/09.
+- [x] ~~Backup dos buckets~~ — descartado pelo dono em 28/09: o deploy não copia arquivos, e o
+      comando `export_media` saiu.

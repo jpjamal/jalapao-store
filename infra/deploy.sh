@@ -50,21 +50,8 @@ docker stop jalapao-store-db-1 2>/dev/null || true
 dc up -d --wait jalapao-db
 dc run --rm jalapao-backend python manage.py migrate --noinput
 
-# Fotos (spec 020): moram no bucket jalapao-media do SILO. As de antes estão no volume antigo,
-# montado só para leitura; a cópia é idempotente (o que já está no bucket fica) e nunca apaga o
-# disco. Ainda com a escrita congelada, o backup das fotos sai do bucket, junto com o do banco.
-dc run --rm -T jalapao-backend python manage.py migrate_media_to_storage /app/media-disco
-dc run --rm -T jalapao-backend python manage.py export_media > "$HOME/backups/jalapao-store/media-$stamp.tar.gz"
-tar -tzf "$HOME/backups/jalapao-store/media-$stamp.tar.gz" >/dev/null
-chmod 600 "$HOME/backups/jalapao-store/media-$stamp.tar.gz"
-
-# Manuais em PDF: a pasta manuais/ da VPS alimenta o bucket público jalapao-manuais. Só entra o
-# que ainda não está lá — um PDF trocado pelo painel do SILO não é sobrescrito pelo do disco.
-if [ -d manuais ] && [ -n "$(ls -A manuais)" ]; then
-    docker run --rm --network infra_storage -v "$PWD/manuais:/manuais:ro" --env-file "$silo_env" \
-        --entrypoint sh pgsty/mc:RELEASE.2026-09-16T00-00-00Z -c \
-        'export MC_HOST_silo="http://$S3_ACCESS_KEY:$S3_SECRET_KEY@silo:9000"; mc mirror --quiet /manuais silo/jalapao-manuais'
-fi
+# Fotos e manuais moram nos buckets do SILO (spec 020); o deploy não faz backup deles (decisão
+# do dono em 28/09/2026).
 legacy_running=$(docker ps -q --filter name='^jalapao-api$')
 if [ -n "$legacy_running" ]; then docker stop jalapao-api; fi
 trap 'if [ -n "$legacy_running" ]; then docker start jalapao-api; fi' ERR
@@ -81,6 +68,21 @@ dc up -d --wait --remove-orphans
 legacy_running=''
 trap - ERR
 
+# Limpeza única da migração para o SILO (28/09/2026): o volume antigo das fotos e a pasta
+# manuais/ saem (as fotos e o manual já estão nos buckets, conferidos). Antes de apagar o volume,
+# as fotos passam uma última vez pela migração (idempotente): nada que estivesse só no disco se
+# perde. Nas próximas publicações os dois já não existem e o bloco não faz nada.
+if docker volume inspect jalapao-store_product_media >/dev/null 2>&1; then
+    dc run --rm -T -v jalapao-store_product_media:/app/media-disco:ro jalapao-backend \
+        python manage.py migrate_media_to_storage /app/media-disco
+    docker volume rm jalapao-store_product_media
+    echo "   volume antigo das fotos apagado"
+fi
+if [ -d manuais ]; then
+    rm -rf manuais
+    echo "   pasta manuais/ apagada"
+fi
+
 # Conferência pelo caminho real (Traefik). O Traefik descobre as rotas pelos labels em
 # segundos e, até lá, responde 404: por isso cada checagem espera o código certo (até 60 s).
 espera() {
@@ -93,15 +95,14 @@ espera() {
     echo "Esperava $esperado em $url e recebi $codigo." >&2
     return 1
 }
-# um manual qualquer da pasta, para provar a rota /manuais/ → bucket (espaço vira %20)
-manual=$(ls manuais 2>/dev/null | head -1 | sed 's/ /%20/g' || true)
 for host in 217.216.82.25 jpsys.duckdns.org; do
     espera 200 "https://$host/jalapao-store/login"
     espera 200 "https://$host/jalapao-store/admin/login/"
     # a API não tem mais rota pública: o caminho cai no front, que responde 404
     espera 404 "https://$host/jalapao-store/backend-api/products"
     espera "301 308" "http://$host/jalapao-store/login"
-    if [ -n "${manual:-}" ]; then espera 200 "https://$host/manuais/$manual"; fi
+    # /manuais/ sem arquivo: o SILO responde 403 (não lista); se caísse no front, seria 404
+    espera 403 "https://$host/manuais/"
 done
 echo "   rotas conferidas: front 200, admin 200, API sem rota pública, HTTP → HTTPS, manuais"
 dc ps

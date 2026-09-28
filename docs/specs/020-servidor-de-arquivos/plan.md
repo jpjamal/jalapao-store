@@ -15,7 +15,8 @@
 - `django-storages[s3]` 1.14.6. `STORAGES["default"]` vira `S3Storage` quando existe
   `S3_ENDPOINT_URL`: estilo de endereço por caminho, sem ACL por objeto, sem sobrescrever.
 - Comandos: `migrate_media_to_storage <pasta>` (disco → armazenamento, mesma chave,
-  idempotente) e `export_media` (tar.gz na saída padrão, lido do armazenamento).
+  idempotente) e `export_media` (tar.gz na saída padrão; retirado em 28/09 junto com o backup
+  de arquivos).
 - Compose: variáveis `S3_*` (a chave vem por `--env-file` de `~/traefikproxy/.env.silo.jalapao-store`),
   rede `infra_storage`, `product_media` montado só para leitura em `/app/media-disco`, routers
   `/manuais/` → `silo-s3@docker` com `replacepathregex` para `/jalapao-manuais/<arquivo>`.
