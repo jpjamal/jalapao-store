@@ -9,6 +9,6 @@
 - [x] Cópia local com Traefik no lugar do Nginx.
 - [x] Nginx e scripts dele removidos; documentação atualizada.
 - [x] Ensaio local com Traefik central, certificado autoassinado e a loja de verdade.
-- [ ] Publicar (traefikproxy, depois a loja) e conferir em produção.
+- [x] Publicar (traefikproxy, depois a loja) e conferir em produção.
 - [ ] Apagar o volume antigo `jalapao-store_certificates` depois de uma renovação real pelo
       Certbot central.

@@ -27,3 +27,12 @@ nada muda na segunda.
 | `/manuais/../jalapao-media/…` | 404 (o Traefik normaliza o caminho) |
 | `mc mirror` com PDF já no bucket e diferente no disco | mantém o do bucket |
 | Rotas da spec 019 | todas iguais depois da troca |
+
+## Produção (28/09/2026)
+- `silo/publicar.sh` gerou as três credenciais (modo 600) e provisionou `jalapao-media`,
+  `jalapao-manuais` e `vinculus-arquivos`, com os usuários `jalapao-store` e `sistema-vinculus`.
+- Painel `https://jpsys.duckdns.org/silo/` 200 com certificado válido.
+- Fotos: as 6 do volume antigo estão no bucket (3,6 MiB, 6 objetos); o backup
+  `media-20260928T155037Z.tar.gz` saiu do bucket com as 6.
+- Manuais: `dummy-13.pdf` (1 MiB) copiado para o bucket; `/manuais/dummy-13.pdf` 200
+  `application/pdf` pelo domínio e pelo IP; `/manuais/` 403; `http://` 301 para HTTPS.

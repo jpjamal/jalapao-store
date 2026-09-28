@@ -8,7 +8,7 @@
 - [x] Rota `/manuais/` para o bucket público, sem listagem.
 - [x] `deploy.sh`: migração, backup do bucket, espelho dos manuais, conferência.
 - [x] Ensaio com SILO de verdade atrás do Traefik local.
-- [ ] Publicar e conferir em produção (fotos migradas, manual pelo QR code).
+- [x] Publicar e conferir em produção (fotos migradas, manual pelo QR code).
 - [ ] Depois de conferido: tirar o volume `product_media` do compose e apagar a pasta
       `manuais/` da VPS (a fonte passa a ser só o bucket).
 - [ ] Backup para fora da VPS (os buckets e os dumps ainda moram na mesma máquina).
