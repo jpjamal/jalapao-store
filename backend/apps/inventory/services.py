@@ -17,7 +17,8 @@ def outgoing_cost(stock, quantity):
 
 @transaction.atomic
 def adjust_stock(
-    *, product_id, delta, reason, actor, sale=None, unit_cost=None, total_cost=None, receipt=None
+    *, product_id, delta, reason, actor, sale=None, unit_cost=None, total_cost=None, receipt=None,
+    restore_value=None,
 ):
     product = Product.objects.select_for_update().get(pk=product_id)
     stock, _ = Stock.objects.get_or_create(product=product)
@@ -40,8 +41,15 @@ def adjust_stock(
     else:
         if unit_cost is not None:
             raise ValidationError({"unit_cost": "Saídas utilizam automaticamente o custo médio."})
-        value_delta = -outgoing_cost(stock, -delta)
+        if restore_value is not None:
+            # desfazer uma entrada: tira exatamente o valor que ela pôs, e não o custo médio
+            check_value(restore_value)
+            value_delta = -restore_value
+        else:
+            value_delta = -outgoing_cost(stock, -delta)
     check_value(stock.value + value_delta)
+    if stock.quantity + delta == 0 and stock.value + value_delta != 0:
+        raise ValidationError({"quantity": "O valor do estoque não fecha ao zerar a quantidade."})
     stock.value += value_delta
     stock.quantity += delta
     stock.version += 1
@@ -107,6 +115,8 @@ def pay_receipt(*, receipt_id, occurred_on, actor):
     from apps.finance.models import CashEntry
 
     receipt = Receipt.objects.select_for_update().get(pk=receipt_id)
+    if receipt.status == Receipt.Status.CANCELLED:
+        raise ValidationError({"status": "Compra cancelada não pode ser paga."})
     if receipt.kind != Receipt.Kind.PURCHASE:
         raise ValidationError(
             {"kind": "Produção não gera pagamento automático. Registre despesas efetivamente pagas no caixa."}
@@ -125,4 +135,55 @@ def pay_receipt(*, receipt_id, occurred_on, actor):
             )
         receipt.paid_at = timezone.now()
         receipt.save(update_fields=["paid_at", "updated_at"])
+    return receipt
+
+
+@transaction.atomic
+def cancel_receipt(*, receipt_id, actor):
+    """Cancela uma compra ou produção lançada errada, sem apagar nada (spec 023).
+
+    Só vale enquanto a entrada for a última movimentação do produto: assim tirar as unidades e
+    o valor dela devolve o estoque exatamente ao que era antes, sem mexer no custo médio de
+    outras entradas. Compra já paga gera um estorno de entrada no caixa."""
+    from apps.finance.models import CashEntry
+
+    receipt = Receipt.objects.select_for_update().get(pk=receipt_id)
+    if receipt.status == Receipt.Status.CANCELLED:
+        return receipt
+    Product.objects.select_for_update().get(pk=receipt.product_id)
+    entry = Movement.objects.filter(receipt=receipt).first()
+    later = (
+        Movement.objects.filter(product_id=receipt.product_id, created_at__gte=entry.created_at)
+        .exclude(pk=entry.pk)
+        .exists()
+        if entry
+        else True
+    )
+    if later:
+        raise ValidationError(
+            {
+                "receipt": "Este produto teve outras movimentações depois desta entrada (venda, ajuste ou "
+                "outra entrada), então ela não pode ser cancelada sem distorcer o custo. "
+                "Corrija pelos ajustes de estoque."
+            }
+        )
+    adjust_stock(
+        product_id=receipt.product_id,
+        delta=-receipt.quantity,
+        reason=f"Cancelamento de {receipt.get_kind_display().lower()}: {receipt.reference or 'entrada de estoque'}",
+        actor=actor,
+        restore_value=receipt.total,
+    )
+    if receipt.paid_at and receipt.total > 0:
+        CashEntry.objects.create(
+            direction="in",
+            amount=receipt.total,
+            description=f"Estorno de compra: {receipt.product_name}"[:240],
+            occurred_on=timezone.localdate(),
+            refund_of_receipt=receipt,
+            actor=actor,
+        )
+    receipt.status = Receipt.Status.CANCELLED
+    receipt.cancelled_at = timezone.now()
+    receipt.save(update_fields=["status", "cancelled_at", "updated_at"])
     return receipt

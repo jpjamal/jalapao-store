@@ -44,6 +44,7 @@ erDiagram
   Product ||--o{ Receipt : entrada_compra_ou_producao
   Receipt ||--o| Movement : gera
   Receipt ||--o| CashEntry : pagamento
+  Receipt ||--o| CashEntry : estorno_ao_cancelar
   Product ||--o{ ProductImage : fotos
   Product ||--o{ ListingDraft : rascunho_por_canal
   ListingDraft ||--o| Listing : publicado_como

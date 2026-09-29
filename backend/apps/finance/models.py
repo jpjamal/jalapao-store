@@ -20,6 +20,10 @@ class CashEntry(Entity):
     receipt = models.OneToOneField(
         "inventory.Receipt", null=True, blank=True, on_delete=models.PROTECT, related_name="payment"
     )
+    # estorno da compra cancelada (spec 023); separado de `receipt`, que é o pagamento
+    refund_of_receipt = models.OneToOneField(
+        "inventory.Receipt", null=True, blank=True, on_delete=models.PROTECT, related_name="refund"
+    )
 
     class Meta:
         ordering = ["-occurred_on", "-created_at"]

@@ -22,6 +22,10 @@ Em 29/09/2026:
   calculados, marca e modelo na lista; produto novo começa em "Eletrônicos".
 - Os produtos e a categoria criados nesse teste foram removidos do banco local depois.
 
+- Correção feita depois do primeiro deploy: o formulário abre no topo da página, então com 32
+  produtos o Editar de uma linha de baixo abria o formulário 2.349 px acima da tela. Agora a
+  tela rola até o formulário (medido: formulário a 25 px do topo depois do clique).
+
 ## Limites da evidência
 As telas não foram conferidas em celular nem no tema escuro, e não houve teste com o login
 de um usuário sem permissão de superusuário. O `iexact` do SQLite não ignora maiúscula

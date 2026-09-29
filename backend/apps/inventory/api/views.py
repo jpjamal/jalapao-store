@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from apps.inventory.api.serializers import MovementSerializer, PaymentInput, ReceiptInput, ReceiptSerializer
 from apps.inventory.models import Movement, Receipt
-from apps.inventory.services import create_receipt, pay_receipt
+from apps.inventory.services import cancel_receipt, create_receipt, pay_receipt
 
 
 class MovementViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -39,4 +39,12 @@ class ReceiptViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
         receipt = pay_receipt(
             receipt_id=self.get_object().id, actor=request.user, **serializer.validated_data
         )
+        return Response(ReceiptSerializer(receipt).data)
+
+    @extend_schema(request=None, responses=ReceiptSerializer)
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        if not request.user.has_perms(["inventory.change_receipt", "inventory.add_movement", "finance.add_cashentry"]):
+            raise PermissionDenied("Sem permissão para cancelar compras, estoque e caixa.")
+        receipt = cancel_receipt(receipt_id=self.get_object().id, actor=request.user)
         return Response(ReceiptSerializer(receipt).data)

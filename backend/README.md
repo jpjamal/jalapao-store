@@ -62,6 +62,9 @@ Autenticação Bearer JWT. Frontend usa BFF `/jalapao-store/api/` com cookies Ht
 `listing-drafts/` GET/POST/PATCH para preparar anúncios por canal,
 `sales/{uuid}/receive/` e `cancel/` POST, `cash/` GET/POST, `dashboard/` GET.
 `receipts/` GET/POST, `receipts/{uuid}/` GET e `receipts/{uuid}/pay/` POST (occurred_on).
+`receipts/{uuid}/cancel` POST (spec 023) desfaz uma entrada lançada errada sem apagá-la; exige
+change_receipt, add_movement e add_cashentry, e só vale se ela for a última movimentação do
+produto. Compra já paga gera um CashEntry de entrada ligado por `refund_of_receipt`.
 Criar entrada exige add_receipt e add_movement; pagar exige add_receipt, change_receipt e
 add_cashentry. Produção não gera caixa. Compra paga cria CashEntry com vínculo único.
 Movimento de ajuste positivo exige unit_cost; negativo usa a média. Campos stock_value e

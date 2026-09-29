@@ -29,5 +29,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [020](020-servidor-de-arquivos/spec.md) | Servidor de arquivos (SILO): fotos e manuais em buckets | — |
 | [021](021-codigo-de-barras/spec.md) | Código de barras (GTIN/EAN) opcional no produto | conferir com leitor de verdade; enviar GTIN aos marketplaces |
 | [022](022-categorias-e-dados-do-produto/spec.md) | Categorias no lugar do tipo; marca, modelo e peso do produto | conferir as telas com login |
+| [023](023-cancelar-compra/spec.md) | Cancelar compra ou produção lançada errada, sem apagar o histórico | conferir as telas com login |
 
-Próxima spec: **023**.
+Próxima spec: **024**.

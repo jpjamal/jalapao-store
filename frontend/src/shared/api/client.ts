@@ -10,6 +10,7 @@ const labels: Record<string, string> = {
   sku: "Código",
   kind: "Tipo",
   category: "Categoria",
+  receipt: "Compra",
   brand: "Marca",
   model: "Modelo",
   uses_printing_profile: "Usa parâmetros de impressão 3D",

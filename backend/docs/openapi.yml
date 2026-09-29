@@ -1384,6 +1384,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Receipt'
           description: ''
+  /receipts/{id}/cancel/:
+    post:
+      operationId: receipts_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este receipt.
+        required: true
+      tags:
+      - receipts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+          description: ''
   /receipts/{id}/pay/:
     post:
       operationId: receipts_pay_create
@@ -3060,6 +3082,12 @@ components:
           type: string
           format: uuid
         paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        cancelled_at:
           type: string
           format: date-time
           nullable: true

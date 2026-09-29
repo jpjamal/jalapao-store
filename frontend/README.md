@@ -35,7 +35,8 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   categoria e busca no catálogo, com link para ver os preços no site (spec 013).
 - /estoque: entradas/saídas justificadas, valor e histórico. Produto por busca digitada.
 - /entradas: compra/produção por produto (busca digitada), custo do lote, histórico e
-  pagamento de compra.
+  pagamento de compra e cancelamento de entrada lançada errada (o registro fica como
+  cancelado, spec 023).
   Cadastro sugere custo; usuário confirma o valor real. Compra só gera caixa ao pagar;
   produção nunca gera despesa automática. Ajustes positivos exigem custo explícito.
 - /vendas: múltiplos itens, canal (boca a boca, Site Jalapão, Mercado Livre, Shopee, outro),

@@ -32,6 +32,10 @@ class Receipt(Entity):
         PURCHASE = "purchase", "Compra"
         PRODUCTION = "production", "Produção"
 
+    class Status(models.TextChoices):
+        CONFIRMED = "confirmed", "Confirmada"
+        CANCELLED = "cancelled", "Cancelada"
+
     product = models.ForeignKey("catalog.Product", on_delete=models.PROTECT, related_name="receipts")
     product_name = models.CharField(max_length=200)
     kind = models.CharField(max_length=12, choices=Kind.choices)
@@ -45,6 +49,9 @@ class Receipt(Entity):
     idempotency_key = models.UUIDField(unique=True)
     request_hash = models.CharField(max_length=64)
     paid_at = models.DateTimeField(null=True, blank=True)
+    # cancelar não apaga: a entrada fica no histórico marcada como cancelada (spec 023)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.CONFIRMED)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
 
     class Meta:

@@ -27,6 +27,7 @@ type Receipt = {
   reference: string;
   notes: string;
   paid_at: string | null;
+  status: string;
 };
 const today = () => new Date().toLocaleDateString("en-CA");
 
@@ -53,6 +54,28 @@ export default function Receipts() {
   }, [page]);
   useEffect(load, [load]);
   useEffect(() => setKey(crypto.randomUUID()), []);
+  async function cancel(r: Receipt) {
+    const nome = r.kind === "purchase" ? "compra" : "produção";
+    if (
+      !window.confirm(
+        `Cancelar esta ${nome} de ${r.quantity} × ${r.product_name}? O estoque volta ao que era antes` +
+          `${r.paid_at ? " e o pagamento é estornado no caixa" : ""}. O registro continua no histórico como cancelado.`,
+      )
+    )
+      return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await api(`receipts/${r.id}/cancel`, { method: "POST", body: "{}" });
+      setNotice("Entrada cancelada e estoque ajustado.");
+      load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <>
       <PageHeader
@@ -249,8 +272,9 @@ export default function Receipts() {
         <h2>Histórico de entradas</h2>
         <p className="text-sm text-muted-foreground mb-4">
           Um registro por produto. Use a mesma referência para itens da mesma
-          compra. Entradas são preservadas; correções de quantidade ficam nos
-          ajustes de estoque.
+          compra. Entrada lançada errada pode ser cancelada enquanto o produto não
+          tiver outra movimentação depois dela; o registro continua aqui como
+          cancelado. Depois disso, corrija pelos ajustes de estoque.
         </p>
         {!rows ? (
           <p>Carregando…</p>
@@ -267,11 +291,17 @@ export default function Receipts() {
                   <th>Custo unitário</th>
                   <th>Total</th>
                   <th>Pagamento</th>
+                  <th>
+                    <span className="sr-only">Ações</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {rows.results.map((r) => (
-                  <tr key={r.id}>
+                  <tr
+                    key={r.id}
+                    className={r.status === "cancelled" ? "opacity-60" : undefined}
+                  >
                     <td data-label="Data / origem">
                       <span>
                         {r.occurred_on.split("-").reverse().join("/")}
@@ -291,7 +321,9 @@ export default function Receipts() {
                     <td data-label="Custo unitário" className="money">{brl(r.unit_cost)}</td>
                     <td data-label="Total" className="money">{brl(r.total)}</td>
                     <td data-label="Pagamento">
-                      {r.kind === "production" ? (
+                      {r.status === "cancelled" ? (
+                        "Cancelada"
+                      ) : r.kind === "production" ? (
                         "Sem saída automática"
                       ) : r.paid_at ? (
                         "Paga"
@@ -302,6 +334,18 @@ export default function Receipts() {
                           onClick={() => setPaying(r)}
                         >
                           Pagar {brl(r.total)}
+                        </Button>
+                      )}
+                    </td>
+                    <td data-role="actions">
+                      {r.status !== "cancelled" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => cancel(r)}
+                        >
+                          Cancelar
                         </Button>
                       )}
                     </td>
