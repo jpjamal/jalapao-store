@@ -23,8 +23,12 @@ function CategoryForm({
   const [error, setError] = useState("");
   // com produtos dentro, o backend não deixa mudar o uso dos parâmetros 3D
   const locked = !!category && category.products_count > 0;
+  // o formulário abre no topo da página: com a lista longa, leva a tela até ele
+  useEffect(() => {
+    document.getElementById("form-categoria")?.scrollIntoView({ block: "start" });
+  }, []);
   return (
-    <Card className="mb-6">
+    <Card id="form-categoria" className="mb-6">
       <h2>{category ? "Editar categoria" : "Nova categoria"}</h2>
       <ErrorMessage message={error} />
       <form

@@ -49,8 +49,12 @@ function ProductForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const profile = product?.printing || defaults;
+  // o formulário abre no topo da página: com a lista longa, leva a tela até ele
+  useEffect(() => {
+    document.getElementById("form-produto")?.scrollIntoView({ block: "start" });
+  }, []);
   return (
-    <Card className="mb-6">
+    <Card id="form-produto" className="mb-6">
       <h2>{product ? "Editar produto" : "Novo produto"}</h2>
       <ErrorMessage message={error} />
       <form
