@@ -10,11 +10,24 @@ export type Printing = {
   fixed_cost: string;
   markup_percent: string;
 };
+export type Category = {
+  id: string;
+  name: string;
+  uses_printing_profile: boolean;
+  active: boolean;
+  products_count: number;
+  created_at: string;
+};
 export type Product = {
   id: string;
   sku: string;
+  gtin: string | null;
   name: string;
-  kind: string;
+  category: string;
+  category_name: string;
+  brand: string;
+  model: string;
+  weight_g: string | null;
   cost_price: string;
   stock_value: string;
   average_cost: string;

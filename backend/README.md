@@ -25,9 +25,17 @@ completo e regras de dependência em [../docs/architecture.md](../docs/architect
 
 - accounts: usuário Django extensível, grupos/permissões, JWT e bootstrap explícito.
 - common: núcleo compartilhado — entidade base, `domain/money.py`, permissões, erros e painel.
+- catalog: Category (spec 022) substitui o antigo `Product.kind`: `uses_printing_profile` diz
+  que os produtos dela levam PrintingProfile. Sem DELETE, só `active`; a opção trava quando há
+  produtos. Product tem `category` (PROTECT, obrigatória no banco), `brand`, `model` e
+  `weight_g` (peso do produto, opcional). Sem categoria na API, entra a de produção 3D se vierem
+  parâmetros 3D e a comum mais antiga se não (`default_category`/`printing_category`).
 - catalog: Product e PrintingProfile 1:1; cálculos em `domain/pricing.py`, SKU em `domain/sku.py`.
 - catalog: ProductImage guarda fotos privadas por produto; ListingDraft guarda conteúdo
   opcional por produto e canal, com ordem de fotos própria. Salvar não publica anúncio.
+- Código de barras (spec 021): `Product.gtin` opcional e único (GTIN-8/12/13/14, com dígito
+  verificador; regra em `domain/gtin.py`). Vazio é `NULL`; espaços e hífens são removidos ao
+  salvar. `?search=` da API de produtos também procura pelo GTIN.
 - Novos produtos recebem SKU automático `SKU-<iniciais>-<sequência>` (ex.: `SKU-LP-0001`).
   O número é global e crescente; estoque é um campo separado. SKUs existentes e importados
   permanecem intactos. A API expõe o SKU apenas para leitura.
@@ -59,7 +67,7 @@ add_cashentry. Produção não gera caixa. Compra paga cria CashEntry com víncu
 Movimento de ajuste positivo exige unit_cost; negativo usa a média. Campos stock_value e
 average_cost são somente leitura no produto. SaleItem.cost_total é o custo exato da baixa;
 unit_cost é arredondado para apresentação e pode não reproduzir o total multiplicado.
-Paginação padrão 100; pesquisar produto com `?search=`, filtrar kind/active, vendas channel/status.
+Paginação padrão 100; pesquisar produto com `?search=`, filtrar category/active, vendas channel/status.
 Respostas inválidas: `{"errors":{"campo":["mensagem"]}}`. HTTP 400 validação, 401 login,
 403 permissão, 404 recurso. Valores monetários em strings decimais.
 

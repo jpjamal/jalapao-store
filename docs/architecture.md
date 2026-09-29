@@ -32,6 +32,7 @@ erDiagram
   User ||--o{ Sale : registra
   User ||--o{ Movement : movimenta
   User ||--o{ CashEntry : registra
+  Category ||--o{ Product : agrupa
   Product ||--o| PrintingProfile : parametros_3d
   Product ||--|| Stock : saldo
   Product ||--o{ Movement : historico
@@ -64,7 +65,7 @@ camadas. O frontend espelha os mesmos contextos.
 | Contexto | Backend (`backend/apps/`) | Frontend (`frontend/src/features/`) | Telas |
 |---|---|---|---|
 | Identidade | `accounts` | `auth` | Login |
-| Catálogo | `catalog` (produto, fotos, rascunho de anúncio) | `catalog`, `listings` | Produtos, Anúncios |
+| Catálogo | `catalog` (categoria, produto, fotos, rascunho de anúncio) | `catalog`, `listings` | Produtos, Anúncios |
 | Estoque | `inventory` (saldo, ajustes, entradas) | `inventory` | Estoque, Compras / produção |
 | Vendas | `sales` | `sales` | Vendas |
 | Caixa | `finance` | `finance` | Caixa |

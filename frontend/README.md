@@ -23,6 +23,10 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
 - /: estoque a custo, faturamento, lucro estimado, caixa, a receber, produtos ativos.
 - /produtos: busca, paginação, cadastro/edição, parâmetros 3D e desativação.
   O SKU aparece após salvar e não é editável; a quantidade é administrada no estoque.
+  Código de barras (GTIN/EAN) opcional, validado pelo backend; a busca e o campo de produto
+  também encontram por ele (spec 021). Categoria no lugar do tipo, mais marca, modelo e peso
+  (spec 022): a categoria de impressão 3D mostra os parâmetros de custo.
+- /categorias: lista e cadastro de categorias; ativar/desativar, sem apagar (spec 022).
 - /anuncios: rascunho por produto e canal, em etapas (produto e canal, conteúdo, fotos,
   categoria). Salvar não publica. No Mercado Livre: validar (simula sem criar), publicar
   com confirmação e, depois de publicado, "Salvar e enviar" manda as alterações ao anúncio

@@ -3,7 +3,17 @@ from drf_spectacular.utils import extend_schema_field
 from PIL import Image, UnidentifiedImageError
 from rest_framework import serializers
 
-from apps.catalog.models import ListingDraft, ListingDraftImage, PrintingProfile, Product, ProductImage
+from apps.catalog.domain.gtin import gtin_error, normalize_gtin
+from apps.catalog.models import (
+    Category,
+    ListingDraft,
+    ListingDraftImage,
+    PrintingProfile,
+    Product,
+    ProductImage,
+    default_category,
+    printing_category,
+)
 from apps.inventory.models import Stock
 
 
@@ -13,7 +23,44 @@ class PrintingSerializer(serializers.ModelSerializer):
         exclude = ["id", "product"]
 
 
+class CategorySerializer(serializers.ModelSerializer):
+    products_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = Category
+        fields = ["id", "name", "uses_printing_profile", "active", "products_count", "created_at", "updated_at"]
+        read_only_fields = ["id", "products_count", "created_at", "updated_at"]
+
+    def validate_name(self, value):
+        name = " ".join(value.split())
+        if not name:
+            raise serializers.ValidationError("Informe o nome da categoria.")
+        outras = Category.objects.all()
+        if self.instance:
+            outras = outras.exclude(pk=self.instance.pk)
+        # casefold no Python: o iexact do SQLite não ignora maiúscula acentuada (Ô x ô)
+        if any(nome.casefold() == name.casefold() for nome in outras.values_list("name", flat=True)):
+            raise serializers.ValidationError("Já existe uma categoria com este nome.")
+        return name
+
+    def validate(self, attrs):
+        flag = attrs.get("uses_printing_profile")
+        if (
+            self.instance
+            and flag is not None
+            and flag != self.instance.uses_printing_profile
+            and self.instance.products.exists()
+        ):
+            raise serializers.ValidationError(
+                {"uses_printing_profile": "A categoria já tem produtos: não dá para mudar o uso dos parâmetros 3D."}
+            )
+        return attrs
+
+
 class ProductSerializer(serializers.ModelSerializer):
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), required=False)
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    gtin = serializers.CharField(max_length=30, required=False, allow_null=True, allow_blank=True)
     printing = PrintingSerializer(required=False, allow_null=True)
     quantity = serializers.IntegerField(source="stock.quantity", read_only=True, default=0)
     stock_value = serializers.DecimalField(
@@ -28,8 +75,13 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "sku",
+            "gtin",
             "name",
-            "kind",
+            "category",
+            "category_name",
+            "brand",
+            "model",
+            "weight_g",
             "description",
             "cost_price",
             "sale_price",
@@ -43,13 +95,36 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "sku", "created_at", "updated_at"]
 
+    def validate_gtin(self, value):
+        code = normalize_gtin(value)
+        if not code:
+            return None
+        erro = gtin_error(code)
+        if erro:
+            raise serializers.ValidationError(erro)
+        outros = Product.objects.filter(gtin=code)
+        if self.instance:
+            outros = outros.exclude(pk=self.instance.pk)
+        if outros.exists():
+            raise serializers.ValidationError("Já existe um produto com este código de barras.")
+        return code
+
     def validate(self, attrs):
-        kind = attrs.get("kind", getattr(self.instance, "kind", "resale"))
+        category = attrs.get("category")
+        if category is None:
+            if self.instance:
+                category = self.instance.category
+            else:
+                # sem categoria: parâmetros 3D levam à de produção 3D, o resto à comum
+                category = printing_category() if attrs.get("printing") else default_category()
+                attrs["category"] = category
+        elif not category.active and (not self.instance or self.instance.category_id != category.pk):
+            raise serializers.ValidationError({"category": "Esta categoria está inativa."})
         profile = attrs.get("printing", getattr(self.instance, "printing", None))
-        if kind == "printing" and not profile:
+        if category.uses_printing_profile and not profile:
             raise serializers.ValidationError({"printing": "Preencha os parâmetros de impressão 3D."})
-        if kind != "printing" and attrs.get("printing"):
-            raise serializers.ValidationError({"printing": "Parâmetros 3D exigem tipo Impressão 3D."})
+        if not category.uses_printing_profile and attrs.get("printing"):
+            raise serializers.ValidationError({"printing": "Parâmetros 3D só valem em categoria de impressão 3D."})
         return attrs
 
     @transaction.atomic
@@ -71,7 +146,7 @@ class ProductSerializer(serializers.ModelSerializer):
         instance = Product.objects.select_for_update().get(pk=instance.pk)
         profile = validated_data.pop("printing", None)
         instance = super().update(instance, validated_data)
-        if instance.kind == "printing":
+        if instance.category.uses_printing_profile:
             self._profile(instance, profile or {})
         else:
             PrintingProfile.objects.filter(product=instance).delete()

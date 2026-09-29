@@ -160,6 +160,163 @@ paths:
               schema:
                 $ref: '#/components/schemas/Cash'
           description: ''
+  /categories/:
+    get:
+      operationId: categories_list
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`), como
+        o produto.'
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      - in: query
+        name: uses_printing_profile
+        schema:
+          type: boolean
+      tags:
+      - categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+    post:
+      operationId: categories_create
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`), como
+        o produto.'
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /categories/{id}/:
+    get:
+      operationId: categories_retrieve
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`), como
+        o produto.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este category.
+        required: true
+      tags:
+      - categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: categories_update
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`), como
+        o produto.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este category.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: categories_partial_update
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`), como
+        o produto.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este category.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
   /dashboard/:
     get:
       operationId: dashboard_retrieve
@@ -999,15 +1156,10 @@ paths:
         schema:
           type: boolean
       - in: query
-        name: kind
+        name: category
         schema:
           type: string
-          enum:
-          - printing
-          - resale
-        description: |-
-          * `printing` - Impressão 3D
-          * `resale` - Revenda
+          format: uuid
       - name: page
         required: false
         in: query
@@ -1606,6 +1758,38 @@ components:
       - occurred_on
       - receipt
       - sale
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        uses_printing_profile:
+          type: boolean
+        active:
+          type: boolean
+        products_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - products_count
+      - updated_at
     CertificateStatus:
       type: object
       properties:
@@ -2185,6 +2369,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Cash'
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
     PaginatedListingDraftList:
       type: object
       required:
@@ -2369,6 +2576,32 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Sale'
+    PatchedCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        uses_printing_profile:
+          type: boolean
+        active:
+          type: boolean
+        products_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedListing:
       type: object
       properties:
@@ -2484,11 +2717,30 @@ components:
         sku:
           type: string
           readOnly: true
+        gtin:
+          type: string
+          nullable: true
+          maxLength: 30
         name:
           type: string
           maxLength: 200
-        kind:
-          $ref: '#/components/schemas/ProductKindEnum'
+        category:
+          type: string
+          format: uuid
+        category_name:
+          type: string
+          readOnly: true
+        brand:
+          type: string
+          maxLength: 100
+        model:
+          type: string
+          maxLength: 100
+        weight_g:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
         description:
           type: string
         cost_price:
@@ -2608,11 +2860,30 @@ components:
         sku:
           type: string
           readOnly: true
+        gtin:
+          type: string
+          nullable: true
+          maxLength: 30
         name:
           type: string
           maxLength: 200
-        kind:
-          $ref: '#/components/schemas/ProductKindEnum'
+        category:
+          type: string
+          format: uuid
+        category_name:
+          type: string
+          readOnly: true
+        brand:
+          type: string
+          maxLength: 100
+        model:
+          type: string
+          maxLength: 100
+        weight_g:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
         description:
           type: string
         cost_price:
@@ -2655,6 +2926,7 @@ components:
           readOnly: true
       required:
       - average_cost
+      - category_name
       - created_at
       - id
       - name
@@ -2725,14 +2997,6 @@ components:
       required:
       - file
       - product
-    ProductKindEnum:
-      enum:
-      - printing
-      - resale
-      type: string
-      description: |-
-        * `printing` - Impressão 3D
-        * `resale` - Revenda
     PushStockResult:
       type: object
       properties:

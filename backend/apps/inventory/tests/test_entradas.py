@@ -245,7 +245,12 @@ class CostMigrationTests(TransactionTestCase):
 
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()
-        before = [("inventory", "0001_initial"), ("sales", "0001_initial"), ("finance", "0001_initial")]
+        before = [
+            ("catalog", "0005_padronizar_sku"),
+            ("inventory", "0001_initial"),
+            ("sales", "0001_initial"),
+            ("finance", "0001_initial"),
+        ]
         executor.migrate(before)
         try:
             old = executor.loader.project_state(before).apps

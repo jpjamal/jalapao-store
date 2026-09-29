@@ -75,7 +75,9 @@ export function ProductPicker({
     if (!busca || (escolhido && texto === rotulo(escolhido))) return base;
     return base.filter(
       (p) =>
-        semAcento(p.name).includes(busca) || semAcento(p.sku).includes(busca),
+        semAcento(p.name).includes(busca) ||
+        semAcento(p.sku).includes(busca) ||
+        (p.gtin ?? "").includes(busca),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, texto, escolhido, somenteAtivos]);

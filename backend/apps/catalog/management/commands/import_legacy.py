@@ -3,7 +3,7 @@ from decimal import Decimal
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from apps.catalog.models import Product, PrintingProfile
+from apps.catalog.models import Product, PrintingProfile, printing_category
 from apps.inventory.models import Stock
 
 FIELDS = {
@@ -38,7 +38,7 @@ class Command(BaseCommand):
                 continue
             if item.get("tipo") != "impressao3d":
                 raise CommandError(f"Tipo legado não reconhecido: {item.get('tipo')}.")
-            product = Product(legacy_id=item["id"], sku=item["id"], name=item["nome"], kind="printing")
+            product = Product(legacy_id=item["id"], sku=item["id"], name=item["nome"], category=printing_category())
             product.full_clean()
             product.save()
             values = {

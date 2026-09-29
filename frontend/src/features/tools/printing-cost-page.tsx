@@ -121,7 +121,6 @@ export default function Impressao3D() {
         method: "POST",
         body: JSON.stringify({
           name: nome.trim(),
-          kind: "printing",
           printing,
         }),
       });

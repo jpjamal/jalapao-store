@@ -1,11 +1,20 @@
 from decimal import Decimal
 import uuid
 from django.db import models
+from django.db.models.functions import Lower
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.common.models import Entity
 from apps.catalog.domain.pricing import printing_cost
+from apps.catalog.domain.gtin import gtin_error, normalize_gtin
 from apps.catalog.domain.sku import sku, sku_initials
+
+
+def validate_gtin(value):
+    erro = gtin_error(normalize_gtin(value))
+    if erro:
+        raise ValidationError(erro)
 
 
 def amount(default=0):
@@ -20,15 +29,52 @@ class SkuSequence(models.Model):
     id = models.BigAutoField(primary_key=True)
 
 
-class Product(Entity):
-    class Kind(models.TextChoices):
-        PRINTING = "printing", "Impressão 3D"
-        RESALE = "resale", "Revenda"
+class Category(Entity):
+    """Categoria do produto (spec 022). Substitui o antigo tipo revenda / impressão 3D:
+    `uses_printing_profile` diz que os produtos dela levam os parâmetros de impressão 3D."""
 
+    name = models.CharField(max_length=100)
+    uses_printing_profile = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name", "id"]
+        verbose_name_plural = "categories"
+        constraints = [models.UniqueConstraint(Lower("name"), name="category_name_unique_ci")]
+
+    def __str__(self):
+        return self.name
+
+
+NAME_ELECTRONICS = "Eletrônicos"
+NAME_PRINTING = "Produção Impressão 3D"
+
+
+def default_category():
+    """Categoria de quem não informou uma: a primeira comum e ativa (renomear não quebra isso)."""
+    found = Category.objects.filter(active=True, uses_printing_profile=False).order_by("created_at", "id").first()
+    return found or Category.objects.create(name=NAME_ELECTRONICS)
+
+
+def printing_category():
+    """Categoria de produção 3D usada quando vêm parâmetros de impressão sem categoria."""
+    found = Category.objects.filter(active=True, uses_printing_profile=True).order_by("created_at", "id").first()
+    return found or Category.objects.create(name=NAME_PRINTING, uses_printing_profile=True)
+
+
+class Product(Entity):
     sku = models.CharField(max_length=80, unique=True, blank=True)
     legacy_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    # código de barras (spec 021): opcional; vazio é NULL para o unique aceitar vários sem código
+    gtin = models.CharField(max_length=14, unique=True, null=True, blank=True, validators=[validate_gtin])
     name = models.CharField(max_length=200)
-    kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.RESALE)
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="products")
+    brand = models.CharField(max_length=100, blank=True)
+    model = models.CharField(max_length=100, blank=True)
+    # peso do produto em gramas (embalagem/frete); não é o filamento gasto, que fica no perfil 3D
+    weight_g = models.DecimalField(
+        max_digits=10, decimal_places=3, null=True, blank=True, validators=[MinValueValidator(0)]
+    )
     description = models.TextField(blank=True)
     cost_price = amount()
     sale_price = amount()
@@ -46,6 +92,10 @@ class Product(Entity):
         return self.name
 
     def save(self, *args, **kwargs):
+        # Admin e importações também chegam aqui: guarda sempre o código limpo, ou NULL
+        self.gtin = normalize_gtin(self.gtin) or None
+        if self.category_id is None:
+            self.category = default_category()
         if self._state.adding and not self.sku:
             with transaction.atomic():
                 while True:

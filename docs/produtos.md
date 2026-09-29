@@ -9,12 +9,25 @@ Fica em **/jalapao-store/produtos**, atrás do login.
 
 ## O que é um produto
 
-Dois tipos, e a diferença está em como o custo aparece:
+Todo produto pertence a uma **categoria** (menu **Categorias**, cadastrável). Desde a spec
+022 a categoria substitui o antigo "tipo". As duas que já existem:
 
-- **Revenda** — você digita o custo e o preço de venda.
-- **Impressão 3D** — você informa os parâmetros da peça (filamento, peso, consumo,
+- **Eletrônicos** — você digita o custo e o preço de venda.
+- **Produção Impressão 3D** — você informa os parâmetros da peça (filamento, peso, consumo,
   tempo, energia, mão de obra, custos fixos e margem) e o sistema calcula custo e
   preço sugerido, com a mesma conta da ferramenta de impressão 3D.
+
+O que decide isso é a opção *Produção de impressão 3D* da categoria: quem escolhe uma categoria
+com ela ligada vê os parâmetros 3D. Categorias novas nascem com ela desligada, e a opção
+trava depois que a categoria recebe o primeiro produto. Categoria não se apaga: desative, e os
+produtos que já estão nela continuam.
+
+Campos opcionais para identificar e despachar: **marca**, **modelo** e **peso do produto**
+em gramas. O peso do produto (embalagem, frete) não é o peso do filamento dos parâmetros 3D.
+
+Todo produto tem um **código de barras (GTIN/EAN)** opcional e único: 8, 12, 13 ou 14
+dígitos, com o dígito verificador conferido. Serve para o leitor a laser na busca de produto
+e, no futuro, para plataformas que peçam o GTIN. Não substitui o SKU.
 
 Todo produto tem um **código (SKU)** único. Os que vieram do sistema anterior guardam
 o identificador antigo em `legacy_id` — por isso uma reimportação nunca duplica nem
@@ -38,8 +51,8 @@ depois não muda o lucro de uma venda antiga.
 
 ## Como usar
 
-1. **Produtos → Novo produto**: nome, código e tipo. Se for impressão 3D, os parâmetros
-   da peça.
+1. **Produtos → Novo produto**: nome, categoria e, se quiser, marca, modelo, peso e código
+   de barras. Se a categoria for de impressão 3D, os parâmetros da peça.
 2. O estoque começa em **zero** — quantidade não se digita no cadastro, entra por
    **Compras / produção**.
 3. Para vender, o produto precisa estar **ativo** e ter saldo.
@@ -51,12 +64,12 @@ telas de venda e continua nos relatórios.
 ## Pela ferramenta de impressão 3D
 
 Em **Ferramentas → Impressão 3D** você faz a conta de uma peça e, se gostar do resultado,
-dá um nome e clica em **Salvar produto**. Ele entra no catálogo como tipo impressão 3D,
-com esses parâmetros e estoque zero.
+dá um nome e clica em **Salvar produto**. Ele entra no catálogo na categoria de produção
+3D, com esses parâmetros e estoque zero.
 
 ## Busca e listagem
 
-Busca por nome e código, paginação de 100 em 100. Cada linha mostra quantidade, custo
+Busca por nome, código (SKU), código de barras, marca e modelo, paginação de 100 em 100. Cada linha mostra quantidade, custo
 médio, preço e situação.
 
 ## Onde isso vive

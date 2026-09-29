@@ -7,6 +7,7 @@ import { api, BASE } from "@/shared/api/client";
 import {
   LayoutDashboard,
   Package,
+  Tags,
   Images,
   Boxes,
   ShoppingBag,
@@ -27,6 +28,7 @@ const groups: { title: string; items: Item[] }[] = [
     items: [
       { href: "/", label: "Visão geral", Icon: LayoutDashboard },
       { href: "/produtos", label: "Produtos", Icon: Package },
+      { href: "/categorias", label: "Categorias", Icon: Tags },
       { href: "/estoque", label: "Estoque", Icon: Boxes },
       { href: "/entradas", label: "Compras / produção", Icon: PackagePlus },
       { href: "/vendas", label: "Vendas", Icon: ShoppingBag },

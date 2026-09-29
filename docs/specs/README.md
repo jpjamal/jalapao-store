@@ -27,5 +27,7 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [018](018-https-no-traefik/spec.md) | HTTPS no Traefik (antes numerada 007) | certificados órfãos |
 | [019](019-traefik-unico/spec.md) | Traefik como único proxy (sem Nginx; Certbot central) | apagar o volume antigo de certificados |
 | [020](020-servidor-de-arquivos/spec.md) | Servidor de arquivos (SILO): fotos e manuais em buckets | — |
+| [021](021-codigo-de-barras/spec.md) | Código de barras (GTIN/EAN) opcional no produto | conferir com leitor de verdade; enviar GTIN aos marketplaces |
+| [022](022-categorias-e-dados-do-produto/spec.md) | Categorias no lugar do tipo; marca, modelo e peso do produto | conferir as telas com login |
 
-Próxima spec: **021**.
+Próxima spec: **023**.

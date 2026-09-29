@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/shared/api/client";
 import { brl } from "@/shared/lib/format";
-import { type Product, type Printing } from "@/features/catalog/types";
+import { type Category, type Product, type Printing } from "@/features/catalog/types";
 import { type Page } from "@/shared/api/types";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -27,14 +27,25 @@ const defaults: Printing = {
 };
 function ProductForm({
   product,
+  categories,
   done,
   cancel,
 }: {
   product: Product | null;
+  categories: Category[];
   done: () => void;
   cancel: () => void;
 }) {
-  const [kind, setKind] = useState(product?.kind || "resale");
+  // ativas para escolher; a categoria atual do produto continua aparecendo mesmo se foi desativada
+  const options = categories.filter((c) => c.active || c.id === product?.category);
+  // produto novo começa na categoria comum mais antiga, a mesma que o backend usa sem escolha
+  const padrao = options
+    .filter((c) => !c.uses_printing_profile)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))[0];
+  const [categoryId, setCategoryId] = useState(
+    product?.category || padrao?.id || options[0]?.id || "",
+  );
+  const usesPrinting = !!categories.find((c) => c.id === categoryId)?.uses_printing_profile;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const profile = product?.printing || defaults;
@@ -50,11 +61,16 @@ function ProductForm({
           const f = new FormData(e.currentTarget);
           const payload: Record<string, unknown> = {
             name: f.get("name"),
+            gtin: f.get("gtin"),
+            category: categoryId,
+            brand: f.get("brand"),
+            model: f.get("model"),
+            // nome próprio no formulário: "weight_g" já é o filamento nos parâmetros 3D
+            weight_g: f.get("product_weight_g") || null,
             description: f.get("description"),
-            kind,
             active: f.get("active") === "on",
           };
-          if (kind === "printing") {
+          if (usesPrinting) {
             payload.printing = Object.fromEntries(
               Object.keys(defaults).map((k) => [k, f.get(k)]),
             );
@@ -90,16 +106,49 @@ function ProductForm({
             </p>
           </div>
           <div>
-            <label htmlFor="kind">Tipo</label>
+            <label htmlFor="category">Categoria</label>
             <select
-              id="kind"
-              value={kind}
-              onChange={(e) => setKind(e.target.value)}
+              id="category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              required
             >
-              <option value="resale">Revenda</option>
-              <option value="printing">Impressão 3D</option>
+              {options.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.active ? "" : " (inativa)"}
+                </option>
+              ))}
             </select>
           </div>
+          <Field
+            name="brand"
+            label="Marca"
+            value={product?.brand}
+            maxLength={100}
+          />
+          <Field
+            name="model"
+            label="Modelo"
+            value={product?.model}
+            maxLength={100}
+          />
+          <Field
+            name="product_weight_g"
+            label="Peso do produto (g)"
+            type="number"
+            min="0"
+            step="0.001"
+            value={product?.weight_g ?? ""}
+          />
+          <Field
+            name="gtin"
+            label="Código de barras (GTIN/EAN) — opcional"
+            value={product?.gtin ?? ""}
+            inputMode="numeric"
+            maxLength={30}
+            placeholder="8, 12, 13 ou 14 dígitos"
+          />
           <div className="md:col-span-3">
             <Field
               name="description"
@@ -108,7 +157,7 @@ function ProductForm({
             />
           </div>
         </div>
-        {kind === "printing" ? (
+        {usesPrinting ? (
           <>
             <p className="my-4 text-muted-foreground">
               Custo e preço sugerido são calculados a partir dos parâmetros
@@ -224,6 +273,12 @@ export default function Products() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
+  const [categories, setCategories] = useState<Category[] | null>(null);
+  useEffect(() => {
+    api<Page<Category>>("categories")
+      .then((r) => setCategories(r.results))
+      .catch((e) => setError(e.message));
+  }, []);
   const load = useCallback(() => {
     setError("");
     api<Page<Product>>(
@@ -241,10 +296,11 @@ export default function Products() {
         actions={<Button onClick={() => setEditing(null)}>Novo produto</Button>}
       />
       <ErrorMessage message={error} />
-      {editing !== undefined && (
+      {editing !== undefined && categories && (
         <ProductForm
           key={editing?.id || "new"}
           product={editing}
+          categories={categories}
           done={() => {
             setEditing(undefined);
             load();
@@ -274,7 +330,7 @@ export default function Products() {
               <thead>
                 <tr>
                   <th>Produto</th>
-                  <th>Tipo</th>
+                  <th>Categoria</th>
                   <th>Custo de referência</th>
                   <th>Preço</th>
                   <th>Estoque</th>
@@ -289,11 +345,17 @@ export default function Products() {
                   <tr key={p.id}>
                     <td data-role="title">
                       <strong>{p.name}</strong>
-                      <p className="text-xs text-muted-foreground font-normal">{p.sku}</p>
+                      <p className="text-xs text-muted-foreground font-normal">
+                        {p.sku}
+                        {p.gtin ? ` · ${p.gtin}` : ""}
+                      </p>
+                      {(p.brand || p.model) && (
+                        <p className="text-xs text-muted-foreground font-normal">
+                          {[p.brand, p.model].filter(Boolean).join(" ")}
+                        </p>
+                      )}
                     </td>
-                    <td data-label="Tipo">
-                      {p.kind === "printing" ? "Impressão 3D" : "Revenda"}
-                    </td>
+                    <td data-label="Categoria">{p.category_name}</td>
                     <td data-label="Custo de referência" className="money">{brl(p.cost_price)}</td>
                     <td data-label="Preço" className="money">{brl(p.sale_price)}</td>
                     <td data-label="Estoque">{p.quantity}</td>

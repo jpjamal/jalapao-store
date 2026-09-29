@@ -13,10 +13,10 @@ class AutomaticSkuTests(TestCase):
 
     def test_new_products_get_unique_sequential_skus_and_separate_stock(self):
         first = self.client.post(
-            "/api/v1/products/", {"name": "Luminária Pimentão", "kind": "resale"}, format="json"
+            "/api/v1/products/", {"name": "Luminária Pimentão"}, format="json"
         )
         second = self.client.post(
-            "/api/v1/products/", {"name": "Luminária Pimentão", "kind": "resale"}, format="json"
+            "/api/v1/products/", {"name": "Luminária Pimentão"}, format="json"
         )
         self.assertEqual(first.status_code, 201)
         self.assertEqual(second.status_code, 201)

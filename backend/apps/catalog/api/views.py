@@ -1,3 +1,4 @@
+from django.db.models import Count
 from django.http import FileResponse, Http404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
@@ -8,12 +9,28 @@ from rest_framework.response import Response
 
 from apps.catalog.api.permissions import DraftChangePermission, DraftPublishPermission
 from apps.catalog.api.serializers import (
+    CategorySerializer,
     ListingDraftSerializer,
     ProductImageSerializer,
     ProductImageUploadSerializer,
     ProductSerializer,
 )
-from apps.catalog.models import ListingDraft, Product, ProductImage
+from apps.catalog.models import Category, ListingDraft, Product, ProductImage
+
+
+class CategoryViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Sem DELETE: categoria sai de uso desativando (`active`), como o produto."""
+
+    queryset = Category.objects.annotate(products_count=Count("products")).all()
+    serializer_class = CategorySerializer
+    filterset_fields = ["active", "uses_printing_profile"]
+    search_fields = ["name"]
 
 
 class ProductViewSet(
@@ -23,10 +40,10 @@ class ProductViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Product.objects.select_related("printing", "stock").all()
+    queryset = Product.objects.select_related("printing", "stock", "category").all()
     serializer_class = ProductSerializer
-    filterset_fields = ["kind", "active"]
-    search_fields = ["name", "sku"]
+    filterset_fields = ["category", "active"]
+    search_fields = ["name", "sku", "gtin", "brand", "model"]
 
 
 class ProductImageViewSet(
