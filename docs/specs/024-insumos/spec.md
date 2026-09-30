@@ -141,7 +141,8 @@ Decisões do dono (30/09/2026): avisar e dar baixa só do que tem; o custo do in
 lucro; **sem** kit padrão por produto (os insumos são escolhidos na hora da venda); vendas importadas
 do Mercado Livre **não** baixam insumo.
 
-- **Registrar venda** ganha a seção opcional **Insumos usados**: linhas com o insumo (a lista mostra o
+- **Registrar venda** ganha a seção opcional **Insumos usados**, **sempre visível**: sem insumos cadastrados ela
+  orienta onde cadastrar, e se a lista falhar (ex.: sem permissão) mostra o motivo. Linhas: linhas com o insumo (a lista mostra o
   saldo) e a quantidade usada, por exemplo 1 caixa pequena e 2 etiquetas. Não se repete o mesmo
   insumo na venda, e a quantidade é maior que zero.
 - Ao confirmar a venda, na **mesma transação**, cada insumo informado dá baixa no saldo, com a

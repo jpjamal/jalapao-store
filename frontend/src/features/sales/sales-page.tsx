@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/shared/api/client";
 import { brl } from "@/shared/lib/format";
 import { type Product } from "@/features/catalog/types";
@@ -54,6 +55,8 @@ export default function Sales() {
   // insumos que a loja pode usar na venda (caixa, etiqueta…); sem permissão a lista vem vazia
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [usedSupplies, setUsedSupplies] = useState<SupplyDraft[]>([]);
+  // por que a lista de insumos veio vazia: falha ao carregar (ex.: sem permissão) ou nada cadastrado
+  const [suppliesError, setSuppliesError] = useState("");
   const [key, setKey] = useState(() => crypto.randomUUID());
   const [items, setItems] = useState<Draft[]>([
     { product_id: "", quantity: 1, unit_price: "0" },
@@ -62,12 +65,16 @@ export default function Sales() {
     Promise.all([
       allProducts(),
       api<Page<Sale>>(`sales?page=${page}`),
-      allSupplies().catch(() => [] as Supply[]),
+      allSupplies().then(
+        (s) => ({ list: s, failure: "" }),
+        (e: Error) => ({ list: [] as Supply[], failure: e.message }),
+      ),
     ])
       .then(([p, r, s]) => {
         setProducts(p);
         setRows(r);
-        setSupplies(s);
+        setSupplies(s.list);
+        setSuppliesError(s.failure);
       })
       .catch((e) => setError(e.message));
   }, [page]);
@@ -258,13 +265,26 @@ export default function Sales() {
             >
               Adicionar item
             </Button>
-            {supplies.length > 0 && (
+            {(
               <div className="border rounded-md p-4 mb-5">
                 <h3>Insumos usados (opcional)</h3>
                 <p className="text-sm text-muted-foreground mb-3">
                   Caixa, etiqueta e outros: dão baixa no saldo de insumos junto com a venda. Se faltar saldo, a
                   venda continua e o insumo é baixado só até onde tem.
                 </p>
+                {suppliesError ? (
+                  <p role="alert" className="text-sm text-destructive mb-3">
+                    Não foi possível carregar os insumos: {suppliesError}
+                  </p>
+                ) : supplies.length === 0 ? (
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Ainda não há insumos cadastrados. Cadastre em{" "}
+                    <Link href="/insumos" className="underline">
+                      Insumos
+                    </Link>{" "}
+                    (e registre uma compra para ter saldo) para usá-los aqui.
+                  </p>
+                ) : null}
                 {usedSupplies.map((u, index) => (
                   <div key={index} className="grid grid-cols-2 md:grid-cols-[2fr_1fr_auto] gap-3 items-end mb-3">
                     <div className="col-span-2 md:col-span-1">
@@ -321,7 +341,7 @@ export default function Sales() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={usedSupplies.length >= supplies.length}
+                  disabled={supplies.length === 0 || usedSupplies.length >= supplies.length}
                   onClick={() => setUsedSupplies([...usedSupplies, { supply_id: "", quantity: 1 }])}
                 >
                   Adicionar insumo

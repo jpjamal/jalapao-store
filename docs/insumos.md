@@ -73,6 +73,8 @@ Em **Vendas → Registrar venda** há a seção **Insumos usados (opcional)**: e
 o saldo) e a quantidade, por exemplo 1 caixa pequena e 2 etiquetas. Ao confirmar a venda, cada insumo dá
 **baixa no saldo junto com a venda**, e a movimentação fica ligada a ela.
 
+- **A seção aparece sempre.** Sem nenhum insumo cadastrado ela explica onde cadastrar (Insumos, e uma compra
+  para ter saldo); se a lista não puder ser carregada, por exemplo sem permissão, mostra o motivo.
 - **Falta de saldo não impede a venda.** O insumo é baixado só até onde tem (nunca fica negativo) e a tela
   avisa o que faltou ("pedido 5, baixado 3"). O pedido e o que foi de fato baixado ficam gravados na venda.
 - **Cancelar a venda devolve os insumos**, só o que foi realmente baixado. Cancelar duas vezes não devolve

@@ -96,6 +96,10 @@ insumos na venda nem alerta de pouco estoque.
   do produto; cancelar a venda devolveu as 2 caixas (saldo 3) e não mexeu na etiqueta.
 - Os dados criados no teste foram removidos do banco local; o estoque do produto voltou a 15 unidades e
   R$ 210,00.
+- Correção depois do deploy da etapa 3: a seção só aparecia quando já havia insumo cadastrado, e sumia sem
+  explicação quando a lista não carregava. Agora é sempre visível. Conferido na tela: sem insumos, mostra
+  a orientação com o link para Insumos e o botão de adicionar desativado; com um usuário sem permissão de
+  ler insumos, mostra "Não foi possível carregar os insumos: Você não tem permissão para executar essa ação".
 
 ## Limites da evidência da etapa 3
 As telas foram conferidas por automação no painel (cliques por script, porque o painel ficou oculto), sem
