@@ -72,5 +72,32 @@ oculto), sem celular nem tema escuro e sem usuário sem permissão de superusuá
 permissões foram testadas na API). O teste de concorrência só roda em PostgreSQL. Ainda não há
 insumos na venda nem alerta de pouco estoque.
 
-## Etapa 3
-Pendente: nada implementado.
+## Etapa 3 — insumos usados na venda (30/09/2026)
+
+- Suíte completa (261 testes, 13 deles novos da etapa 3) contra PostgreSQL 17 real, sem nenhum teste
+  pulado: OK. Os 248 testes que já existiam continuam passando, sem alteração, inclusive os de venda e
+  da importação do Mercado Livre. `ruff`, `manage.py check`, contrato OpenAPI validado com
+  `--fail-on-warn` (só linhas novas), ausência de migrações pendentes, `tsc --noEmit` e `next build`: OK.
+- Testes do serviço: insumos baixados junto com a venda, com a movimentação ligada a ela; custo e lucro
+  da venda idênticos com e sem insumos; venda sem insumos não cria linhas; falta de saldo não bloqueia a
+  venda e baixa só o que existe (pedido 5, baixado 3, saldo 0); insumo sem nenhum saldo fica registrado
+  com nada baixado e sem movimentação; cancelar devolve exatamente o que foi baixado, mesmo com o insumo
+  inativo, e não devolve duas vezes; repetir o mesmo pedido não baixa de novo; linha repetida ou insumo
+  inexistente desfazem a venda inteira (estoque do produto e saldo do insumo intactos).
+- Testes da API: a resposta e a listagem trazem `supplies` com `requested`, `taken` e `shortfall`; a chave
+  `supplies` é opcional; entradas inválidas (quantidade 0, id mal formado, insumo repetido) dão 400 sem
+  criar venda; informar insumos exige a permissão de movimentar insumos (403 sem ela, e a venda sem
+  insumos segue permitida); cancelar uma venda que baixou insumo também exige essa permissão e nada é
+  devolvido quando é recusado.
+- Na tela, com o app local: a seção "Insumos usados (opcional)" mostra cada insumo com o saldo; venda de
+  1 produto com 2 caixas (saldo 3) e 2 etiquetas (saldo 0) foi registrada, a caixa foi a saldo 1 e o
+  aviso mostrou "Faltou saldo de insumo: Etiqueta (pedido 2, baixado 0)"; o histórico de vendas lista
+  "Insumo: 2× Caixa pequena" e "Insumo: 0× Etiqueta (faltou 2 de 2)"; o lucro da venda ficou só com o custo
+  do produto; cancelar a venda devolveu as 2 caixas (saldo 3) e não mexeu na etiqueta.
+- Os dados criados no teste foram removidos do banco local; o estoque do produto voltou a 15 unidades e
+  R$ 210,00.
+
+## Limites da evidência da etapa 3
+As telas foram conferidas por automação no painel (cliques por script, porque o painel ficou oculto), sem
+celular nem tema escuro. As permissões foram testadas na API. Não há kit padrão, custo de insumo no lucro,
+bloqueio por falta de saldo nem baixa nas vendas importadas do Mercado Livre: foram decisões do dono.

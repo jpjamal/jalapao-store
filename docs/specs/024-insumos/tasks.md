@@ -23,13 +23,17 @@
 - [x] Testes, documentação e validação com PostgreSQL.
 - [ ] Conferir as telas com login e publicar (só quando o dono mandar).
 
-**Etapa 3 — insumos na venda** (desejada pelo dono; especificar antes de começar)
-- [ ] Informar insumos usados ao criar a venda, com baixa no saldo na mesma transação.
-- [ ] Cancelar a venda devolve os insumos; decidir aviso ou bloqueio e se o custo entra no lucro.
-- [ ] Kit padrão por produto (opcional).
+**Etapa 3 — insumos na venda** (decisões do dono: avisar e baixar só o que tem; custo fora do lucro;
+sem kit padrão; importadas do Mercado Livre não baixam)
+- [x] Informar insumos usados ao criar a venda, com baixa no saldo na mesma transação.
+- [x] Cancelar a venda devolve os insumos (só o que foi baixado).
+- [x] Aviso do que faltou na resposta da API e na tela; insumos no histórico de vendas.
+- [x] Testes, documentação e validação com PostgreSQL.
+- [ ] Conferir as telas com login e publicar (só quando o dono mandar).
 
 **Depois, só se o dono pedir**
-- [ ] Alerta de pouco estoque e desconto automático por produção.
+- [ ] Alerta de pouco estoque, kit padrão por produto, custo de insumo no lucro e desconto automático de
+      filamento por produção.
 
 - [ ] Aprovação do dono.
 - [ ] Publicação pelo GitHub (só quando o dono mandar).

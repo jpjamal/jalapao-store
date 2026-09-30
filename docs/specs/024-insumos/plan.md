@@ -1,6 +1,6 @@
 # Plano
 
-> Etapas 1 e 2 implementadas; etapa 3 segue como proposta. Ver a [spec](spec.md).
+> Etapas 1, 2 e 3 implementadas. Ver a [spec](spec.md).
 
 **Contexto novo: `supplies`** (insumos), app Django com as mesmas camadas dos demais
 (`domain/`, `models.py`, `services.py`, `api/`, `tests/`), e `features/supplies` no frontend.
@@ -59,3 +59,17 @@ desatualizado.
 
 **Migrações**: `supplies 0001`, `catalog` (linhas de filamento do perfil) e `finance` (vínculo do caixa).
 Nada do que existe é alterado ou apagado; peças atuais ficam sem filamento escolhido.
+
+**Etapa 3 — insumos na venda.** `SaleSupply` (app `supplies`, ligado a `sales.Sale` por chave de texto,
+como `SupplyMovement.sale`): `sale`, `supply`, `supply_name`, `requested` e `taken`, único por venda e
+insumo, com `taken ≤ requested`. Guarda o que foi pedido e o que de fato foi baixado, porque falta de
+saldo não impede a venda. `consume_supplies_for_sale` (em `supplies/services.py`) roda dentro do
+`create_sale`: trava os insumos em ordem de id (evita impasse), baixa `min(pedido, saldo)` por
+`adjust_supply_stock`, com a movimentação ligada à venda, e grava o `SaleSupply`.
+`restore_supplies_for_sale` roda no `cancel_sale` e devolve só `taken`, com `allow_inactive` para
+insumo que foi desativado depois. O `SaleInput` ganha `supplies` opcional; a resposta traz, por linha,
+`requested`, `taken` e `shortfall`. Quem informa insumos (e quem cancela uma venda que baixou) precisa
+da permissão de movimentar o estoque de insumos. O importador do Mercado Livre não envia `supplies` e
+portanto não baixa nada. O custo e o lucro da venda não mudam: o cálculo nem lê os insumos. Migração
+`supplies 0003`; frontend: seção "Insumos usados" em Vendas, aviso do que faltou e os insumos no
+histórico.

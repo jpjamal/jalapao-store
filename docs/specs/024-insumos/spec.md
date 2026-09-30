@@ -1,7 +1,8 @@
 # 024 — Insumos: filamentos, embalagens, ferramentas e outros materiais
 
-> **Situação: etapas 1 e 2 implementadas localmente (categorias e cadastro de insumos, filamentos
-> multicolor, estoque em rolos, compras, pagamento e cancelamento); etapa 3 ainda não.**
+> **Situação: etapas 1 e 2 em produção (categorias e cadastro de insumos, filamentos multicolor,
+> estoque em rolos, compras, pagamento e cancelamento); etapa 3 (insumos na venda) implementada
+> localmente, com as decisões do dono abaixo.**
 > Decisões já tomadas pelo dono: uma tela com duas abas; ferramentas só com nome e quantidade por
 > enquanto; cancelamento de compra de insumo entra nesta spec; categorias de insumo cadastráveis.
 
@@ -131,23 +132,37 @@ para pagar e cancelar.
 - Consumo de insumo ligado a cada venda ou a cada peça, ferramentas com controle de empréstimo,
   vida útil ou manutenção (só nome e quantidade), e importação dos cadastros antigos.
 - Categoria de insumo por uso (peça 3D ou produto comum) e insumos compartilhados com produtos.
-- Ligar insumos a uma **venda** (ex.: usar 1 caixa e 2 etiquetas e já dar baixa no saldo): **desejado
-  pelo dono, fica para uma etapa 3, depois de tudo isto pronto** (ver "Etapa 3 prevista"). Nesta
-  versão a baixa é sempre manual. Só o filamento se liga à peça 3D, pelas linhas de custo.
+- Nas etapas 1 e 2 a baixa de insumo é sempre manual; a baixa junto com a venda é a etapa 3. Só o
+  filamento se liga à peça 3D, pelas linhas de custo.
 
-## Etapa 3 prevista (depois das etapas 1 e 2, ainda sem especificação detalhada)
+## Etapa 3 — insumos usados na venda
 
-Ao criar uma venda de produto, o dono poderá informar os insumos usados (etiqueta, embalagem e
-outros), e o sistema dá baixa no saldo deles junto com a venda, na mesma transação. Cancelar a venda
-devolve os insumos ao saldo. Possível atalho: um "kit padrão" por produto, que já vem preenchido na
-venda e pode ser ajustado. A estrutura desta spec já reserva o vínculo opcional da movimentação de
-insumo com a venda, para essa etapa não exigir mudar as anteriores.
+Decisões do dono (30/09/2026): avisar e dar baixa só do que tem; o custo do insumo **não** entra no
+lucro; **sem** kit padrão por produto (os insumos são escolhidos na hora da venda); vendas importadas
+do Mercado Livre **não** baixam insumo.
 
-Decisões que ficam para quando a etapa for especificada:
-1. Saldo insuficiente de insumo na venda: bloquear ou só avisar (sugestão: avisar).
-2. O custo do insumo entra no lucro da venda? Hoje o estoque de insumo não tem custo médio, então
-   não entraria; incluir exige custo por unidade e é uma decisão maior.
-3. Kit padrão por produto ou só a escolha na hora da venda.
+- **Registrar venda** ganha a seção opcional **Insumos usados**: linhas com o insumo (a lista mostra o
+  saldo) e a quantidade usada, por exemplo 1 caixa pequena e 2 etiquetas. Não se repete o mesmo
+  insumo na venda, e a quantidade é maior que zero.
+- Ao confirmar a venda, na **mesma transação**, cada insumo informado dá baixa no saldo, com a
+  movimentação ligada à venda (`SupplyMovement.sale`, o vínculo que a etapa 2 já reservou).
+- **Saldo insuficiente não impede a venda.** O insumo é baixado **só até onde tem** (nunca fica
+  negativo) e a resposta da API e a tela avisam o que faltou ("pedido 5, baixado 3"). O pedido e o
+  que foi de fato baixado ficam gravados na venda (`SaleSupply`: `requested` e `taken`), inclusive
+  para o histórico.
+- **Cancelar a venda devolve os insumos**: só o que foi de fato baixado (`taken`), mesmo que o
+  insumo esteja inativo depois. Cancelar duas vezes não devolve duas vezes.
+- Repetir o mesmo pedido de venda (mesma chave de idempotência) não baixa de novo.
+- O **lucro da venda não muda**: o custo do insumo não entra nele (o estoque de insumo segue sem
+  custo médio).
+- **Vendas importadas do Mercado Livre não baixam insumo**: a baixa continua sendo manual.
+- **Permissões:** informar insumos exige a permissão de movimentar o estoque de insumos; cancelar uma
+  venda que baixou insumo também.
+- A lista de vendas mostra os insumos usados de cada venda, e o que faltou quando for o caso.
+
+Não objetivos da etapa 3: kit padrão por produto, custo de insumo no lucro, bloquear a venda por falta
+de insumo, insumo nas vendas importadas e editar os insumos de uma venda depois de confirmada (cancela
+e lança de novo).
 
 ## Validação
 

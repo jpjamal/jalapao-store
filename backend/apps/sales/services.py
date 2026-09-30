@@ -12,6 +12,7 @@ from apps.inventory.models import Stock
 from apps.inventory.services import outgoing_cost
 from apps.finance.models import CashEntry
 from apps.sales.models import Sale, SaleItem
+from apps.supplies.services import consume_supplies_for_sale, restore_supplies_for_sale
 
 
 @transaction.atomic
@@ -75,6 +76,8 @@ def create_sale(*, data, actor):
         adjust_stock(
             product_id=product.id, delta=-row["quantity"], reason="Venda confirmada", actor=actor, sale=sale
         )
+    # insumos usados (caixa, etiqueta…): baixa só do que tem, sem mexer no custo nem no lucro
+    consume_supplies_for_sale(sale=sale, lines=data.get("supplies") or [], actor=actor)
     return sale
 
 
@@ -112,6 +115,7 @@ def cancel_sale(*, sale_id, actor):
             sale=sale,
             total_cost=item.cost_total,
         )
+    restore_supplies_for_sale(sale=sale, actor=actor)
     if sale.received_at and sale.net > 0:
         CashEntry.objects.create(
             direction="out",

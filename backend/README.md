@@ -41,7 +41,11 @@ completo e regras de dependência em [../docs/architecture.md](../docs/architect
   compra entra na hora e fica a pagar; pagar gera uma saída no caixa (`CashEntry.supply_receipt`);
   cancelar só vale se for a última movimentação do insumo e estorna o caixa (`refund_of_supply_receipt`),
   devolvendo o preço do rolo se ele não foi editado. Rotas `supply-receipts/` (`pay`, `cancel`) e
-  `supply-movements/` (baixa e ajuste). `SupplyMovement.sale` está reservado para a etapa 3.
+  `supply-movements/` (baixa e ajuste). Etapa 3: a venda aceita `supplies` (`[{supply_id, quantity}]`);
+  `consume_supplies_for_sale` baixa `min(pedido, saldo)` na mesma transação, grava `SaleSupply`
+  (`requested`, `taken`) e liga a movimentação à venda; falta de saldo não impede a venda e aparece em
+  `shortfall`; `cancel_sale` devolve só `taken`. Não mexe em custo nem lucro; o importador do Mercado
+  Livre não envia insumos.
 - catalog: peça 3D multicolor (spec 024): `PrintingFilament` liga o perfil a filamentos, com as
   gramas e o preço e peso do rolo copiados ao salvar; o custo do filamento é a soma
   `gramas × preço ÷ peso` por linha (`filament_cost`), arredondada só no total. Mudar o filamento

@@ -39,7 +39,8 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   cancelado, spec 023).
   Cadastro sugere custo; usuário confirma o valor real. Compra só gera caixa ao pagar;
   produção nunca gera despesa automática. Ajustes positivos exigem custo explícito.
-- /vendas: múltiplos itens, canal (boca a boca, Site Jalapão, Mercado Livre, Shopee, outro),
+- /vendas: seção opcional *Insumos usados* (baixa no saldo de insumos junto com a venda, com aviso do
+  que faltou; spec 024), múltiplos itens, canal (boca a boca, Site Jalapão, Mercado Livre, Shopee, outro),
   descontos/taxas/frete, receber e cancelar. Produto de cada item por busca digitada.
   "Importar do Mercado Livre" traz os pedidos pagos com taxa e frete reais, em prévia, e
   cria as vendas só quando o dono manda (spec 015).

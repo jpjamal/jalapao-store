@@ -1,12 +1,20 @@
 from rest_framework import serializers
 
 from apps.sales.models import Sale, SaleItem
+from apps.supplies.models import SaleSupply
 
 
 class ItemInput(serializers.Serializer):
     product_id = serializers.UUIDField()
     quantity = serializers.IntegerField(min_value=1, max_value=1000000)
     unit_price = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0)
+
+
+class SaleSupplyInput(serializers.Serializer):
+    """Insumo usado na venda (spec 024, etapa 3)."""
+
+    supply_id = serializers.UUIDField()
+    quantity = serializers.IntegerField(min_value=1, max_value=1000000)
 
 
 class SaleInput(serializers.Serializer):
@@ -17,6 +25,7 @@ class SaleInput(serializers.Serializer):
     platform_fee = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, default=0)
     shipping_cost = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, default=0)
     items = ItemInput(many=True, allow_empty=False)
+    supplies = SaleSupplyInput(many=True, required=False, default=list)
 
 
 class ItemOutput(serializers.ModelSerializer):
@@ -25,8 +34,21 @@ class ItemOutput(serializers.ModelSerializer):
         fields = ["id", "product", "product_name", "quantity", "unit_price", "unit_cost", "cost_total"]
 
 
+class SaleSupplyOutput(serializers.ModelSerializer):
+    # quanto faltou de saldo na hora da venda (0 quando baixou tudo o que foi pedido)
+    shortfall = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleSupply
+        fields = ["supply", "supply_name", "requested", "taken", "shortfall"]
+
+    def get_shortfall(self, line) -> int:
+        return line.requested - line.taken
+
+
 class SaleSerializer(serializers.ModelSerializer):
     items = ItemOutput(many=True, read_only=True)
+    supplies = SaleSupplyOutput(source="supply_lines", many=True, read_only=True)
 
     class Meta:
         model = Sale

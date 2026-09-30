@@ -11,19 +11,19 @@ from django.utils import timezone
 
 from apps.common.domain.money import money
 from apps.supplies.domain.pricing import check_amount
-from apps.supplies.models import Supply, SupplyMovement, SupplyReceipt, SupplyStock
+from apps.supplies.models import SaleSupply, Supply, SupplyMovement, SupplyReceipt, SupplyStock
 
 LIMITE_QUANTIDADE = 2147483647
 
 
 @transaction.atomic
-def adjust_supply_stock(*, supply_id, delta, reason, actor, receipt=None, sale=None):
+def adjust_supply_stock(*, supply_id, delta, reason, actor, receipt=None, sale=None, allow_inactive=False):
     """Muda o saldo de um insumo e grava o movimento. Nunca deixa o saldo negativo."""
     supply = Supply.objects.select_for_update().get(pk=supply_id)
     stock, _ = SupplyStock.objects.get_or_create(supply=supply)
     if not delta or not (reason or "").strip():
         raise ValidationError({"reason": "Informe um motivo e uma quantidade diferente de zero."})
-    if delta > 0 and not supply.active:
+    if delta > 0 and not supply.active and not allow_inactive:
         raise ValidationError({"supply": f"O insumo {supply.name} está inativo e não recebe entradas."})
     if stock.quantity + delta < 0:
         raise ValidationError(
@@ -172,3 +172,49 @@ def cancel_supply_receipt(*, receipt_id, actor):
     receipt.cancelled_at = timezone.now()
     receipt.save(update_fields=["status", "cancelled_at", "updated_at"])
     return receipt
+
+
+@transaction.atomic
+def consume_supplies_for_sale(*, sale, lines, actor):
+    """Dá baixa nos insumos usados numa venda, na mesma transação dela (spec 024, etapa 3).
+
+    Saldo insuficiente não impede a venda: o insumo é baixado só até onde tem, e o que foi pedido e o
+    que foi baixado ficam gravados em `SaleSupply`, para a tela avisar o que faltou."""
+    if not lines:
+        return []
+    ids = [line["supply_id"] for line in lines]
+    if len(set(ids)) != len(ids):
+        raise ValidationError({"supplies": "Agrupe o mesmo insumo em uma única linha."})
+    supplies = {s.id: s for s in Supply.objects.select_for_update().filter(id__in=ids).order_by("id")}
+    if len(supplies) != len(ids):
+        raise ValidationError({"supplies": "Insumo inexistente."})
+    used = []
+    for line in sorted(lines, key=lambda row: str(row["supply_id"])):
+        supply = supplies[line["supply_id"]]
+        stock, _ = SupplyStock.objects.get_or_create(supply=supply)
+        requested = line["quantity"]
+        taken = min(requested, stock.quantity)
+        if taken > 0:
+            adjust_supply_stock(
+                supply_id=supply.id, delta=-taken, reason="Venda confirmada", actor=actor, sale=sale
+            )
+        used.append(
+            SaleSupply.objects.create(
+                sale=sale, supply=supply, supply_name=supply.name, requested=requested, taken=taken
+            )
+        )
+    return used
+
+
+@transaction.atomic
+def restore_supplies_for_sale(*, sale, actor):
+    """Devolve ao saldo o que a venda baixou (só `taken`), mesmo que o insumo esteja inativo hoje."""
+    for line in SaleSupply.objects.select_for_update().filter(sale=sale, taken__gt=0).order_by("supply_id"):
+        adjust_supply_stock(
+            supply_id=line.supply_id,
+            delta=line.taken,
+            reason="Cancelamento de venda",
+            actor=actor,
+            sale=sale,
+            allow_inactive=True,
+        )

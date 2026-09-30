@@ -42,6 +42,9 @@ erDiagram
   Supply ||--o{ SupplyMovement : historico
   SupplyReceipt ||--o| SupplyMovement : gera
   SupplyReceipt ||--o| CashEntry : pagamento_ou_estorno
+  Sale ||--o{ SaleSupply : insumos_usados
+  Supply ||--o{ SaleSupply : usado_em_vendas
+  Sale ||--o{ SupplyMovement : baixa_de_insumo
   Product ||--|| Stock : saldo
   Product ||--o{ Movement : historico
   Product ||--o{ SaleItem : vendido_em

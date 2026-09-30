@@ -10,7 +10,7 @@ from apps.sales.services import cancel_sale, create_sale, receive_sale
 
 
 class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    queryset = Sale.objects.prefetch_related("items").all()
+    queryset = Sale.objects.prefetch_related("items", "supply_lines").all()
     serializer_class = SaleSerializer
     filterset_fields = ["channel", "status"]
 
@@ -20,6 +20,8 @@ class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             raise PermissionDenied("Sem permissão para baixar estoque.")
         serializer = SaleInput(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get("supplies") and not request.user.has_perm("supplies.add_supplymovement"):
+            raise PermissionDenied("Sem permissão para baixar insumos.")
         sale = create_sale(data=serializer.validated_data, actor=request.user)
         return Response(SaleSerializer(sale).data, status=201)
 
@@ -39,6 +41,10 @@ class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
         self._change_permission()
+        if self.get_object().supply_lines.filter(taken__gt=0).exists() and not request.user.has_perm(
+            "supplies.add_supplymovement"
+        ):
+            raise PermissionDenied("Sem permissão para devolver os insumos desta venda.")
         return Response(SaleSerializer(cancel_sale(sale_id=self.get_object().id, actor=request.user)).data)
 
     # ---------- vendas do Mercado Livre, importadas sob comando do dono (spec 015) ----------

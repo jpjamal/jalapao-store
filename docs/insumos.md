@@ -45,8 +45,8 @@ caminhos**, todos gravados no histórico com o motivo e quem fez:
 | **Ajustar** | Corrige para mais ou para menos (contagem, perda), com motivo. |
 | **Cancelar compra** | Desfaz uma compra lançada errada (abaixo). |
 
-**Não há desconto automático**: usar um rolo na impressão ou uma caixa no envio é uma baixa que você
-lança. O estoque de insumo guarda só a quantidade, **sem custo médio** e sem valor de estoque; o custo
+**Não há desconto automático por produção**: usar um rolo na impressão é uma baixa que você lança. Caixa e
+etiqueta podem dar baixa junto com a venda (ver abaixo). O estoque de insumo guarda só a quantidade, **sem custo médio** e sem valor de estoque; o custo
 que vale para o lucro vem do preço por grama do filamento escolhido na peça. Insumo inativo não recebe
 entradas, mas ainda dá baixa no que sobrou.
 
@@ -67,6 +67,22 @@ movimentação daquele insumo**: se já houve baixa, ajuste ou outra compra depo
 explica, e a correção passa por um ajuste. Se era filamento, o preço do rolo volta ao de antes, **a menos
 que você já o tenha editado**. Compra cancelada não pode ser paga.
 
+## Insumos usados numa venda
+
+Em **Vendas → Registrar venda** há a seção **Insumos usados (opcional)**: escolha o insumo (a lista mostra
+o saldo) e a quantidade, por exemplo 1 caixa pequena e 2 etiquetas. Ao confirmar a venda, cada insumo dá
+**baixa no saldo junto com a venda**, e a movimentação fica ligada a ela.
+
+- **Falta de saldo não impede a venda.** O insumo é baixado só até onde tem (nunca fica negativo) e a tela
+  avisa o que faltou ("pedido 5, baixado 3"). O pedido e o que foi de fato baixado ficam gravados na venda.
+- **Cancelar a venda devolve os insumos**, só o que foi realmente baixado. Cancelar duas vezes não devolve
+  duas vezes.
+- **O lucro não muda.** O custo do insumo não entra na venda; o lucro continua só com o custo do produto.
+- **Não há kit padrão por produto**: você escolhe os insumos em cada venda.
+- **Vendas importadas do Mercado Livre não baixam insumo**: a baixa continua manual, por *Dar baixa*.
+- Informar insumos na venda e cancelar uma venda que baixou insumo exigem a permissão de movimentar o
+  estoque de insumos.
+
 ## Onde isso vive
 
 | O quê | Onde |
@@ -76,7 +92,8 @@ que você já o tenha editado**. Compra cancelada não pode ser paga.
 | Preço por grama e material | `backend/apps/supplies/domain/pricing.py` |
 | Saldo, compra, pagamento e cancelamento | `backend/apps/supplies/services.py` |
 | API | `/jalapao-store/backend-api/supply-categories/`, `supplies/`, `supply-receipts/`, `supply-movements/` |
+| Insumos na venda | `backend/apps/supplies/services.py` (`consume_supplies_for_sale`, `restore_supplies_for_sale`) e `frontend/src/features/sales/sales-page.tsx` |
 | Linhas de filamento da peça | `backend/apps/catalog/models.py` (`PrintingFilament`) |
 | Testes | `backend/apps/supplies/tests/` e `backend/apps/catalog/tests/test_filamentos.py` |
 
-Ainda não existe: baixa de insumo junto com a venda (etapa 3 da spec 024) e alerta de pouco estoque.
+Ainda não existe: alerta de pouco estoque, kit padrão por produto e custo de insumo no lucro.

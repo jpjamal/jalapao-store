@@ -3931,6 +3931,11 @@ components:
           items:
             $ref: '#/components/schemas/ItemOutput'
           readOnly: true
+        supplies:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleSupplyOutput'
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -4000,6 +4005,7 @@ components:
       - items
       - net
       - profit
+      - supplies
       - updated_at
     SaleChannelEnum:
       enum:
@@ -4046,10 +4052,54 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ItemInput'
+        supplies:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleSupplyInput'
       required:
       - channel
       - idempotency_key
       - items
+    SaleSupplyInput:
+      type: object
+      description: Insumo usado na venda (spec 024, etapa 3).
+      properties:
+        supply_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          maximum: 1000000
+          minimum: 1
+      required:
+      - quantity
+      - supply_id
+    SaleSupplyOutput:
+      type: object
+      properties:
+        supply:
+          type: string
+          format: uuid
+        supply_name:
+          type: string
+          maxLength: 120
+        requested:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+        taken:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        shortfall:
+          type: integer
+          readOnly: true
+      required:
+      - requested
+      - shortfall
+      - supply
+      - supply_name
+      - taken
     StatusEnum:
       enum:
       - confirmed

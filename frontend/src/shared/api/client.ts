@@ -12,6 +12,7 @@ const labels: Record<string, string> = {
   category: "Categoria",
   receipt: "Compra",
   supply: "Insumo",
+  supplies: "Insumos",
   supply_id: "Insumo",
   material: "Material",
   color: "Cor",

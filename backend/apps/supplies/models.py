@@ -132,3 +132,23 @@ class SupplyMovement(Entity):
     class Meta:
         ordering = ["-created_at", "-id"]
         constraints = [models.CheckConstraint(condition=~models.Q(delta=0), name="supply_movement_nonzero")]
+
+
+class SaleSupply(Entity):
+    """Insumo usado numa venda (spec 024, etapa 3): o que o dono pediu e o que de fato foi baixado.
+    Falta de saldo não impede a venda: `taken` pode ser menor que `requested`. Cancelar a venda
+    devolve exatamente `taken`."""
+
+    sale = models.ForeignKey("sales.Sale", on_delete=models.PROTECT, related_name="supply_lines")
+    supply = models.ForeignKey(Supply, on_delete=models.PROTECT, related_name="sale_lines")
+    supply_name = models.CharField(max_length=120)
+    requested = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    taken = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["supply_name", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["sale", "supply"], name="sale_supply_unique"),
+            models.CheckConstraint(condition=models.Q(requested__gt=0), name="sale_supply_requested_positive"),
+            models.CheckConstraint(condition=models.Q(taken__lte=models.F("requested")), name="sale_supply_taken_le_requested"),
+        ]
