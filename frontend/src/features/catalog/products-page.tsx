@@ -4,6 +4,9 @@ import Link from "next/link";
 import { api } from "@/shared/api/client";
 import { brl } from "@/shared/lib/format";
 import { type Category, type Product, type Printing } from "@/features/catalog/types";
+import { FilamentLines, type FilamentLine } from "@/features/catalog/components/filament-lines";
+import { allSupplies } from "@/features/supplies/api";
+import { type Supply } from "@/features/supplies/types";
 import { type Page } from "@/shared/api/types";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -46,6 +49,25 @@ function ProductForm({
     product?.category || padrao?.id || options[0]?.id || "",
   );
   const usesPrinting = !!categories.find((c) => c.id === categoryId)?.uses_printing_profile;
+  // filamentos da peça multicolor (spec 024); sem linhas vale o preço por kg e o peso digitados
+  const [lines, setLines] = useState<FilamentLine[]>(() =>
+    (product?.printing?.filaments || []).map((l) => ({
+      uid: crypto.randomUUID(),
+      filament: l.filament,
+      grams: String(Number(l.grams)),
+      roll_price: l.roll_price,
+      roll_weight_g: l.roll_weight_g,
+      outdated: l.price_outdated,
+      refresh: false,
+    })),
+  );
+  const [supplies, setSupplies] = useState<Supply[]>([]);
+  useEffect(() => {
+    allSupplies()
+      .then(setSupplies)
+      .catch(() => setSupplies([]));
+  }, []);
+  const withLines = lines.length > 0;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const profile = product?.printing || defaults;
@@ -75,9 +97,18 @@ function ProductForm({
             active: f.get("active") === "on",
           };
           if (usesPrinting) {
-            payload.printing = Object.fromEntries(
-              Object.keys(defaults).map((k) => [k, f.get(k)]),
+            // com linhas, o peso e o preço por kg vêm delas e o servidor calcula
+            const manual = Object.keys(defaults).filter(
+              (k) => !(withLines && ["weight_g", "filament_price_kg"].includes(k)),
             );
+            payload.printing = {
+              ...Object.fromEntries(manual.map((k) => [k, f.get(k)])),
+              filaments: lines.map((l) => ({
+                filament: l.filament,
+                grams: l.grams,
+                refresh_price: l.refresh,
+              })),
+            };
           } else {
             payload.cost_price = f.get("cost_price");
             payload.sale_price = f.get("sale_price");
@@ -167,21 +198,30 @@ function ProductForm({
               Custo e preço sugerido são calculados a partir dos parâmetros
               abaixo. Margem é o acréscimo sobre o custo.
             </p>
+            <FilamentLines lines={lines} onChange={setLines} supplies={supplies} />
             <div className="grid md:grid-cols-3 gap-4">
-              <MoneyField
-                name="filament_price_kg"
-                label="Filamento (R$/kg)"
-                value={profile.filament_price_kg}
-              />
-              <Field
-                name="weight_g"
-                label="Peso (g)"
-                value={profile.weight_g}
-                type="number"
-                min="0.001"
-                step="0.001"
-                required
-              />
+              {withLines ? (
+                <p className="md:col-span-3 text-sm text-muted-foreground">
+                  Peso e custo do filamento vêm das linhas de filamento acima.
+                </p>
+              ) : (
+                <>
+                  <MoneyField
+                    name="filament_price_kg"
+                    label="Filamento (R$/kg)"
+                    value={profile.filament_price_kg}
+                  />
+                  <Field
+                    name="weight_g"
+                    label="Peso (g)"
+                    value={profile.weight_g}
+                    type="number"
+                    min="0.001"
+                    step="0.001"
+                    required
+                  />
+                </>
+              )}
               <MoneyField
                 name="power_w"
                 label="Potência (W)"

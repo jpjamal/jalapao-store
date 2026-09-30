@@ -23,6 +23,23 @@ preço     = total + lucro
 Sem margem, o resultado grande é o **custo da impressão**. Com margem, vira **preço final
 sugerido** e aparece a linha do lucro.
 
+### Peça multicolor (spec 024)
+
+Com filamentos cadastrados em **Insumos**, a peça pode ter várias linhas, uma por cor, cada uma com
+as gramas usadas. O filamento deixa de ser `preço do kg ÷ 1000 × gramas` e passa a ser a soma, linha
+a linha, de:
+
+```
+gramas × preço do rolo ÷ peso do rolo
+```
+
+O preço por grama **não é arredondado** na linha (R$ 89,90 por 1.000 g é R$ 0,0899, não R$ 0,09):
+só o total final vira centavos. Energia, mão de obra, custos fixos e margem não mudam. Exemplo:
+30 g de um rolo de R$ 100,00/1.000 g (R$ 3,00) mais 12 g de um de R$ 89,90/1.000 g (R$ 1,0788)
+dão R$ 4,0788 de filamento; com 2 h a 200 W e R$ 1,56 o kWh, o custo é R$ 4,70 e o preço sugerido,
+com 100% de margem, R$ 9,41. O backend e a ferramenta têm testes com esses mesmos números. Sem
+linhas, vale a conta de sempre, com o preço por kg e o peso digitados.
+
 ## Os campos
 
 | Campo | Observação |

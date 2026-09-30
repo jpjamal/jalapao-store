@@ -30,6 +30,23 @@ completo e regras de dependência em [../docs/architecture.md](../docs/architect
   produtos. Product tem `category` (PROTECT, obrigatória no banco), `brand`, `model` e
   `weight_g` (peso do produto, opcional). Sem categoria na API, entra a de produção 3D se vierem
   parâmetros 3D e a comum mais antiga se não (`default_category`/`printing_category`).
+- supplies (spec 024, etapa 1): SupplyCategory e Supply, o cadastro de insumos, separado de produtos
+  (insumo não tem SKU nem preço de venda e nunca aparece em vendas ou anúncios). Categoria com
+  `is_filament` trava depois do primeiro insumo; insumo de filamento exige material, cor, peso e
+  preço do rolo, e o preço por grama é `preço ÷ peso` sem arredondar (`domain/pricing.py`). Sem
+  DELETE: desativa-se. Rotas `supply-categories/`, `supplies/` e `supplies/materials/`. Estoque,
+  SupplyStock guarda só a quantidade (sem custo médio); SupplyReceipt é a compra
+  (cancelável, sem apagar); SupplyMovement é o razão imutável. Todo saldo muda por `services.py`
+  (`adjust_supply_stock`, `create_supply_receipt`, `pay_supply_receipt`, `cancel_supply_receipt`):
+  compra entra na hora e fica a pagar; pagar gera uma saída no caixa (`CashEntry.supply_receipt`);
+  cancelar só vale se for a última movimentação do insumo e estorna o caixa (`refund_of_supply_receipt`),
+  devolvendo o preço do rolo se ele não foi editado. Rotas `supply-receipts/` (`pay`, `cancel`) e
+  `supply-movements/` (baixa e ajuste). `SupplyMovement.sale` está reservado para a etapa 3.
+- catalog: peça 3D multicolor (spec 024): `PrintingFilament` liga o perfil a filamentos, com as
+  gramas e o preço e peso do rolo copiados ao salvar; o custo do filamento é a soma
+  `gramas × preço ÷ peso` por linha (`filament_cost`), arredondada só no total. Mudar o filamento
+  depois não altera a peça: a API só marca `price_outdated`, e `refresh_price` traz o preço atual.
+  Sem linhas vale a conta de sempre.
 - catalog: Product e PrintingProfile 1:1; cálculos em `domain/pricing.py`, SKU em `domain/sku.py`.
 - catalog: ProductImage guarda fotos privadas por produto; ListingDraft guarda conteúdo
   opcional por produto e canal, com ordem de fotos própria. Salvar não publica anúncio.

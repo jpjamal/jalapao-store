@@ -27,7 +27,7 @@ class CategoryViewSet(
 ):
     """Sem DELETE: categoria sai de uso desativando (`active`), como o produto."""
 
-    queryset = Category.objects.annotate(products_count=Count("products")).all()
+    queryset = Category.objects.annotate(products_count=Count("products")).order_by("name", "id")
     serializer_class = CategorySerializer
     filterset_fields = ["active", "uses_printing_profile"]
     search_fields = ["name"]
@@ -40,7 +40,11 @@ class ProductViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Product.objects.select_related("printing", "stock", "category").all()
+    queryset = (
+        Product.objects.select_related("printing", "stock", "category")
+        .prefetch_related("printing__filaments__filament")
+        .all()
+    )
     serializer_class = ProductSerializer
     filterset_fields = ["category", "active"]
     search_fields = ["name", "sku", "gtin", "brand", "model"]

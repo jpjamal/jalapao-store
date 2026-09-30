@@ -191,6 +191,30 @@ class PrintingProfile(models.Model):
     markup_percent = amount(100)
 
     def prices(self):
+        lines = [(f.grams, f.roll_price, f.roll_weight_g) for f in self.filaments.all()] if self.pk else []
         return printing_cost(
-            **{f.name: getattr(self, f.name) for f in self._meta.fields if f.name not in ("id", "product")}
+            **{f.name: getattr(self, f.name) for f in self._meta.fields if f.name not in ("id", "product")},
+            filament_lines=lines,
         )
+
+
+class PrintingFilament(models.Model):
+    """Uma linha de filamento da peça 3D multicolor (spec 024): o filamento e as gramas usadas.
+    O preço e o peso do rolo são **copiados** na hora de salvar: mudar o filamento depois não muda
+    o custo da peça, só avisa (`price_outdated` na API)."""
+
+    profile = models.ForeignKey(PrintingProfile, on_delete=models.CASCADE, related_name="filaments")
+    filament = models.ForeignKey("supplies.Supply", on_delete=models.PROTECT, related_name="printing_lines")
+    grams = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal("0.001"))])
+    roll_price = models.DecimalField(max_digits=14, decimal_places=2, validators=[MinValueValidator(0)])
+    roll_weight_g = models.DecimalField(
+        max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal("0.001"))]
+    )
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["profile", "filament"], name="printing_filament_unique"),
+            models.CheckConstraint(condition=models.Q(grams__gt=0), name="printing_filament_grams_positive"),
+        ]

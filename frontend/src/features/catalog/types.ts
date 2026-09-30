@@ -1,4 +1,15 @@
 /* Tipos do catálogo, no formato da API (valores decimais chegam como texto). */
+export type PrintingFilament = {
+  filament: string;
+  filament_name: string;
+  material: string;
+  color: string;
+  grams: string;
+  roll_price: string;
+  roll_weight_g: string;
+  price_per_kg: string;
+  price_outdated: boolean;
+};
 export type Printing = {
   filament_price_kg: string;
   weight_g: string;
@@ -9,6 +20,7 @@ export type Printing = {
   labor_cost: string;
   fixed_cost: string;
   markup_percent: string;
+  filaments?: PrintingFilament[];
 };
 export type Category = {
   id: string;

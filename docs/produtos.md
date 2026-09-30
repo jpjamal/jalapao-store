@@ -22,6 +22,12 @@ com ela ligada vê os parâmetros 3D. Categorias novas nascem com ela desligada,
 trava depois que a categoria recebe o primeiro produto. Categoria não se apaga: desative, e os
 produtos que já estão nela continuam.
 
+Na categoria de produção 3D, a peça pode ser **multicolor**: em vez de digitar o preço por kg e o
+peso, você adiciona **linhas de filamento**, uma por cor, escolhendo o filamento cadastrado em
+**Insumos** e informando as gramas usadas. O custo do filamento é a soma das linhas, e o peso da
+peça é a soma das gramas. O preço de cada linha é copiado na hora de salvar: se o filamento ficar
+mais caro depois, a peça **não muda sozinha**, só aparece um aviso e você escolhe se atualiza.
+
 Campos opcionais para identificar e despachar: **marca**, **modelo** e **peso do produto**
 em gramas. O peso do produto (embalagem, frete) não é o peso do filamento dos parâmetros 3D.
 

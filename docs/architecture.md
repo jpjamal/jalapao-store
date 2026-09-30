@@ -34,6 +34,14 @@ erDiagram
   User ||--o{ CashEntry : registra
   Category ||--o{ Product : agrupa
   Product ||--o| PrintingProfile : parametros_3d
+  SupplyCategory ||--o{ Supply : agrupa
+  PrintingProfile ||--o{ PrintingFilament : linhas_de_filamento
+  Supply ||--o{ PrintingFilament : usado_em
+  Supply ||--|| SupplyStock : saldo
+  Supply ||--o{ SupplyReceipt : compras
+  Supply ||--o{ SupplyMovement : historico
+  SupplyReceipt ||--o| SupplyMovement : gera
+  SupplyReceipt ||--o| CashEntry : pagamento_ou_estorno
   Product ||--|| Stock : saldo
   Product ||--o{ Movement : historico
   Product ||--o{ SaleItem : vendido_em
@@ -70,6 +78,7 @@ camadas. O frontend espelha os mesmos contextos.
 | Estoque | `inventory` (saldo, ajustes, entradas) | `inventory` | Estoque, Compras / produção |
 | Vendas | `sales` | `sales` | Vendas |
 | Caixa | `finance` | `finance` | Caixa |
+| Insumos | `supplies` (categoria de insumo, insumo) | `supplies` | Insumos |
 | Marketplaces | `integrations` | `integrations` | Integrações, Pesquisa de mercado |
 | Núcleo compartilhado | `common` (entidade base, dinheiro, permissões, erros, painel) | `shared`, `dashboard` | Visão geral |
 | Ferramentas | — (cálculo no navegador) | `tools` | Ferramentas |

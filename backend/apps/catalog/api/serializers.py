@@ -1,26 +1,85 @@
+from decimal import Decimal
+
 from django.db import IntegrityError, transaction
 from drf_spectacular.utils import extend_schema_field
 from PIL import Image, UnidentifiedImageError
 from rest_framework import serializers
 
+from apps.common.domain.money import money
 from apps.catalog.domain.gtin import gtin_error, normalize_gtin
+from apps.catalog.domain.pricing import filament_cost
 from apps.catalog.models import (
     Category,
     ListingDraft,
     ListingDraftImage,
+    PrintingFilament,
     PrintingProfile,
     Product,
     ProductImage,
     default_category,
     printing_category,
 )
+from apps.supplies.domain.pricing import price_per_kg
+from apps.supplies.models import Supply
 from apps.inventory.models import Stock
 
 
+MAX_FILAMENT_LINES = 8
+
+
+class PrintingFilamentSerializer(serializers.ModelSerializer):
+    filament = serializers.PrimaryKeyRelatedField(queryset=Supply.objects.select_related("category"))
+    filament_name = serializers.CharField(source="filament.name", read_only=True)
+    material = serializers.CharField(source="filament.material", read_only=True)
+    color = serializers.CharField(source="filament.color", read_only=True)
+    price_per_kg = serializers.SerializerMethodField()
+    price_outdated = serializers.SerializerMethodField()
+    # só na entrada: o dono pediu para trazer o preço atual do filamento para esta linha
+    refresh_price = serializers.BooleanField(write_only=True, required=False, default=False)
+
+    class Meta:
+        model = PrintingFilament
+        fields = [
+            "filament", "filament_name", "material", "color", "grams", "roll_price", "roll_weight_g",
+            "price_per_kg", "price_outdated", "refresh_price",
+        ]
+        read_only_fields = ["roll_price", "roll_weight_g"]
+
+    def get_price_per_kg(self, line) -> str:
+        return f"{price_per_kg(line.roll_price, line.roll_weight_g):.2f}"
+
+    def get_price_outdated(self, line) -> bool:
+        supply = line.filament
+        return line.roll_price != supply.roll_price or line.roll_weight_g != supply.roll_weight_g
+
+    def validate_filament(self, supply):
+        if not supply.category.is_filament or supply.roll_price is None or not supply.roll_weight_g:
+            raise serializers.ValidationError("Escolha um insumo de filamento, com preço e peso do rolo.")
+        return supply
+
+
 class PrintingSerializer(serializers.ModelSerializer):
+    filaments = PrintingFilamentSerializer(many=True, required=False)
+
     class Meta:
         model = PrintingProfile
         exclude = ["id", "product"]
+        extra_kwargs = {"weight_g": {"required": False}}
+
+    def validate_filaments(self, lines):
+        if len(lines) > MAX_FILAMENT_LINES:
+            raise serializers.ValidationError(f"Use no máximo {MAX_FILAMENT_LINES} filamentos por peça.")
+        ids = [line["filament"].pk for line in lines]
+        if len(ids) != len(set(ids)):
+            raise serializers.ValidationError("Não repita o mesmo filamento na peça.")
+        product = getattr(self.parent, "instance", None)
+        profile = PrintingProfile.objects.filter(product=product).first() if product else None
+        already = set(profile.filaments.values_list("filament_id", flat=True)) if profile else set()
+        for line in lines:
+            supply = line["filament"]
+            if not supply.active and supply.pk not in already:
+                raise serializers.ValidationError(f"O filamento {supply.name} está inativo.")
+        return lines
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -123,6 +182,13 @@ class ProductSerializer(serializers.ModelSerializer):
         profile = attrs.get("printing", getattr(self.instance, "printing", None))
         if category.uses_printing_profile and not profile:
             raise serializers.ValidationError({"printing": "Preencha os parâmetros de impressão 3D."})
+        sent = attrs.get("printing")
+        if category.uses_printing_profile and sent is not None and not sent.get("filaments"):
+            existing = getattr(self.instance, "printing", None)
+            if sent.get("weight_g") is None and not (existing and existing.weight_g):
+                raise serializers.ValidationError(
+                    {"printing": {"weight_g": "Informe o peso da peça ou escolha os filamentos."}}
+                )
         if not category.uses_printing_profile and attrs.get("printing"):
             raise serializers.ValidationError({"printing": "Parâmetros 3D só valem em categoria de impressão 3D."})
         return attrs
@@ -136,8 +202,44 @@ class ProductSerializer(serializers.ModelSerializer):
             self._profile(product, profile)
         return product
 
+    def _resolve_lines(self, lines, profile):
+        """Linhas prontas para gravar, com o preço do rolo copiado. Linha que já existia mantém o
+        preço que tinha, a menos que o dono peça o preço atual (`refresh_price`)."""
+        kept = {line.filament_id: line for line in profile.filaments.all()} if profile else {}
+        resolved = []
+        for position, line in enumerate(lines):
+            supply, old = line["filament"], kept.get(line["filament"].pk)
+            fresh = old is None or line.get("refresh_price")
+            resolved.append(
+                {
+                    "filament": supply,
+                    "grams": line["grams"],
+                    "roll_price": supply.roll_price if fresh else old.roll_price,
+                    "roll_weight_g": supply.roll_weight_g if fresh else old.roll_weight_g,
+                    "position": position,
+                }
+            )
+        return resolved
+
     def _profile(self, product, data):
+        lines = data.pop("filaments", None)
+        profile = PrintingProfile.objects.filter(product=product).first()
+        resolved = self._resolve_lines(lines, profile) if lines else []
+        if resolved:
+            grams = sum((line["grams"] for line in resolved), Decimal(0))
+            cost = filament_cost((line["grams"], line["roll_price"], line["roll_weight_g"]) for line in resolved)
+            # com linhas, o peso da peça é a soma delas; o preço por kg guardado é a média ponderada
+            data["weight_g"] = grams
+            data["filament_price_kg"] = money(cost / grams * 1000)
         profile, _ = PrintingProfile.objects.update_or_create(product=product, defaults=data)
+        if lines is not None:
+            profile.filaments.exclude(filament_id__in=[line["filament"].pk for line in resolved]).delete()
+            for line in resolved:
+                PrintingFilament.objects.update_or_create(
+                    profile=profile,
+                    filament=line["filament"],
+                    defaults={k: line[k] for k in ("grams", "roll_price", "roll_weight_g", "position")},
+                )
         product.cost_price, product.sale_price = profile.prices()
         product.save(update_fields=["cost_price", "sale_price", "updated_at"])
 

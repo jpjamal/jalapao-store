@@ -46,6 +46,11 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
 - /caixa: entradas/saídas, origem automática/manual e histórico preservado.
 - /ferramentas: índice das três ferramentas.
 - /ferramentas/impressao-3d: custo da peça e botão de salvar no catálogo, com SKU gerado pelo backend.
+  Aceita peça multicolor: linhas de filamento cadastrado com as gramas de cada um (spec 024).
+- /insumos: cadastro de insumos (filamento, embalagens, etiquetas, colas, ferramentas) com filtro por
+  categoria e painel para gerenciar as categorias de insumo. Duas abas: *Cadastro e estoque* (saldo e as
+  ações Comprar, Dar baixa, Ajustar, Editar) e *Compras e movimentos* (Pagar, Cancelar e o razão do
+  saldo).
 - /ferramentas/calculadora: taxas de Shopee e Mercado Livre, com a tabela de regras.
 - /ferramentas/etiquetas: ZPL → Labelary → PDF nomeado pelo destinatário, com OCR.
 - /integracoes: conectar Shopee e Mercado Livre, importar anúncios, vincular por SKU e

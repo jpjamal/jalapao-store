@@ -9,6 +9,9 @@ import {
   num,
   type Entradas3D,
 } from "@/features/tools/lib/custo3d";
+import { FilamentLines, linesToCalc, type FilamentLine } from "@/features/catalog/components/filament-lines";
+import { allSupplies } from "@/features/supplies/api";
+import { type Supply } from "@/features/supplies/types";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
@@ -70,6 +73,15 @@ export default function Impressao3D() {
   const [salvando, setSalvando] = useState(false);
   const [aviso, setAviso] = useState("");
   const [erro, setErro] = useState("");
+  // filamentos cadastrados (spec 024): a peça pode ser multicolor, com uma linha por filamento
+  const [supplies, setSupplies] = useState<Supply[]>([]);
+  const [filLines, setFilLines] = useState<FilamentLine[]>([]);
+  useEffect(() => {
+    allSupplies()
+      .then(setSupplies)
+      .catch(() => setSupplies([]));
+  }, []);
+  const comLinhas = filLines.length > 0;
 
   // valores da impressora ficam guardados neste navegador; a peça não
   useEffect(() => {
@@ -100,7 +112,10 @@ export default function Impressao3D() {
     });
   };
 
-  const r = useMemo(() => calcular(entradas), [entradas]);
+  const r = useMemo(
+    () => calcular({ ...entradas, filamentos: linesToCalc(filLines, supplies) }),
+    [entradas, filLines, supplies],
+  );
 
   async function salvar() {
     if (!nome.trim()) {
@@ -111,12 +126,15 @@ export default function Impressao3D() {
     setErro("");
     setAviso("");
     try {
-      const printing = Object.fromEntries(
-        Object.entries(paraApi).map(([meu, deles]) => [
-          deles,
-          Number(entradas[meu as keyof Entradas3D] || 0),
-        ]),
-      );
+      // com linhas, o peso e o preço por kg vêm delas e o servidor calcula
+      const printing = {
+        ...Object.fromEntries(
+          Object.entries(paraApi)
+            .filter(([meu]) => !(comLinhas && ["precoKg", "gramas"].includes(meu)))
+            .map(([meu, deles]) => [deles, Number(entradas[meu as keyof Entradas3D] || 0)]),
+        ),
+        filaments: filLines.map((l) => ({ filament: l.filament, grams: l.grams })),
+      };
       await api("products", {
         method: "POST",
         body: JSON.stringify({
@@ -134,7 +152,7 @@ export default function Impressao3D() {
   }
 
   const linhas: [string, string, string?][] = [
-    ["Filamento", brl(r.filamento), `${num(entradas.gramas)} g`],
+    ["Filamento", brl(r.filamento), `${Number(r.gramasTotal.toFixed(3))} g`],
     ["Energia", brl(r.energia), `${r.kwhGastos.toFixed(3)} kWh`],
     ["Mão de obra", brl(r.maoDeObra)],
     ["Custos fixos", brl(r.custoFixo)],
@@ -153,7 +171,9 @@ export default function Impressao3D() {
         <Card>
           <h2>Dados da peça e da impressora</h2>
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {campos.map((c) => (
+            {campos
+              .filter((c) => !(comLinhas && ["precoKg", "gramas"].includes(c.chave)))
+              .map((c) => (
               <div key={c.chave}>
                 <label htmlFor={c.chave}>{c.rotulo}</label>
                 <Input
@@ -168,6 +188,12 @@ export default function Impressao3D() {
               </div>
             ))}
           </div>
+          <FilamentLines lines={filLines} onChange={setFilLines} supplies={supplies} />
+          {comLinhas && (
+            <p className="text-sm text-muted-foreground">
+              Peso e custo do filamento vêm das linhas acima.
+            </p>
+          )}
           <p className="text-sm text-muted-foreground mt-4">
             Filamento, consumo e preço do kWh ficam guardados neste navegador —
             na próxima peça já vêm preenchidos. O tempo entra em horas e minutos

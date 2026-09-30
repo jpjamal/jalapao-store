@@ -3,6 +3,14 @@
    operações, mesmos arredondamentos (nenhum). O backend repete essa conta em
    apps/catalog/domain.py; as duas precisam continuar dando o mesmo número. */
 
+/* Linha de filamento de uma peça multicolor (spec 024): gramas usadas e o rolo (preço e peso).
+   O custo da linha é gramas × preço do rolo ÷ peso do rolo, sem arredondar o preço por grama. */
+export type LinhaFilamento = {
+  gramas: string | number;
+  precoRolo: string | number;
+  pesoRolo: string | number;
+};
+
 export type Entradas3D = {
   precoKg: string | number;
   gramas: string | number;
@@ -13,10 +21,14 @@ export type Entradas3D = {
   maoDeObra: string | number;
   custoFixo: string | number;
   margem: string | number;
+  /* com linhas, o filamento é a soma delas e precoKg/gramas são ignorados */
+  filamentos?: LinhaFilamento[];
 };
 
 export type Resultado3D = {
   filamento: number;
+  /* gramas totais: as digitadas, ou a soma das linhas */
+  gramasTotal: number;
   kwhGastos: number;
   energia: number;
   maoDeObra: number;
@@ -39,7 +51,11 @@ export function num(v: unknown): number {
 export function calcular(entradas: Partial<Entradas3D>): Resultado3D {
   const e = entradas || {};
   const precoKg = num(e.precoKg);
-  const gramas = num(e.gramas);
+  const linhasFil = (e.filamentos || []).filter((l) => num(l.pesoRolo) > 0);
+  const comLinhas = linhasFil.length > 0;
+  const gramas = comLinhas
+    ? linhasFil.reduce((t, l) => t + num(l.gramas), 0)
+    : num(e.gramas);
   const consumo = num(e.consumo);
   const tempo = num(e.horas) + num(e.minutos) / 60;
   const kwh = num(e.kwh);
@@ -47,7 +63,12 @@ export function calcular(entradas: Partial<Entradas3D>): Resultado3D {
   const fixo = num(e.custoFixo);
   const margem = num(e.margem);
 
-  const filamento = (precoKg / 1000) * gramas;
+  const filamento = comLinhas
+    ? linhasFil.reduce(
+        (t, l) => t + (num(l.gramas) * num(l.precoRolo)) / num(l.pesoRolo),
+        0,
+      )
+    : (precoKg / 1000) * gramas;
   const kwhGastos = (consumo * tempo) / 1000;
   const energia = kwhGastos * kwh;
   const custoTotal = filamento + energia + mao + fixo;
@@ -55,6 +76,7 @@ export function calcular(entradas: Partial<Entradas3D>): Resultado3D {
 
   return {
     filamento,
+    gramasTotal: gramas,
     kwhGastos,
     energia,
     maoDeObra: mao,
@@ -65,7 +87,7 @@ export function calcular(entradas: Partial<Entradas3D>): Resultado3D {
     tempoHoras: tempo,
     // true quando todos os campos obrigatórios estão preenchidos
     completo: !(
-      precoKg <= 0 ||
+      (!comLinhas && precoKg <= 0) ||
       gramas <= 0 ||
       consumo <= 0 ||
       tempo <= 0 ||

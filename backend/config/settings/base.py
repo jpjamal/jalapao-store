@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "apps.sales",
     "apps.finance",
     "apps.integrations",
+    "apps.supplies",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

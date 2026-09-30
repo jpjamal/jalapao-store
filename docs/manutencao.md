@@ -15,7 +15,7 @@ cada arquivo antigo foi parar estão em [arquitetura](architecture.md).
 ```
 jalapao-store/
 ├── backend/            Django 5.2 + DRF, PostgreSQL, uv
-│   ├── apps/<contexto>/  accounts, catalog, inventory, sales, finance, integrations, common
+│   ├── apps/<contexto>/  accounts, catalog, inventory, sales, finance, integrations, supplies, common
 │   │   ├── domain/       regras puras, sem banco
 │   │   ├── models.py     entidades
 │   │   ├── services.py   casos de uso transacionais

@@ -8,7 +8,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from apps.common.api.views import health
 
-CONTEXTOS = ["accounts", "common", "catalog", "inventory", "sales", "finance", "integrations"]
+CONTEXTOS = ["accounts", "common", "catalog", "inventory", "sales", "finance", "integrations", "supplies"]
 
 urlpatterns = [
     path("health/", health),

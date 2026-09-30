@@ -30,5 +30,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [021](021-codigo-de-barras/spec.md) | Código de barras (GTIN/EAN) opcional no produto | conferir com leitor de verdade; enviar GTIN aos marketplaces |
 | [022](022-categorias-e-dados-do-produto/spec.md) | Categorias no lugar do tipo; marca, modelo e peso do produto | conferir as telas com login |
 | [023](023-cancelar-compra/spec.md) | Cancelar compra ou produção lançada errada, sem apagar o histórico | conferir as telas com login |
+| [024](024-insumos/spec.md) | Insumos (filamentos, embalagens, etiquetas, ferramentas) e peça 3D multicolor | etapa 3 (insumos na venda) |
 
-Próxima spec: **024**.
+Próxima spec: **025**.

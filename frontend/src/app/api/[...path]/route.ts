@@ -52,7 +52,7 @@ async function handle(
       );
   }
   if (
-    !/^(auth\/(login|logout|me)|dashboard|categories(?:\/[a-f0-9-]+)?|products(?:\/[a-f0-9-]+)?|product-images(?:\/[a-f0-9-]+(?:\/content)?)?|listing-drafts(?:\/[a-f0-9-]+(?:\/(?:validate|publish|push))?)?|listing-drafts\/(?:ml-categories|ml-attributes|ml-category-tree)|movements|cash|receipts(?:\/[a-f0-9-]+(?:\/(?:pay|cancel))?)?|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel))?)?|sales\/(?:ml-preview|ml-import)|integrations(?:\/[a-f0-9-]+(?:\/(?:import-listings|push-stock))?)?|integrations\/(?:auth-link|ml-auth-link|connect|status|price-products|price-best-sellers)|listings(?:\/[a-f0-9-]+)?)$/.test(
+    !/^(auth\/(login|logout|me)|dashboard|categories(?:\/[a-f0-9-]+)?|supply-categories(?:\/[a-f0-9-]+)?|supplies(?:\/(?:[a-f0-9-]+|materials))?|supply-receipts(?:\/[a-f0-9-]+(?:\/(?:pay|cancel))?)?|supply-movements|products(?:\/[a-f0-9-]+)?|product-images(?:\/[a-f0-9-]+(?:\/content)?)?|listing-drafts(?:\/[a-f0-9-]+(?:\/(?:validate|publish|push))?)?|listing-drafts\/(?:ml-categories|ml-attributes|ml-category-tree)|movements|cash|receipts(?:\/[a-f0-9-]+(?:\/(?:pay|cancel))?)?|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel))?)?|sales\/(?:ml-preview|ml-import)|integrations(?:\/[a-f0-9-]+(?:\/(?:import-listings|push-stock))?)?|integrations\/(?:auth-link|ml-auth-link|connect|status|price-products|price-best-sellers)|listings(?:\/[a-f0-9-]+)?)$/.test(
       path,
     )
   )

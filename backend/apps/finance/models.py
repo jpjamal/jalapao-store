@@ -24,6 +24,13 @@ class CashEntry(Entity):
     refund_of_receipt = models.OneToOneField(
         "inventory.Receipt", null=True, blank=True, on_delete=models.PROTECT, related_name="refund"
     )
+    # pagamento e estorno da compra de insumo (spec 024)
+    supply_receipt = models.OneToOneField(
+        "supplies.SupplyReceipt", null=True, blank=True, on_delete=models.PROTECT, related_name="payment"
+    )
+    refund_of_supply_receipt = models.OneToOneField(
+        "supplies.SupplyReceipt", null=True, blank=True, on_delete=models.PROTECT, related_name="refund"
+    )
 
     class Meta:
         ordering = ["-occurred_on", "-created_at"]
@@ -33,5 +40,10 @@ class CashEntry(Entity):
             models.CheckConstraint(
                 condition=models.Q(sale__isnull=True) | models.Q(receipt__isnull=True),
                 name="cash_single_origin",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(supply_receipt__isnull=True)
+                | (models.Q(sale__isnull=True) & models.Q(receipt__isnull=True)),
+                name="cash_supply_single_origin",
             ),
         ]

@@ -1633,6 +1633,537 @@ paths:
               schema:
                 $ref: '#/components/schemas/MlOrdersPreview'
           description: ''
+  /supplies/:
+    get:
+      operationId: supplies_list
+      description: 'Sem DELETE: insumo sai de uso desativando (`active`).'
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+      - in: query
+        name: category
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: material
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - supplies
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSupplyList'
+          description: ''
+    post:
+      operationId: supplies_create
+      description: 'Sem DELETE: insumo sai de uso desativando (`active`).'
+      tags:
+      - supplies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Supply'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Supply'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Supply'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supply'
+          description: ''
+  /supplies/{id}/:
+    get:
+      operationId: supplies_retrieve
+      description: 'Sem DELETE: insumo sai de uso desativando (`active`).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este supply.
+        required: true
+      tags:
+      - supplies
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supply'
+          description: ''
+    put:
+      operationId: supplies_update
+      description: 'Sem DELETE: insumo sai de uso desativando (`active`).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este supply.
+        required: true
+      tags:
+      - supplies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Supply'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Supply'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Supply'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supply'
+          description: ''
+    patch:
+      operationId: supplies_partial_update
+      description: 'Sem DELETE: insumo sai de uso desativando (`active`).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este supply.
+        required: true
+      tags:
+      - supplies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSupply'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSupply'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSupply'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supply'
+          description: ''
+  /supplies/materials/:
+    get:
+      operationId: supplies_materials_retrieve
+      description: Sugestões de material para o cadastro de filamento; aceita outro
+        valor digitado.
+      tags:
+      - supplies
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyMaterials'
+          description: ''
+  /supply-categories/:
+    get:
+      operationId: supply_categories_list
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`).'
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+      - in: query
+        name: is_filament
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - supply-categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSupplyCategoryList'
+          description: ''
+    post:
+      operationId: supply_categories_create
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`).'
+      tags:
+      - supply-categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplyCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplyCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplyCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyCategory'
+          description: ''
+  /supply-categories/{id}/:
+    get:
+      operationId: supply_categories_retrieve
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este supply category.
+        required: true
+      tags:
+      - supply-categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyCategory'
+          description: ''
+    put:
+      operationId: supply_categories_update
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este supply category.
+        required: true
+      tags:
+      - supply-categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplyCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplyCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplyCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyCategory'
+          description: ''
+    patch:
+      operationId: supply_categories_partial_update
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este supply category.
+        required: true
+      tags:
+      - supply-categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplyCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplyCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplyCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyCategory'
+          description: ''
+  /supply-movements/:
+    get:
+      operationId: supply_movements_list
+      description: Razão do saldo. Criar aqui é dar baixa ou ajustar (delta negativo
+        ou positivo, com motivo).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      - in: query
+        name: supply
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - supply-movements
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSupplyMovementList'
+          description: ''
+    post:
+      operationId: supply_movements_create
+      description: Razão do saldo. Criar aqui é dar baixa ou ajustar (delta negativo
+        ou positivo, com motivo).
+      tags:
+      - supply-movements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplyMovement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplyMovement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplyMovement'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyMovement'
+          description: ''
+  /supply-receipts/:
+    get:
+      operationId: supply_receipts_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - confirmed
+        description: |-
+          * `confirmed` - Confirmada
+          * `cancelled` - Cancelada
+      - in: query
+        name: supply
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - supply-receipts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSupplyReceiptList'
+          description: ''
+    post:
+      operationId: supply_receipts_create
+      tags:
+      - supply-receipts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplyReceiptInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplyReceiptInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplyReceiptInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyReceipt'
+          description: ''
+  /supply-receipts/{id}/:
+    get:
+      operationId: supply_receipts_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este supply receipt.
+        required: true
+      tags:
+      - supply-receipts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyReceipt'
+          description: ''
+  /supply-receipts/{id}/cancel/:
+    post:
+      operationId: supply_receipts_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este supply receipt.
+        required: true
+      tags:
+      - supply-receipts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyReceipt'
+          description: ''
+  /supply-receipts/{id}/pay/:
+    post:
+      operationId: supply_receipts_pay_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este supply receipt.
+        required: true
+      tags:
+      - supply-receipts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplyPaymentInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplyPaymentInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplyPaymentInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyReceipt'
+          description: ''
 components:
   schemas:
     Account:
@@ -2598,6 +3129,98 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Sale'
+    PaginatedSupplyCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplyCategory'
+    PaginatedSupplyList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Supply'
+    PaginatedSupplyMovementList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplyMovement'
+    PaginatedSupplyReceiptList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplyReceipt'
     PatchedCategory:
       type: object
       properties:
@@ -2803,6 +3426,95 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedSupply:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category:
+          type: string
+          format: uuid
+        category_name:
+          type: string
+          readOnly: true
+        category_is_filament:
+          type: boolean
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        unit:
+          type: string
+          maxLength: 30
+        notes:
+          type: string
+          maxLength: 500
+        active:
+          type: boolean
+        material:
+          type: string
+          maxLength: 40
+        color:
+          type: string
+          maxLength: 40
+        roll_weight_g:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        roll_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        price_per_gram:
+          type: string
+          nullable: true
+          readOnly: true
+        price_per_kg:
+          type: string
+          nullable: true
+          readOnly: true
+        quantity:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedSupplyCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        is_filament:
+          type: boolean
+        active:
+          type: boolean
+        supplies_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PaymentInput:
       type: object
       properties:
@@ -2834,6 +3546,10 @@ components:
     Printing:
       type: object
       properties:
+        filaments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrintingFilament'
         filament_price_kg:
           type: string
           format: decimal
@@ -2870,8 +3586,55 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+    PrintingFilament:
+      type: object
+      properties:
+        filament:
+          type: string
+          format: uuid
+        filament_name:
+          type: string
+          readOnly: true
+        material:
+          type: string
+          readOnly: true
+        color:
+          type: string
+          readOnly: true
+        grams:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+        roll_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        roll_weight_g:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+        price_per_kg:
+          type: string
+          readOnly: true
+        price_outdated:
+          type: boolean
+          readOnly: true
+        refresh_price:
+          type: boolean
+          writeOnly: true
+          default: false
       required:
-      - weight_g
+      - color
+      - filament
+      - filament_name
+      - grams
+      - material
+      - price_outdated
+      - price_per_kg
+      - roll_price
+      - roll_weight_g
     Product:
       type: object
       properties:
@@ -3295,6 +4058,282 @@ components:
       description: |-
         * `confirmed` - Confirmada
         * `cancelled` - Cancelada
+    Supply:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category:
+          type: string
+          format: uuid
+        category_name:
+          type: string
+          readOnly: true
+        category_is_filament:
+          type: boolean
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        unit:
+          type: string
+          maxLength: 30
+        notes:
+          type: string
+          maxLength: 500
+        active:
+          type: boolean
+        material:
+          type: string
+          maxLength: 40
+        color:
+          type: string
+          maxLength: 40
+        roll_weight_g:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        roll_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        price_per_gram:
+          type: string
+          nullable: true
+          readOnly: true
+        price_per_kg:
+          type: string
+          nullable: true
+          readOnly: true
+        quantity:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - category_is_filament
+      - category_name
+      - created_at
+      - id
+      - name
+      - price_per_gram
+      - price_per_kg
+      - quantity
+      - updated_at
+    SupplyCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        is_filament:
+          type: boolean
+        active:
+          type: boolean
+        supplies_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - supplies_count
+      - updated_at
+    SupplyMaterials:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: string
+      required:
+      - results
+    SupplyMovement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        supply:
+          type: string
+          format: uuid
+        supply_name:
+          type: string
+          readOnly: true
+        delta:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        balance_after:
+          type: integer
+          readOnly: true
+        reason:
+          type: string
+          maxLength: 240
+        receipt:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        actor:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - actor
+      - balance_after
+      - created_at
+      - delta
+      - id
+      - reason
+      - receipt
+      - supply
+      - supply_name
+    SupplyPaymentInput:
+      type: object
+      properties:
+        occurred_on:
+          type: string
+          format: date
+      required:
+      - occurred_on
+    SupplyReceipt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        supply_name:
+          type: string
+          maxLength: 120
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        occurred_on:
+          type: string
+          format: date
+        supplier:
+          type: string
+          maxLength: 200
+        reference:
+          type: string
+          maxLength: 100
+        notes:
+          type: string
+          maxLength: 500
+        idempotency_key:
+          type: string
+          format: uuid
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        cancelled_at:
+          type: string
+          format: date-time
+          nullable: true
+        supply:
+          type: string
+          format: uuid
+        actor:
+          type: integer
+      required:
+      - actor
+      - created_at
+      - id
+      - idempotency_key
+      - occurred_on
+      - quantity
+      - supply
+      - supply_name
+      - updated_at
+    SupplyReceiptInput:
+      type: object
+      properties:
+        idempotency_key:
+          type: string
+          format: uuid
+        supply_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          maximum: 1000000
+          minimum: 1
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        occurred_on:
+          type: string
+          format: date
+        supplier:
+          type: string
+          default: ''
+          maxLength: 200
+        reference:
+          type: string
+          default: ''
+          maxLength: 100
+        notes:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - idempotency_key
+      - occurred_on
+      - quantity
+      - supply_id
+      - unit_cost
     TokenBlacklist:
       type: object
       properties:
