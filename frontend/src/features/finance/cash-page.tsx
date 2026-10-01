@@ -17,6 +17,12 @@ import { ErrorMessage, Empty } from "@/shared/components/feedback";
 import { FormActions } from "@/shared/components/form-actions";
 import { PageHeader } from "@/shared/components/page-header";
 import { Pagination } from "@/shared/components/pagination";
+import { useClientList, useListQuery } from "@/shared/hooks/use-list-query";
+import {
+  ClearFilters, DateRange, FilterSelect, ListToolbar, SearchBox, SortSelect,
+} from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 
 /* categorias que o dono pode escolher: não são do sistema, estão ativas e combinam com o tipo */
 const choosable = (categories: CashCategory[], direction: string) =>
@@ -24,12 +30,35 @@ const choosable = (categories: CashCategory[], direction: string) =>
     (c) => !c.is_system && c.active && (c.direction === "both" || c.direction === direction),
   );
 
+const cashColumns: SortColumn[] = [
+  { key: "occurred_on", label: "Data", kind: "date" },
+  { key: "description", label: "Descrição", kind: "text" },
+  { key: "category__name", label: "Categoria", kind: "text" },
+  { key: "amount", label: "Valor", kind: "number" },
+];
+const summaryColumns: SortColumn[] = [
+  { key: "name", label: "Categoria", kind: "text" },
+  { key: "in_total", label: "Entradas", kind: "number" },
+  { key: "out_total", label: "Saídas", kind: "number" },
+  { key: "entries", label: "Lançamentos", kind: "number" },
+];
+
 export default function Cash() {
   const [rows, setRows] = useState<Page<CashEntry> | null>(null);
   const [categories, setCategories] = useState<CashCategory[]>([]);
   const [summary, setSummary] = useState<CashSummaryRow[]>([]);
-  const [page, setPage] = useState(1);
-  const [filter, setFilter] = useState("");
+  // busca, filtros, ordem e página da lista de lançamentos, no servidor (spec 027)
+  const q = useListQuery({ direction: "", category: "", origin: "", date_from: "", date_to: "" });
+  // o resumo por categoria é curto e já vem inteiro: busca e ordem acontecem na tela
+  const summaryList = useClientList(summary, {
+    texts: (s) => [s.category_name],
+    getters: {
+      name: (s) => s.category_name,
+      in_total: (s) => s.in_total,
+      out_total: (s) => s.out_total,
+      entries: (s) => s.entries,
+    },
+  });
   const [direction, setDirection] = useState("out");
   const [showCategories, setShowCategories] = useState(false);
   const [error, setError] = useState("");
@@ -40,17 +69,22 @@ export default function Cash() {
       .then((r) => setCategories(r.results))
       .catch((e) => setError(e.message));
   }, []);
-  const load = useCallback(() => {
-    const params = new URLSearchParams({ page: String(page) });
-    if (filter) params.set("category", filter);
-    api<Page<CashEntry>>(`cash?${params}`)
+  const loadRows = useCallback(() => {
+    api<Page<CashEntry>>(`cash?${q.queryString}`)
       .then(setRows)
       .catch((e) => setError(e.message));
+  }, [q.queryString]);
+  const loadSummary = useCallback(() => {
     api<CashSummaryRow[]>("cash/summary")
       .then(setSummary)
       .catch((e) => setError(e.message));
-  }, [page, filter]);
-  useEffect(load, [load]);
+  }, []);
+  useEffect(loadRows, [loadRows]);
+  useEffect(loadSummary, [loadSummary]);
+  const load = useCallback(() => {
+    loadRows();
+    loadSummary();
+  }, [loadRows, loadSummary]);
   useEffect(loadCategories, [loadCategories]);
 
   const toClassify = summary.find((s) => s.is_system && s.category_name === "A classificar")?.entries ?? 0;
@@ -171,19 +205,24 @@ export default function Cash() {
             Soma de todos os lançamentos. "Conta no resultado" mostra o que entra no Resultado do negócio da tela
             inicial.
           </p>
+          <ListToolbar>
+            <SearchBox value={summaryList.search} onChange={summaryList.setSearch} placeholder="Nome da categoria…" />
+            <SortSelect columns={summaryColumns} sort={summaryList.sort} onChange={summaryList.setSort} />
+            <ClearFilters visible={summaryList.hasActiveFilters} onClick={summaryList.clear} />
+          </ListToolbar>
           <div className="overflow-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Categoria</th>
-                  <th>Entradas</th>
-                  <th>Saídas</th>
-                  <th>Lançamentos</th>
+                  <SortableTh label="Categoria" sortKey="name" sort={summaryList.sort} onSort={summaryList.toggle} />
+                  <SortableTh label="Entradas" sortKey="in_total" sort={summaryList.sort} onSort={summaryList.toggle} />
+                  <SortableTh label="Saídas" sortKey="out_total" sort={summaryList.sort} onSort={summaryList.toggle} />
+                  <SortableTh label="Lançamentos" sortKey="entries" sort={summaryList.sort} onSort={summaryList.toggle} />
                   <th>Conta no resultado</th>
                 </tr>
               </thead>
               <tbody>
-                {summary.map((s) => (
+                {(summaryList.visible ?? []).map((s) => (
                   <tr key={s.category}>
                     <td data-role="title">{s.category_name}</td>
                     <td data-label="Entradas" className="money text-success">
@@ -202,39 +241,51 @@ export default function Cash() {
         </Card>
       )}
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2>Movimentações de caixa</h2>
-          <select
-            aria-label="Filtrar por categoria"
-            value={filter}
-            onChange={(e) => {
-              setFilter(e.target.value);
-              setPage(1);
-            }}
-            className="sm:max-w-xs"
-          >
-            <option value="">Todas as categorias</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <h2>Movimentações de caixa</h2>
+        <ListToolbar>
+          <SearchBox value={q.search} onChange={q.setSearch} placeholder="Descrição ou categoria…" />
+          <FilterSelect
+            label="Tipo"
+            value={q.filters.direction}
+            onChange={(v) => q.setFilter("direction", v)}
+            options={[["in", "Entradas"], ["out", "Saídas"]]}
+          />
+          <FilterSelect
+            label="Categoria"
+            value={q.filters.category}
+            onChange={(v) => q.setFilter("category", v)}
+            options={categories.map((c) => [c.id, c.name])}
+            allLabel="Todas"
+          />
+          <FilterSelect
+            label="Origem"
+            value={q.filters.origin}
+            onChange={(v) => q.setFilter("origin", v)}
+            options={Object.entries(originLabels)}
+          />
+          <DateRange
+            from={q.filters.date_from}
+            to={q.filters.date_to}
+            onFrom={(v) => q.setFilter("date_from", v)}
+            onTo={(v) => q.setFilter("date_to", v)}
+          />
+          <SortSelect columns={cashColumns} sort={q.sort} onChange={q.setSort} />
+          <ClearFilters visible={q.hasActiveFilters} onClick={q.clear} />
+        </ListToolbar>
         {!rows ? (
           <p>Carregando…</p>
         ) : !rows.results.length ? (
-          <Empty>Nenhum lançamento registrado.</Empty>
+          <Empty>{q.hasActiveFilters ? "Nenhum lançamento encontrado com esses filtros." : "Nenhum lançamento registrado."}</Empty>
         ) : (
           <div className="overflow-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Data</th>
-                  <th>Descrição</th>
+                  <SortableTh label="Data" sortKey="occurred_on" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Descrição" sortKey="description" sort={q.sort} onSort={q.toggleSort} />
                   <th>Origem</th>
-                  <th>Categoria</th>
-                  <th>Valor</th>
+                  <SortableTh label="Categoria" sortKey="category__name" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Valor" sortKey="amount" sort={q.sort} onSort={q.toggleSort} />
                 </tr>
               </thead>
               <tbody>
@@ -281,9 +332,9 @@ export default function Cash() {
         <Pagination
           count={rows?.count || 0}
           noun={["lançamento", "lançamentos"]}
-          page={page}
+          page={q.page}
           hasNext={!!rows?.next}
-          onPage={setPage}
+          onPage={q.setPage}
         />
       </Card>
     </>

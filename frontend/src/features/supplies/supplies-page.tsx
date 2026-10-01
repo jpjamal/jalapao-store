@@ -16,6 +16,12 @@ import { PageHeader } from "@/shared/components/page-header";
 import { Pagination } from "@/shared/components/pagination";
 import { ErrorMessage, Empty } from "@/shared/components/feedback";
 import { Field } from "@/shared/components/fields";
+import { useClientList, useListQuery } from "@/shared/hooks/use-list-query";
+import {
+  ClearFilters, DateRange, FilterSelect, ListToolbar, SearchBox, SortSelect,
+} from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 
 function SupplyForm({
   supply,
@@ -177,14 +183,21 @@ function SupplyForm({
   );
 }
 
+const supplyColumns: SortColumn[] = [
+  { key: "name", label: "Insumo", kind: "text" },
+  { key: "category__name", label: "Categoria", kind: "text" },
+  { key: "stock__quantity", label: "Saldo", kind: "number" },
+  { key: "roll_price", label: "Preço do rolo", kind: "number" },
+  { key: "active", label: "Status", kind: "text" },
+];
+
 export default function Supplies() {
   const [data, setData] = useState<Page<Supply> | null>(null);
   const [categories, setCategories] = useState<SupplyCategory[] | null>(null);
   const [materials, setMaterials] = useState<string[]>([]);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [page, setPage] = useState(1);
+  // busca, filtros, ordem e página, no servidor (spec 027)
+  const q = useListQuery({ category: "", active: "", in_stock: "" });
   const [editing, setEditing] = useState<Supply | null | undefined>(undefined);
   const [showCategories, setShowCategories] = useState(false);
   // duas abas (spec 024): o cadastro com o saldo, e as compras e movimentos
@@ -205,12 +218,10 @@ export default function Supplies() {
   }, [loadCategories]);
   const load = useCallback(() => {
     setError("");
-    const params = new URLSearchParams({ search, page: String(page) });
-    if (categoryFilter) params.set("category", categoryFilter);
-    api<Page<Supply>>(`supplies?${params}`)
+    api<Page<Supply>>(`supplies?${q.queryString}`)
       .then(setData)
       .catch((e) => setError(e.message));
-  }, [search, page, categoryFilter]);
+  }, [q.queryString]);
   useEffect(load, [load]);
   return (
     <>
@@ -291,35 +302,30 @@ export default function Supplies() {
       )}
       {tab === "cadastro" && (
       <Card>
-        <div className="flex flex-col sm:flex-row gap-3 mb-5">
-          <Input
-            aria-label="Buscar insumos"
-            placeholder="Buscar por nome, cor ou material…"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            type="search"
-            className="sm:max-w-md"
+        <ListToolbar>
+          <SearchBox value={q.search} onChange={q.setSearch} placeholder="Nome, cor, material ou categoria…" />
+          <FilterSelect
+            label="Categoria"
+            value={q.filters.category}
+            onChange={(v) => q.setFilter("category", v)}
+            options={(categories || []).map((c) => [c.id, c.name])}
+            allLabel="Todas"
           />
-          <select
-            aria-label="Filtrar por categoria"
-            value={categoryFilter}
-            onChange={(e) => {
-              setCategoryFilter(e.target.value);
-              setPage(1);
-            }}
-            className="sm:max-w-xs"
-          >
-            <option value="">Todas as categorias</option>
-            {(categories || []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          <FilterSelect
+            label="Situação"
+            value={q.filters.active}
+            onChange={(v) => q.setFilter("active", v)}
+            options={[["true", "Ativos"], ["false", "Inativos"]]}
+          />
+          <FilterSelect
+            label="Saldo"
+            value={q.filters.in_stock}
+            onChange={(v) => q.setFilter("in_stock", v)}
+            options={[["true", "Com saldo"], ["false", "Sem saldo"]]}
+          />
+          <SortSelect columns={supplyColumns} sort={q.sort} onChange={q.setSort} />
+          <ClearFilters visible={q.hasActiveFilters} onClick={q.clear} />
+        </ListToolbar>
         {!data ? (
           <p role="status">Carregando insumos…</p>
         ) : !data.results.length ? (
@@ -329,12 +335,12 @@ export default function Supplies() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Insumo</th>
-                  <th>Categoria</th>
-                  <th>Saldo</th>
-                  <th>Preço do rolo</th>
+                  <SortableTh label="Insumo" sortKey="name" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Categoria" sortKey="category__name" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Saldo" sortKey="stock__quantity" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Preço do rolo" sortKey="roll_price" sort={q.sort} onSort={q.toggleSort} />
                   <th>Por grama / por kg</th>
-                  <th>Status</th>
+                  <SortableTh label="Status" sortKey="active" sort={q.sort} onSort={q.toggleSort} />
                   <th>
                     <span className="sr-only">Ações</span>
                   </th>
@@ -397,9 +403,9 @@ export default function Supplies() {
         <Pagination
           count={data?.count || 0}
           noun={["insumo", "insumos"]}
-          page={page}
+          page={q.page}
           hasNext={!!data?.next}
-          onPage={setPage}
+          onPage={q.setPage}
         />
       </Card>
       )}

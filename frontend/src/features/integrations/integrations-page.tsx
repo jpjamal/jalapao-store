@@ -8,6 +8,10 @@ import { Input } from "@/shared/ui/input";
 import { ErrorMessage, Empty } from "@/shared/components/feedback";
 import { FormActions } from "@/shared/components/form-actions";
 import { PageHeader } from "@/shared/components/page-header";
+import { useClientList } from "@/shared/hooks/use-list-query";
+import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 
 type Account = {
   id: string;
@@ -39,6 +43,27 @@ type Listing = {
 const quando = (v: string | null) =>
   v ? new Date(v).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
 
+const accountColumns: SortColumn[] = [
+  { key: "channel", label: "Canal", kind: "text" },
+  { key: "name", label: "Loja", kind: "text" },
+  { key: "token", label: "Token", kind: "text" },
+  { key: "expires", label: "Autorização expira", kind: "date" },
+  { key: "synced", label: "Última sincronia", kind: "date" },
+];
+const pendingColumns: SortColumn[] = [
+  { key: "item_id", label: "Anúncio", kind: "text" },
+  { key: "title", label: "Título", kind: "text" },
+  { key: "sku", label: "Código no anúncio", kind: "text" },
+];
+const linkedColumns: SortColumn[] = [
+  { key: "title", label: "Anúncio", kind: "text" },
+  { key: "product", label: "Produto", kind: "text" },
+  { key: "local", label: "Saldo aqui", kind: "number" },
+  { key: "remote", label: "Saldo lá", kind: "number" },
+  { key: "pushed", label: "Último envio", kind: "date" },
+  { key: "sync", label: "Sincronizar", kind: "text" },
+];
+
 export default function Integracoes() {
   const [contas, setContas] = useState<Account[]>([]);
   const [vinculos, setVinculos] = useState<Listing[]>([]);
@@ -48,6 +73,40 @@ export default function Integracoes() {
   const [pendentes, setPendentes] = useState<{ item_id: string; title: string; sku: string }[]>(
     [],
   );
+  // listas curtas, já carregadas por inteiro: busca, filtros e ordem acontecem na tela (spec 027)
+  const accountList = useClientList(contas, {
+    texts: (c) => [c.channel_label, c.name, c.external_id],
+    filters: {
+      channel: (c, v) => c.channel === v,
+      token: (c, v) => (v === "valid" ? c.token_valido : !c.token_valido),
+    },
+    getters: {
+      channel: (c) => c.channel_label,
+      name: (c) => c.name || c.external_id,
+      token: (c) => c.token_valido,
+      expires: (c) => c.authorization_expires_at,
+      synced: (c) => c.last_synced_at,
+    },
+  });
+  const pendingList = useClientList(pendentes, {
+    texts: (p) => [p.item_id, p.title, p.sku],
+    getters: { item_id: (p) => p.item_id, title: (p) => p.title, sku: (p) => p.sku },
+  });
+  const linkedList = useClientList(vinculos, {
+    texts: (v) => [v.title, v.item_id, v.product_name, v.product_sku, v.marketplace],
+    filters: {
+      marketplace: (v, value) => v.marketplace === value,
+      sync: (v, value) => (value === "on" ? v.sync_enabled : !v.sync_enabled),
+    },
+    getters: {
+      title: (v) => v.title || v.item_id,
+      product: (v) => v.product_name,
+      local: (v) => v.local_stock,
+      remote: (v) => v.remote_stock,
+      pushed: (v) => v.stock_pushed_at,
+      sync: (v) => v.sync_enabled,
+    },
+  });
 
   const carregar = useCallback(() => {
     Promise.all([
@@ -103,19 +162,36 @@ export default function Integracoes() {
           </>
         ) : (
           <div className="overflow-auto mb-4">
+            <ListToolbar>
+              <SearchBox value={accountList.search} onChange={accountList.setSearch} placeholder="Canal ou loja…" />
+              <FilterSelect
+                label="Canal"
+                value={accountList.filters.channel ?? ""}
+                onChange={(v) => accountList.setFilter("channel", v)}
+                options={Array.from(new Map(contas.map((c) => [c.channel, c.channel_label])).entries())}
+              />
+              <FilterSelect
+                label="Token"
+                value={accountList.filters.token ?? ""}
+                onChange={(v) => accountList.setFilter("token", v)}
+                options={[["valid", "Válido"], ["renew", "Vai renovar"]]}
+              />
+              <SortSelect columns={accountColumns} sort={accountList.sort} onChange={accountList.setSort} />
+              <ClearFilters visible={accountList.hasActiveFilters} onClick={accountList.clear} />
+            </ListToolbar>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Canal</th>
-                  <th>Loja</th>
-                  <th>Token</th>
-                  <th>Autorização expira</th>
-                  <th>Última sincronia</th>
+                  <SortableTh label="Canal" sortKey="channel" sort={accountList.sort} onSort={accountList.toggle} />
+                  <SortableTh label="Loja" sortKey="name" sort={accountList.sort} onSort={accountList.toggle} />
+                  <SortableTh label="Token" sortKey="token" sort={accountList.sort} onSort={accountList.toggle} />
+                  <SortableTh label="Autorização expira" sortKey="expires" sort={accountList.sort} onSort={accountList.toggle} />
+                  <SortableTh label="Última sincronia" sortKey="synced" sort={accountList.sort} onSort={accountList.toggle} />
                   <th><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody>
-                {contas.map((c) => (
+                {(accountList.visible ?? []).map((c) => (
                   <tr key={c.id}>
                     <td data-role="title">{c.channel_label}</td>
                     <td data-label="Loja">{c.name || c.external_id}</td>
@@ -233,17 +309,22 @@ export default function Integracoes() {
             produto — nenhum produto foi criado. Cadastre com o mesmo código, ou
             ajuste o código do anúncio no marketplace, e importe de novo.
           </p>
+          <ListToolbar>
+            <SearchBox value={pendingList.search} onChange={pendingList.setSearch} placeholder="Anúncio, título ou código…" />
+            <SortSelect columns={pendingColumns} sort={pendingList.sort} onChange={pendingList.setSort} />
+            <ClearFilters visible={pendingList.hasActiveFilters} onClick={pendingList.clear} />
+          </ListToolbar>
           <div className="overflow-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Anúncio</th>
-                  <th>Título</th>
-                  <th>Código no anúncio</th>
+                  <SortableTh label="Anúncio" sortKey="item_id" sort={pendingList.sort} onSort={pendingList.toggle} />
+                  <SortableTh label="Título" sortKey="title" sort={pendingList.sort} onSort={pendingList.toggle} />
+                  <SortableTh label="Código no anúncio" sortKey="sku" sort={pendingList.sort} onSort={pendingList.toggle} />
                 </tr>
               </thead>
               <tbody>
-                {pendentes.map((p) => (
+                {(pendingList.visible ?? []).map((p) => (
                   <tr key={p.item_id}>
                     <td data-label="Anúncio" className="money">{p.item_id}</td>
                     <td data-role="title">{p.title}</td>
@@ -263,23 +344,44 @@ export default function Integracoes() {
           a ser levada para o anúncio quando você mandar enviar. O saldo do
           marketplace nunca sobrescreve o daqui.
         </p>
+        {vinculos.length > 0 && (
+          <ListToolbar>
+            <SearchBox value={linkedList.search} onChange={linkedList.setSearch} placeholder="Anúncio, produto ou código…" />
+            <FilterSelect
+              label="Marketplace"
+              value={linkedList.filters.marketplace ?? ""}
+              onChange={(v) => linkedList.setFilter("marketplace", v)}
+              options={Array.from(new Set(vinculos.map((v) => v.marketplace))).map((m) => [m, m])}
+            />
+            <FilterSelect
+              label="Sincronização"
+              value={linkedList.filters.sync ?? ""}
+              onChange={(v) => linkedList.setFilter("sync", v)}
+              options={[["on", "Ligada"], ["off", "Desligada"]]}
+            />
+            <SortSelect columns={linkedColumns} sort={linkedList.sort} onChange={linkedList.setSort} />
+            <ClearFilters visible={linkedList.hasActiveFilters} onClick={linkedList.clear} />
+          </ListToolbar>
+        )}
         {!vinculos.length ? (
           <Empty>Nenhum anúncio vinculado.</Empty>
+        ) : !linkedList.visible?.length ? (
+          <Empty>Nenhum anúncio encontrado com esses filtros.</Empty>
         ) : (
           <div className="overflow-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Anúncio</th>
-                  <th>Produto</th>
-                  <th>Saldo aqui</th>
-                  <th>Saldo lá</th>
-                  <th>Último envio</th>
-                  <th>Sincronizar</th>
+                  <SortableTh label="Anúncio" sortKey="title" sort={linkedList.sort} onSort={linkedList.toggle} />
+                  <SortableTh label="Produto" sortKey="product" sort={linkedList.sort} onSort={linkedList.toggle} />
+                  <SortableTh label="Saldo aqui" sortKey="local" sort={linkedList.sort} onSort={linkedList.toggle} />
+                  <SortableTh label="Saldo lá" sortKey="remote" sort={linkedList.sort} onSort={linkedList.toggle} />
+                  <SortableTh label="Último envio" sortKey="pushed" sort={linkedList.sort} onSort={linkedList.toggle} />
+                  <SortableTh label="Sincronizar" sortKey="sync" sort={linkedList.sort} onSort={linkedList.toggle} />
                 </tr>
               </thead>
               <tbody>
-                {vinculos.map((v) => (
+                {linkedList.visible.map((v) => (
                   <tr key={v.id}>
                     <td data-role="title">
                       {v.title || v.item_id}

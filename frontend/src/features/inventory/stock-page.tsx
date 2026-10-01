@@ -15,6 +15,12 @@ import { PageHeader } from "@/shared/components/page-header";
 import { Pagination } from "@/shared/components/pagination";
 import { ProductPicker } from "@/features/catalog/components/product-picker";
 import Link from "next/link";
+import { useClientList, useListQuery } from "@/shared/hooks/use-list-query";
+import {
+  ClearFilters, DateRange, FilterSelect, ListToolbar, SearchBox, SortSelect,
+} from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 type Movement = {
   id: string;
   product_name: string;
@@ -33,10 +39,40 @@ const MOTIVOS = [
   "Devolução",
 ];
 
+const positionColumns: SortColumn[] = [
+  { key: "name", label: "Produto", kind: "text" },
+  { key: "quantity", label: "Unidades", kind: "number" },
+  { key: "stock_value", label: "Valor a custo", kind: "number" },
+  { key: "average_cost", label: "Custo médio / un.", kind: "number" },
+];
+const movementColumns: SortColumn[] = [
+  { key: "created_at", label: "Data", kind: "date" },
+  { key: "product__name", label: "Produto", kind: "text" },
+  { key: "delta", label: "Variação", kind: "number" },
+  { key: "balance_after", label: "Saldo após", kind: "number" },
+  { key: "value_delta", label: "Variação em R$", kind: "number" },
+];
+
 export default function Inventory() {
   const [products, setProducts] = useState<Product[]>([]);
   const [rows, setRows] = useState<Page<Movement> | null>(null);
-  const [page, setPage] = useState(1);
+  // histórico: paginado, então busca, filtros e ordem vão ao servidor (spec 027)
+  const q = useListQuery({ direction: "", date_from: "", date_to: "" });
+  // posição atual: todos os produtos já estão carregados, então busca e ordem acontecem na tela
+  const position = useClientList(products, {
+    texts: (p) => [p.name, p.sku, p.category_name, p.brand, p.model],
+    filters: {
+      category: (p, v) => p.category === v,
+      balance: (p, v) => (v === "with" ? p.quantity > 0 : p.quantity === 0),
+    },
+    getters: {
+      name: (p) => p.name,
+      quantity: (p) => p.quantity,
+      stock_value: (p) => p.stock_value,
+      average_cost: (p) => (p.quantity ? p.average_cost : null),
+    },
+  });
+  const categoryOptions = Array.from(new Map(products.map((p) => [p.category, p.category_name])).entries());
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -45,15 +81,22 @@ export default function Inventory() {
   // o input oculto do seletor de busca
   const [produtoId, setProdutoId] = useState("");
   const [motivo, setMotivo] = useState("");
-  const load = useCallback(() => {
-    Promise.all([allProducts(), api<Page<Movement>>(`movements?page=${page}`)])
-      .then(([p, m]) => {
-        setProducts(p);
-        setRows(m);
-      })
+  const loadProducts = useCallback(() => {
+    allProducts()
+      .then(setProducts)
       .catch((e) => setError(e.message));
-  }, [page]);
-  useEffect(load, [load]);
+  }, []);
+  const loadMovements = useCallback(() => {
+    api<Page<Movement>>(`movements?${q.queryString}`)
+      .then(setRows)
+      .catch((e) => setError(e.message));
+  }, [q.queryString]);
+  useEffect(loadProducts, [loadProducts]);
+  useEffect(loadMovements, [loadMovements]);
+  const load = useCallback(() => {
+    loadProducts();
+    loadMovements();
+  }, [loadProducts, loadMovements]);
   return (
     <>
       <PageHeader
@@ -174,18 +217,40 @@ export default function Inventory() {
         </Card>
         <Card>
           <h2>Posição atual</h2>
+          <ListToolbar>
+            <SearchBox
+              value={position.search}
+              onChange={position.setSearch}
+              placeholder="Nome, código, marca ou categoria…"
+            />
+            <FilterSelect
+              label="Categoria"
+              value={position.filters.category ?? ""}
+              onChange={(v) => position.setFilter("category", v)}
+              options={categoryOptions}
+              allLabel="Todas"
+            />
+            <FilterSelect
+              label="Saldo"
+              value={position.filters.balance ?? ""}
+              onChange={(v) => position.setFilter("balance", v)}
+              options={[["with", "Com saldo"], ["without", "Sem saldo"]]}
+            />
+            <SortSelect columns={positionColumns} sort={position.sort} onChange={position.setSort} />
+            <ClearFilters visible={position.hasActiveFilters} onClick={position.clear} />
+          </ListToolbar>
           <div className="overflow-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Produto</th>
-                  <th>Unidades</th>
-                  <th>Valor a custo</th>
-                  <th>Custo médio / un.</th>
+                  <SortableTh label="Produto" sortKey="name" sort={position.sort} onSort={position.toggle} />
+                  <SortableTh label="Unidades" sortKey="quantity" sort={position.sort} onSort={position.toggle} />
+                  <SortableTh label="Valor a custo" sortKey="stock_value" sort={position.sort} onSort={position.toggle} />
+                  <SortableTh label="Custo médio / un." sortKey="average_cost" sort={position.sort} onSort={position.toggle} />
                 </tr>
               </thead>
               <tbody>
-                {products.map((p) => (
+                {(position.visible ?? []).map((p) => (
                   <tr key={p.id}>
                     <td data-role="title">{p.name}</td>
                     <td data-label="Unidades">{p.quantity}</td>
@@ -198,26 +263,46 @@ export default function Inventory() {
               </tbody>
             </table>
             {!products.length && <Empty>Nenhum produto cadastrado.</Empty>}
+            {products.length > 0 && !position.visible?.length && (
+              <Empty>Nenhum produto encontrado com esses filtros.</Empty>
+            )}
           </div>
         </Card>
       </div>
       <Card className="mt-5">
         <h2>Histórico de movimentações</h2>
+        <ListToolbar>
+          <SearchBox value={q.search} onChange={q.setSearch} placeholder="Produto, código ou motivo…" />
+          <FilterSelect
+            label="Tipo"
+            value={q.filters.direction}
+            onChange={(v) => q.setFilter("direction", v)}
+            options={[["in", "Entradas"], ["out", "Saídas"]]}
+          />
+          <DateRange
+            from={q.filters.date_from}
+            to={q.filters.date_to}
+            onFrom={(v) => q.setFilter("date_from", v)}
+            onTo={(v) => q.setFilter("date_to", v)}
+          />
+          <SortSelect columns={movementColumns} sort={q.sort} onChange={q.setSort} />
+          <ClearFilters visible={q.hasActiveFilters} onClick={q.clear} />
+        </ListToolbar>
         {!rows ? (
           <p>Carregando…</p>
         ) : !rows.results.length ? (
-          <Empty>Nenhuma movimentação registrada.</Empty>
+          <Empty>{q.hasActiveFilters ? "Nenhuma movimentação encontrada com esses filtros." : "Nenhuma movimentação registrada."}</Empty>
         ) : (
           <div className="overflow-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Data</th>
-                  <th>Produto</th>
-                  <th>Variação</th>
-                  <th>Saldo após</th>
+                  <SortableTh label="Data" sortKey="created_at" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Produto" sortKey="product__name" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Variação" sortKey="delta" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Saldo após" sortKey="balance_after" sort={q.sort} onSort={q.toggleSort} />
                   <th>Motivo</th>
-                  <th>Variação em R$</th>
+                  <SortableTh label="Variação em R$" sortKey="value_delta" sort={q.sort} onSort={q.toggleSort} />
                 </tr>
               </thead>
               <tbody>
@@ -245,9 +330,9 @@ export default function Inventory() {
         <Pagination
           count={rows?.count || 0}
           noun={["movimentação", "movimentações"]}
-          page={page}
+          page={q.page}
           hasNext={!!rows?.next}
-          onPage={setPage}
+          onPage={q.setPage}
         />
       </Card>
     </>

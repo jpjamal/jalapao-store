@@ -64,6 +64,10 @@ completo e regras de dependência em [../docs/architecture.md](../docs/architect
 - inventory.Receipt: compras/produções por produto com custo congelado; Stock.value mantém
   avaliação pelo custo médio móvel. Product.cost_price é apenas referência de novas entradas.
 - sales: Sale 1:N SaleItem; snapshots, chave idempotente e cancelamento reversível.
+- Listagens (spec 027): os filtros de busca e de ordem são globais (`apps/common/filters.py`). Busca e ordem de
+  texto ignoram acento e maiúscula por `Fold` (igual no PostgreSQL e no SQLite); cada view declara `search_fields`,
+  `ordering_fields`, `ordering_text_fields` e `ordering_zero_fields`; `range_filterset` cria `date_from`/`date_to`.
+  Lista nova: copie uma view existente e o `api/filters.py` do app.
 - finance: entradas/saídas imutáveis. Recebimento e estorno por venda são únicos. Spec 026: todo
   lançamento tem `CashCategory` (direção, `counts_in_result`, ativa; categorias do sistema têm `system_key`
   e são só leitura). `CashEntry.save()` põe a categoria do sistema pela origem (`domain/categories.py`); o

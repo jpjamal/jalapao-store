@@ -18,6 +18,12 @@ import { FormActions } from "@/shared/components/form-actions";
 import { PageHeader } from "@/shared/components/page-header";
 import { ImportarVendasML } from "@/features/sales/components/importar-vendas-ml";
 import { Pagination } from "@/shared/components/pagination";
+import { useListQuery } from "@/shared/hooks/use-list-query";
+import {
+  ClearFilters, DateRange, FilterSelect, ListToolbar, SearchBox, SortSelect,
+} from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 type Item = { product_name: string; quantity: number; unit_price: string };
 /* insumo usado na venda (spec 024): o que foi pedido e o que de fato foi baixado do saldo */
 type SaleSupply = { supply_name: string; requested: number; taken: number; shortfall: number };
@@ -43,10 +49,20 @@ const channels: Record<string, string> = {
   shopee: "Shopee",
   other: "Outro",
 };
+const saleColumns: SortColumn[] = [
+  { key: "created_at", label: "Data", kind: "date" },
+  { key: "channel", label: "Canal", kind: "text" },
+  { key: "gross", label: "Valor bruto", kind: "number" },
+  { key: "net", label: "Valor líquido", kind: "number" },
+  { key: "profit", label: "Lucro", kind: "number" },
+  { key: "status", label: "Situação", kind: "text" },
+];
+
 export default function Sales() {
   const [products, setProducts] = useState<Product[]>([]);
   const [rows, setRows] = useState<Page<Sale> | null>(null);
-  const [page, setPage] = useState(1);
+  // busca, filtros, ordem e página do histórico, no servidor (spec 027)
+  const q = useListQuery({ channel: "", status: "", received: "", date_from: "", date_to: "" });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,24 +77,32 @@ export default function Sales() {
   const [items, setItems] = useState<Draft[]>([
     { product_id: "", quantity: 1, unit_price: "0" },
   ]);
-  const load = useCallback(() => {
+  const loadAux = useCallback(() => {
     Promise.all([
       allProducts(),
-      api<Page<Sale>>(`sales?page=${page}`),
       allSupplies().then(
         (s) => ({ list: s, failure: "" }),
         (e: Error) => ({ list: [] as Supply[], failure: e.message }),
       ),
     ])
-      .then(([p, r, s]) => {
+      .then(([p, s]) => {
         setProducts(p);
-        setRows(r);
         setSupplies(s.list);
         setSuppliesError(s.failure);
       })
       .catch((e) => setError(e.message));
-  }, [page]);
-  useEffect(load, [load]);
+  }, []);
+  const loadRows = useCallback(() => {
+    api<Page<Sale>>(`sales?${q.queryString}`)
+      .then(setRows)
+      .catch((e) => setError(e.message));
+  }, [q.queryString]);
+  useEffect(loadAux, [loadAux]);
+  useEffect(loadRows, [loadRows]);
+  const load = useCallback(() => {
+    loadAux();
+    loadRows();
+  }, [loadAux, loadRows]);
   function update(index: number, patch: Partial<Draft>) {
     setItems(items.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   }
@@ -380,20 +404,49 @@ export default function Sales() {
       )}
       <Card>
         <h2>Histórico de vendas</h2>
+        <ListToolbar>
+          <SearchBox value={q.search} onChange={q.setSearch} placeholder="Referência, pedido ou produto…" />
+          <FilterSelect
+            label="Canal"
+            value={q.filters.channel}
+            onChange={(v) => q.setFilter("channel", v)}
+            options={Object.entries(channels)}
+          />
+          <FilterSelect
+            label="Situação"
+            value={q.filters.status}
+            onChange={(v) => q.setFilter("status", v)}
+            options={[["confirmed", "Confirmadas"], ["cancelled", "Canceladas"]]}
+          />
+          <FilterSelect
+            label="Recebimento"
+            value={q.filters.received}
+            onChange={(v) => q.setFilter("received", v)}
+            options={[["true", "Recebidas"], ["false", "A receber"]]}
+          />
+          <DateRange
+            from={q.filters.date_from}
+            to={q.filters.date_to}
+            onFrom={(v) => q.setFilter("date_from", v)}
+            onTo={(v) => q.setFilter("date_to", v)}
+          />
+          <SortSelect columns={saleColumns} sort={q.sort} onChange={q.setSort} />
+          <ClearFilters visible={q.hasActiveFilters} onClick={q.clear} />
+        </ListToolbar>
         {!rows ? (
           <p role="status">Carregando…</p>
         ) : !rows.results.length ? (
-          <Empty>Nenhuma venda registrada.</Empty>
+          <Empty>{q.hasActiveFilters ? "Nenhuma venda encontrada com esses filtros." : "Nenhuma venda registrada."}</Empty>
         ) : (
           <div className="overflow-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Venda</th>
-                  <th>Canal</th>
-                  <th>Bruto / líquido</th>
-                  <th>Lucro</th>
-                  <th>Situação</th>
+                  <SortableTh label="Venda" sortKey="created_at" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Canal" sortKey="channel" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Bruto / líquido" sortKey="gross" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Lucro" sortKey="profit" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Situação" sortKey="status" sort={q.sort} onSort={q.toggleSort} />
                   <th><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
@@ -466,9 +519,9 @@ export default function Sales() {
         <Pagination
           count={rows?.count || 0}
           noun={["venda", "vendas"]}
-          page={page}
+          page={q.page}
           hasNext={!!rows?.next}
-          onPage={setPage}
+          onPage={q.setPage}
         />
       </Card>
     </>

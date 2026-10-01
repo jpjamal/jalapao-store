@@ -15,6 +15,10 @@ import { RelatorioValidacao } from "@/features/listings/components/validation-re
 import type { Atributos, Categoria, Relatorio } from "@/features/listings/types";
 import { FormActions } from "@/shared/components/form-actions";
 import { PageHeader } from "@/shared/components/page-header";
+import { useClientList } from "@/shared/hooks/use-list-query";
+import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 import { ChevronLeft, ChevronRight, ImagePlus } from "lucide-react";
 
 type Channel = "mercado_livre" | "shopee";
@@ -61,9 +65,30 @@ const channels: Record<Channel, string> = {
 };
 const imageUrl = (id: string) => `${BASE}/api/product-images/${id}/content`;
 
+const draftColumns: SortColumn[] = [
+  { key: "product", label: "Produto", kind: "text" },
+  { key: "channel", label: "Canal", kind: "text" },
+  { key: "title", label: "Título", kind: "text" },
+  { key: "status", label: "Situação", kind: "text" },
+];
+
 export default function Anuncios() {
   const [products, setProducts] = useState<Product[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  // rascunhos salvos: a lista é curta e já vem inteira, então busca, filtros e ordem acontecem na tela (spec 027)
+  const draftList = useClientList(drafts, {
+    texts: (d) => [d.product_name, d.product_sku, d.title],
+    filters: {
+      channel: (d, v) => d.channel === v,
+      status: (d, v) => (v === "published" ? !!d.published_item_id : !d.published_item_id),
+    },
+    getters: {
+      product: (d) => d.product_name,
+      channel: (d) => channels[d.channel],
+      title: (d) => d.title,
+      status: (d) => (d.published_item_id ? "Publicado" : "Rascunho"),
+    },
+  });
   const [productId, setProductId] = useState("");
   const [channel, setChannel] = useState<Channel>("mercado_livre");
   const [images, setImages] = useState<ProductImage[]>([]);
@@ -414,9 +439,33 @@ export default function Anuncios() {
 
     {drafts.length > 0 && <Card>
       <h2>Rascunhos salvos</h2>
+      <ListToolbar>
+        <SearchBox value={draftList.search} onChange={draftList.setSearch} placeholder="Produto, código ou título…" />
+        <FilterSelect
+          label="Canal"
+          value={draftList.filters.channel ?? ""}
+          onChange={(v) => draftList.setFilter("channel", v)}
+          options={Object.entries(channels)}
+        />
+        <FilterSelect
+          label="Situação"
+          value={draftList.filters.status ?? ""}
+          onChange={(v) => draftList.setFilter("status", v)}
+          options={[["published", "Publicados"], ["draft", "Só rascunho"]]}
+        />
+        <SortSelect columns={draftColumns} sort={draftList.sort} onChange={draftList.setSort} />
+        <ClearFilters visible={draftList.hasActiveFilters} onClick={draftList.clear} />
+      </ListToolbar>
+      {!draftList.visible?.length && <Empty>Nenhum rascunho encontrado com esses filtros.</Empty>}
       <div className="overflow-auto"><table className="data-table">
-        <thead><tr><th>Produto</th><th>Canal</th><th>Título</th><th>Situação</th><th><span className="sr-only">Ações</span></th></tr></thead>
-        <tbody>{drafts.map((item) => <tr key={item.id}>
+        <thead><tr>
+          <SortableTh label="Produto" sortKey="product" sort={draftList.sort} onSort={draftList.toggle} />
+          <SortableTh label="Canal" sortKey="channel" sort={draftList.sort} onSort={draftList.toggle} />
+          <SortableTh label="Título" sortKey="title" sort={draftList.sort} onSort={draftList.toggle} />
+          <SortableTh label="Situação" sortKey="status" sort={draftList.sort} onSort={draftList.toggle} />
+          <th><span className="sr-only">Ações</span></th>
+        </tr></thead>
+        <tbody>{(draftList.visible ?? []).map((item) => <tr key={item.id}>
           <td data-role="title">{item.product_name}<span className="block text-xs text-muted-foreground font-normal">{item.product_sku}</span></td>
           <td data-label="Canal">{channels[item.channel]}</td>
           <td data-label="Título">{item.title || "Sem título"}</td>

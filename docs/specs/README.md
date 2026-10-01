@@ -33,5 +33,7 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [024](024-insumos/spec.md) | Insumos (filamentos, embalagens, etiquetas, ferramentas) e peça 3D multicolor | alerta de pouco estoque, kit padrão e custo de insumo no lucro (se o dono pedir) |
 | [025](025-lucro-real/spec.md) | Lucro real na tela inicial, ao lado do lucro previsto | — |
 | [026](026-categorias-do-caixa/spec.md) | Categorias nos lançamentos do Caixa e resultado do negócio | classificar os lançamentos antigos (o dono) |
+| [027](027-busca-filtros-e-ordenacao/spec.md) | Busca, filtros e ordenação em todas as listagens | guardar busca e ordem na URL (se o dono pedir) |
+| [028](028-pagar-varias-compras/spec.md) | Janela de confirmação ao pagar compra e pagamento de várias de uma vez | escolher a data do pagamento (se o dono pedir) |
 
-Próxima spec: **027**.
+Próxima spec: **029**.

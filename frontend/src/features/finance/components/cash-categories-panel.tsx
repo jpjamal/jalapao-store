@@ -8,8 +8,19 @@ import { Card } from "@/shared/ui/card";
 import { FormActions } from "@/shared/components/form-actions";
 import { ErrorMessage } from "@/shared/components/feedback";
 import { Field } from "@/shared/components/fields";
+import { useClientList } from "@/shared/hooks/use-list-query";
+import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 
 const directionLabel = { in: "Entrada", out: "Saída", both: "Entrada ou saída" } as const;
+const columns: SortColumn[] = [
+  { key: "name", label: "Categoria", kind: "text" },
+  { key: "direction", label: "Vale para", kind: "text" },
+  { key: "counts_in_result", label: "Conta no resultado", kind: "text" },
+  { key: "entries_count", label: "Lançamentos", kind: "number" },
+  { key: "active", label: "Status", kind: "text" },
+];
 
 function CategoryForm({
   category,
@@ -102,6 +113,21 @@ export function CashCategoriesPanel({ onChanged }: { onChanged: () => void }) {
   const [rows, setRows] = useState<CashCategory[] | null>(null);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<CashCategory | null | undefined>(undefined);
+  const list = useClientList(rows, {
+    texts: (c) => [c.name],
+    filters: {
+      direction: (c, v) => c.direction === v,
+      status: (c, v) => (v === "active" ? c.active : !c.active),
+      system: (c, v) => (v === "system" ? c.is_system : !c.is_system),
+    },
+    getters: {
+      name: (c) => c.name,
+      direction: (c) => directionLabel[c.direction],
+      counts_in_result: (c) => c.counts_in_result,
+      entries_count: (c) => c.entries_count,
+      active: (c) => c.active,
+    },
+  });
   const load = useCallback(() => {
     setError("");
     api<Page<CashCategory>>("cash-categories")
@@ -134,6 +160,29 @@ export function CashCategoriesPanel({ onChanged }: { onChanged: () => void }) {
           cancel={() => setEditing(undefined)}
         />
       )}
+      <ListToolbar>
+        <SearchBox value={list.search} onChange={list.setSearch} placeholder="Nome da categoria…" />
+        <FilterSelect
+          label="Vale para"
+          value={list.filters.direction ?? ""}
+          onChange={(v) => list.setFilter("direction", v)}
+          options={[["in", "Entrada"], ["out", "Saída"], ["both", "Entrada ou saída"]]}
+        />
+        <FilterSelect
+          label="Situação"
+          value={list.filters.status ?? ""}
+          onChange={(v) => list.setFilter("status", v)}
+          options={[["active", "Ativas"], ["inactive", "Inativas"]]}
+        />
+        <FilterSelect
+          label="Tipo"
+          value={list.filters.system ?? ""}
+          onChange={(v) => list.setFilter("system", v)}
+          options={[["mine", "Minhas"], ["system", "Do sistema"]]}
+        />
+        <SortSelect columns={columns} sort={list.sort} onChange={list.setSort} />
+        <ClearFilters visible={list.hasActiveFilters} onClick={list.clear} />
+      </ListToolbar>
       {!rows ? (
         <p role="status">Carregando categorias…</p>
       ) : (
@@ -141,18 +190,18 @@ export function CashCategoriesPanel({ onChanged }: { onChanged: () => void }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Categoria</th>
-                <th>Vale para</th>
-                <th>Conta no resultado</th>
-                <th>Lançamentos</th>
-                <th>Status</th>
+                <SortableTh label="Categoria" sortKey="name" sort={list.sort} onSort={list.toggle} />
+                <SortableTh label="Vale para" sortKey="direction" sort={list.sort} onSort={list.toggle} />
+                <SortableTh label="Conta no resultado" sortKey="counts_in_result" sort={list.sort} onSort={list.toggle} />
+                <SortableTh label="Lançamentos" sortKey="entries_count" sort={list.sort} onSort={list.toggle} />
+                <SortableTh label="Status" sortKey="active" sort={list.sort} onSort={list.toggle} />
                 <th>
                   <span className="sr-only">Ações</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((c) => (
+              {(list.visible ?? []).map((c) => (
                 <tr key={c.id}>
                   <td data-role="title">
                     <strong>{c.name}</strong>

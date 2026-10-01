@@ -108,6 +108,16 @@ paths:
           type: string
           format: uuid
       - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - in: query
         name: direction
         schema:
           type: string
@@ -117,6 +127,32 @@ paths:
         description: |-
           * `in` - Entrada
           * `out` - Saída
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
+      - in: query
+        name: origin
+        schema:
+          type: string
+          enum:
+          - manual
+          - purchase
+          - purchase_refund
+          - sale
+          - sale_refund
+          - supply
+          - supply_refund
+        description: |-
+          * `sale` - Venda
+          * `sale_refund` - Estorno de venda
+          * `purchase` - Compra de estoque
+          * `purchase_refund` - Estorno de compra de estoque
+          * `supply` - Compra de insumo
+          * `supply_refund` - Estorno de compra de insumo
+          * `manual` - Manual
       - name: page
         required: false
         in: query
@@ -191,6 +227,12 @@ paths:
           * `in` - Entrada
           * `out` - Saída
           * `both` - Entrada ou saída
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -378,6 +420,16 @@ paths:
           type: string
           format: uuid
       - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - in: query
         name: direction
         schema:
           type: string
@@ -387,6 +439,32 @@ paths:
         description: |-
           * `in` - Entrada
           * `out` - Saída
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
+      - in: query
+        name: origin
+        schema:
+          type: string
+          enum:
+          - manual
+          - purchase
+          - purchase_refund
+          - sale
+          - sale_refund
+          - supply
+          - supply_refund
+        description: |-
+          * `sale` - Venda
+          * `sale_refund` - Estorno de venda
+          * `purchase` - Compra de estoque
+          * `purchase_refund` - Estorno de compra de estoque
+          * `supply` - Compra de insumo
+          * `supply_refund` - Estorno de compra de insumo
+          * `manual` - Manual
       - name: page
         required: false
         in: query
@@ -420,6 +498,12 @@ paths:
         name: active
         schema:
           type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -600,6 +684,12 @@ paths:
         description: |-
           * `shopee` - Shopee
           * `mercado_livre` - Mercado Livre
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -832,6 +922,12 @@ paths:
         description: |-
           * `mercado_livre` - Mercado Livre
           * `shopee` - Shopee
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -1077,6 +1173,12 @@ paths:
         description: |-
           * `mercado_livre` - Mercado Livre
           * `shopee` - Shopee
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -1141,6 +1243,12 @@ paths:
       parameters:
       - in: query
         name: marketplace
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
         schema:
           type: string
       - name: page
@@ -1249,6 +1357,32 @@ paths:
     get:
       operationId: movements_list
       parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: direction
+        schema:
+          type: string
+          enum:
+          - in
+          - out
+        description: |-
+          * `in` - Entrada
+          * `out` - Saída
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -1306,6 +1440,12 @@ paths:
     get:
       operationId: product_images_list
       parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -1410,6 +1550,16 @@ paths:
         schema:
           type: string
           format: uuid
+      - in: query
+        name: in_stock
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -1550,6 +1700,16 @@ paths:
       operationId: receipts_list
       parameters:
       - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - in: query
         name: kind
         schema:
           type: string
@@ -1559,12 +1719,22 @@ paths:
         description: |-
           * `purchase` - Compra
           * `production` - Produção
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
         description: Um número de página dentro do conjunto de resultados paginado.
         schema:
           type: integer
+      - in: query
+        name: paid
+        schema:
+          type: boolean
       - in: query
         name: product
         schema:
@@ -1576,6 +1746,16 @@ paths:
         description: Um termo de busca.
         schema:
           type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - confirmed
+        description: |-
+          * `confirmed` - Confirmada
+          * `cancelled` - Cancelada
       tags:
       - receipts
       security:
@@ -1710,12 +1890,32 @@ paths:
           * `mercado_livre` - Mercado Livre
           * `shopee` - Shopee
           * `other` - Outro
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
         description: Um número de página dentro do conjunto de resultados paginado.
         schema:
           type: integer
+      - in: query
+        name: received
+        schema:
+          type: boolean
       - name: search
         required: false
         in: query
@@ -1898,7 +2098,17 @@ paths:
           type: string
           format: uuid
       - in: query
+        name: in_stock
+        schema:
+          type: boolean
+      - in: query
         name: material
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
         schema:
           type: string
       - name: page
@@ -2069,6 +2279,12 @@ paths:
         name: is_filament
         schema:
           type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -2214,6 +2430,32 @@ paths:
       description: Razão do saldo. Criar aqui é dar baixa ou ajustar (delta negativo
         ou positivo, com motivo).
       parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: direction
+        schema:
+          type: string
+          enum:
+          - in
+          - out
+        description: |-
+          * `in` - Entrada
+          * `out` - Saída
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -2273,12 +2515,32 @@ paths:
     get:
       operationId: supply_receipts_list
       parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - name: ordering
+        required: false
+        in: query
+        description: Qual campo usar ao ordenar os resultados.
+        schema:
+          type: string
       - name: page
         required: false
         in: query
         description: Um número de página dentro do conjunto de resultados paginado.
         schema:
           type: integer
+      - in: query
+        name: paid
+        schema:
+          type: boolean
       - name: search
         required: false
         in: query

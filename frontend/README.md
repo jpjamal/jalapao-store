@@ -47,6 +47,8 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   cria as vendas só quando o dono manda (spec 015).
 - /caixa: entradas/saídas, origem e categoria de cada lançamento (manual escolhe e pode reclassificar), filtro
   e resumo por categoria, painel *Gerenciar categorias* e aviso dos "A classificar" (spec 026).
+- Listagens (spec 027): toda lista usa `shared/hooks/use-list-query.ts` (`useListQuery` no servidor, `useClientList`
+  na tela), `SortableTh` e `ListToolbar` (busca, filtros, período, *Ordenar por*, *Limpar filtros*).
 - /ferramentas: índice das três ferramentas.
 - /ferramentas/impressao-3d: custo da peça e botão de salvar no catálogo, com SKU gerado pelo backend.
   Aceita peça multicolor: linhas de filamento cadastrado com as gramas de cada um (spec 024).

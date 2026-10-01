@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
+from apps.catalog.api.filters import ProductFilter
 from apps.catalog.api.permissions import DraftChangePermission, DraftPublishPermission
 from apps.catalog.api.serializers import (
     CategorySerializer,
@@ -31,6 +32,8 @@ class CategoryViewSet(
     serializer_class = CategorySerializer
     filterset_fields = ["active", "uses_printing_profile"]
     search_fields = ["name"]
+    ordering_fields = ["name", "products_count", "uses_printing_profile", "active"]
+    ordering_text_fields = ["name"]
 
 
 class ProductViewSet(
@@ -46,8 +49,14 @@ class ProductViewSet(
         .all()
     )
     serializer_class = ProductSerializer
-    filterset_fields = ["category", "active"]
-    search_fields = ["name", "sku", "gtin", "brand", "model"]
+    filterset_class = ProductFilter
+    search_fields = ["name", "sku", "gtin", "brand", "model", "category__name"]
+    ordering_fields = [
+        "name", "sku", "category__name", "brand", "model", "cost_price", "sale_price", "stock__quantity",
+        "stock__value", "active", "created_at",
+    ]
+    ordering_text_fields = ["name", "sku", "category__name", "brand", "model"]
+    ordering_zero_fields = ["stock__quantity", "stock__value"]
 
 
 class ProductImageViewSet(
@@ -108,6 +117,9 @@ class ListingDraftViewSet(
     queryset = ListingDraft.objects.select_related("product", "listing").prefetch_related("ordered_images").all()
     serializer_class = ListingDraftSerializer
     filterset_fields = ["product", "channel"]
+    search_fields = ["title", "product__name", "product__sku"]
+    ordering_fields = ["product__name", "channel", "title", "updated_at"]
+    ordering_text_fields = ["product__name", "title"]
 
     # ---------- entrega 2: consultar categoria e validar, sem publicar (spec 011) ----------
 

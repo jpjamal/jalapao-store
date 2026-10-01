@@ -12,8 +12,18 @@ import { Field } from "@/shared/components/fields";
 import { Empty, ErrorMessage } from "@/shared/components/feedback";
 import { ProductPicker } from "@/features/catalog/components/product-picker";
 import { FormActions } from "@/shared/components/form-actions";
+import { ConfirmDialog } from "@/shared/components/confirm-dialog";
+import { PayDialogBody, PaySelectionBar, SelectBox } from "@/shared/components/pay-selection";
+import { useSelection } from "@/shared/hooks/use-selection";
+import { payInOrder } from "@/shared/lib/pay";
 import { PageHeader } from "@/shared/components/page-header";
 import { Pagination } from "@/shared/components/pagination";
+import { useListQuery } from "@/shared/hooks/use-list-query";
+import {
+  ClearFilters, DateRange, FilterSelect, ListToolbar, SearchBox, SortSelect,
+} from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 
 type Receipt = {
   id: string;
@@ -29,12 +39,23 @@ type Receipt = {
   paid_at: string | null;
   status: string;
 };
+// compra confirmada e ainda sem pagamento (produção não gera saída; cancelada não se paga)
+const isPayable = (r: Receipt) => r.kind === "purchase" && r.status === "confirmed" && !r.paid_at;
 const today = () => new Date().toLocaleDateString("en-CA");
+const receiptColumns: SortColumn[] = [
+  { key: "occurred_on", label: "Data", kind: "date" },
+  { key: "product_name", label: "Produto", kind: "text" },
+  { key: "quantity", label: "Quantidade", kind: "number" },
+  { key: "unit_cost", label: "Custo unitário", kind: "number" },
+  { key: "total", label: "Total", kind: "number" },
+  { key: "paid_at", label: "Pagamento", kind: "date" },
+];
 
 export default function Receipts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [rows, setRows] = useState<Page<Receipt> | null>(null);
-  const [page, setPage] = useState(1);
+  // busca, filtros, ordem e página do histórico, no servidor (spec 027)
+  const q = useListQuery({ kind: "", status: "", paid: "", date_from: "", date_to: "" });
   const [kind, setKind] = useState("purchase");
   const [productId, setProductId] = useState("");
   const [cost, setCost] = useState("");
@@ -43,17 +64,50 @@ export default function Receipts() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [paying, setPaying] = useState<Receipt | null>(null);
-  const load = useCallback(() => {
-    Promise.all([allProducts(), api<Page<Receipt>>(`receipts?page=${page}`)])
-      .then(([p, r]) => {
-        setProducts(p);
-        setRows(r);
-      })
+  // compras na janela de pagamento (uma ou várias); vazio = janela fechada (spec 028)
+  const [paying, setPaying] = useState<Receipt[]>([]);
+  const [payError, setPayError] = useState("");
+  const loadProducts = useCallback(() => {
+    allProducts()
+      .then(setProducts)
       .catch((e) => setError(e.message));
-  }, [page]);
-  useEffect(load, [load]);
+  }, []);
+  const loadRows = useCallback(() => {
+    api<Page<Receipt>>(`receipts?${q.queryString}`)
+      .then(setRows)
+      .catch((e) => setError(e.message));
+  }, [q.queryString]);
+  useEffect(loadProducts, [loadProducts]);
+  useEffect(loadRows, [loadRows]);
+  // o aviso fica no topo e a lista embaixo: depois de pagar, leva a tela até o aviso
+  useEffect(() => {
+    if (notice) document.getElementById("aviso-pagamento")?.scrollIntoView({ block: "center" });
+  }, [notice]);
+  const payable = (rows?.results ?? []).filter(isPayable);
+  const sel = useSelection(payable);
+  const load = useCallback(() => {
+    loadProducts();
+    loadRows();
+  }, [loadProducts, loadRows]);
   useEffect(() => setKey(crypto.randomUUID()), []);
+  async function confirmPay() {
+    if (!paying.length) return;
+    setBusy(true);
+    setPayError("");
+    const r = await payInOrder(
+      paying,
+      (item) => api(`receipts/${item.id}/pay`, { method: "POST", body: JSON.stringify({ occurred_on: today() }) }),
+      (item) => `${item.quantity} × ${item.product_name} (${brl(item.total)})`,
+    );
+    setBusy(false);
+    if (r.paid.length) {
+      setNotice(r.paid.length === 1 ? "Compra paga. Saída registrada no caixa uma única vez." : `${r.paid.length} compras pagas. Uma saída no caixa para cada uma.`);
+      sel.clear();
+      load();
+    }
+    setPaying(r.rest);
+    setPayError(r.error);
+  }
   async function cancel(r: Receipt) {
     const nome = r.kind === "purchase" ? "compra" : "produção";
     if (
@@ -84,7 +138,7 @@ export default function Receipts() {
       />
       <ErrorMessage message={error} />
       {notice && (
-        <p role="status" className="text-success mb-4">
+        <p id="aviso-pagamento" role="status" className="text-success mb-4">
           {notice}
         </p>
       )}
@@ -215,59 +269,19 @@ export default function Receipts() {
           </FormActions>
         </form>
       </Card>
-      {paying && (
-        <Card className="mb-5">
-          <h2>Pagar compra: {paying.product_name}</h2>
-          <p className="mb-4">
-            Saída de {brl(paying.total)} do caixa. Use somente se este pagamento
-            ainda não foi lançado manualmente.
-          </p>
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setBusy(true);
-              setError("");
-              const data = Object.fromEntries(new FormData(e.currentTarget));
-              try {
-                await api(`receipts/${paying.id}/pay`, {
-                  method: "POST",
-                  body: JSON.stringify(data),
-                });
-                setPaying(null);
-                setNotice(
-                  "Compra paga. Saída registrada no caixa uma única vez.",
-                );
-                load();
-              } catch (err) {
-                setError((err as Error).message);
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            <Field
-              name="occurred_on"
-              id="payment_date"
-              label="Data do pagamento"
-              type="date"
-              value={today()}
-              max={today()}
-              required
-            />
-            <FormActions className="mt-4">
-              <Button disabled={busy}>Confirmar pagamento</Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={() => setPaying(null)}
-              >
-                Voltar
-              </Button>
-            </FormActions>
-          </form>
-        </Card>
-      )}
+      <ConfirmDialog
+        open={paying.length > 0}
+        title={paying.length > 1 ? "Pagar compras?" : "Pagar compra?"}
+        confirmLabel="Confirmar pagamento"
+        busy={busy}
+        error={payError}
+        onConfirm={confirmPay}
+        onCancel={() => setPaying([])}
+      >
+        <PayDialogBody
+          items={paying.map((r) => ({ id: r.id, label: `${r.quantity} × ${r.product_name}`, total: r.total }))}
+        />
+      </ConfirmDialog>
       <Card>
         <h2>Histórico de entradas</h2>
         <p className="text-sm text-muted-foreground mb-4">
@@ -276,21 +290,71 @@ export default function Receipts() {
           tiver outra movimentação depois dela; o registro continua aqui como
           cancelado. Depois disso, corrija pelos ajustes de estoque.
         </p>
+        <ListToolbar>
+          <SearchBox
+            value={q.search}
+            onChange={q.setSearch}
+            placeholder="Produto, fornecedor, referência ou observação…"
+          />
+          <FilterSelect
+            label="Origem"
+            value={q.filters.kind}
+            onChange={(v) => q.setFilter("kind", v)}
+            options={[["purchase", "Compra"], ["production", "Produção"]]}
+          />
+          <FilterSelect
+            label="Situação"
+            value={q.filters.status}
+            onChange={(v) => q.setFilter("status", v)}
+            options={[["confirmed", "Confirmadas"], ["cancelled", "Canceladas"]]}
+          />
+          <FilterSelect
+            label="Pagamento"
+            value={q.filters.paid}
+            onChange={(v) => q.setFilter("paid", v)}
+            options={[["true", "Pagas"], ["false", "A pagar"]]}
+          />
+          <DateRange
+            from={q.filters.date_from}
+            to={q.filters.date_to}
+            onFrom={(v) => q.setFilter("date_from", v)}
+            onTo={(v) => q.setFilter("date_to", v)}
+          />
+          <SortSelect columns={receiptColumns} sort={q.sort} onChange={q.setSort} />
+          <ClearFilters visible={q.hasActiveFilters} onClick={q.clear} />
+        </ListToolbar>
+        <PaySelectionBar
+          count={sel.selected.length}
+          total={sel.selected.reduce((acc, r) => acc + Number(r.total), 0)}
+          busy={busy}
+          onPay={() => { setPayError(""); setPaying(sel.selected); }}
+          onClear={sel.clear}
+        />
         {!rows ? (
           <p>Carregando…</p>
         ) : !rows.results.length ? (
-          <Empty>Nenhuma compra ou produção registrada.</Empty>
+          <Empty>
+            {q.hasActiveFilters ? "Nenhuma entrada encontrada com esses filtros." : "Nenhuma compra ou produção registrada."}
+          </Empty>
         ) : (
           <div className="overflow-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Data / origem</th>
-                  <th>Produto / referência</th>
-                  <th>Quantidade</th>
-                  <th>Custo unitário</th>
-                  <th>Total</th>
-                  <th>Pagamento</th>
+                  <th>
+                    <SelectBox
+                      checked={sel.allChecked}
+                      indeterminate={sel.someChecked}
+                      onChange={sel.toggleAll}
+                      label="Selecionar todas as compras a pagar desta lista"
+                    />
+                  </th>
+                  <SortableTh label="Data / origem" sortKey="occurred_on" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Produto / referência" sortKey="product_name" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Quantidade" sortKey="quantity" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Custo unitário" sortKey="unit_cost" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Total" sortKey="total" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Pagamento" sortKey="paid_at" sort={q.sort} onSort={q.toggleSort} />
                   <th>
                     <span className="sr-only">Ações</span>
                   </th>
@@ -302,6 +366,15 @@ export default function Receipts() {
                     key={r.id}
                     className={r.status === "cancelled" ? "opacity-60" : undefined}
                   >
+                    <td data-label="Selecionar">
+                      {isPayable(r) && (
+                        <SelectBox
+                          checked={sel.has(r.id)}
+                          onChange={() => sel.toggle(r.id)}
+                          label={`Selecionar ${r.product_name} para pagar`}
+                        />
+                      )}
+                    </td>
                     <td data-label="Data / origem">
                       <span>
                         {r.occurred_on.split("-").reverse().join("/")}
@@ -331,7 +404,7 @@ export default function Receipts() {
                         <Button
                           variant="outline"
                           disabled={busy}
-                          onClick={() => setPaying(r)}
+                          onClick={() => { setPayError(""); setPaying([r]); }}
                         >
                           Pagar {brl(r.total)}
                         </Button>
@@ -358,9 +431,9 @@ export default function Receipts() {
         <Pagination
           count={rows?.count || 0}
           noun={["entrada", "entradas"]}
-          page={page}
+          page={q.page}
           hasNext={!!rows?.next}
-          onPage={setPage}
+          onPage={q.setPage}
         />
       </Card>
     </>

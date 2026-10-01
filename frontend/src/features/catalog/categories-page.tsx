@@ -9,6 +9,12 @@ import { FormActions } from "@/shared/components/form-actions";
 import { PageHeader } from "@/shared/components/page-header";
 import { ErrorMessage, Empty } from "@/shared/components/feedback";
 import { Field } from "@/shared/components/fields";
+import { useClientList, useListQuery } from "@/shared/hooks/use-list-query";
+import {
+  ClearFilters, DateRange, FilterSelect, ListToolbar, SearchBox, SortSelect,
+} from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 
 function CategoryForm({
   category,
@@ -93,10 +99,30 @@ function CategoryForm({
   );
 }
 
+const columns: SortColumn[] = [
+  { key: "name", label: "Categoria", kind: "text" },
+  { key: "uses_printing_profile", label: "Parâmetros 3D", kind: "text" },
+  { key: "products_count", label: "Produtos", kind: "number" },
+  { key: "active", label: "Status", kind: "text" },
+];
+
 export default function Categories() {
   const [data, setData] = useState<Page<Category> | null>(null);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Category | null | undefined>(undefined);
+  const list = useClientList(data?.results ?? null, {
+    texts: (c) => [c.name],
+    filters: {
+      status: (c, v) => (v === "active" ? c.active : !c.active),
+      printing: (c, v) => (v === "yes" ? c.uses_printing_profile : !c.uses_printing_profile),
+    },
+    getters: {
+      name: (c) => c.name,
+      uses_printing_profile: (c) => c.uses_printing_profile,
+      products_count: (c) => c.products_count,
+      active: (c) => c.active,
+    },
+  });
   const load = useCallback(() => {
     setError("");
     api<Page<Category>>("categories")
@@ -124,26 +150,47 @@ export default function Categories() {
         />
       )}
       <Card>
+        {data && data.results.length > 0 && (
+          <ListToolbar>
+            <SearchBox value={list.search} onChange={list.setSearch} placeholder="Nome da categoria…" />
+            <FilterSelect
+              label="Situação"
+              value={list.filters.status ?? ""}
+              onChange={(v) => list.setFilter("status", v)}
+              options={[["active", "Ativas"], ["inactive", "Inativas"]]}
+            />
+            <FilterSelect
+              label="Parâmetros 3D"
+              value={list.filters.printing ?? ""}
+              onChange={(v) => list.setFilter("printing", v)}
+              options={[["yes", "Usa parâmetros 3D"], ["no", "Não usa"]]}
+            />
+            <SortSelect columns={columns} sort={list.sort} onChange={list.setSort} />
+            <ClearFilters visible={list.hasActiveFilters} onClick={list.clear} />
+          </ListToolbar>
+        )}
         {!data ? (
           <p role="status">Carregando categorias…</p>
         ) : !data.results.length ? (
           <Empty>Nenhuma categoria cadastrada.</Empty>
+        ) : !list.visible?.length ? (
+          <Empty>Nenhuma categoria encontrada com esses filtros.</Empty>
         ) : (
           <div className="overflow-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Categoria</th>
-                  <th>Parâmetros 3D</th>
-                  <th>Produtos</th>
-                  <th>Status</th>
+                  <SortableTh label="Categoria" sortKey="name" sort={list.sort} onSort={list.toggle} />
+                  <SortableTh label="Parâmetros 3D" sortKey="uses_printing_profile" sort={list.sort} onSort={list.toggle} />
+                  <SortableTh label="Produtos" sortKey="products_count" sort={list.sort} onSort={list.toggle} />
+                  <SortableTh label="Status" sortKey="active" sort={list.sort} onSort={list.toggle} />
                   <th>
                     <span className="sr-only">Ações</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {data.results.map((c) => (
+                {list.visible.map((c) => (
                   <tr key={c.id}>
                     <td data-role="title">
                       <strong>{c.name}</strong>

@@ -6,6 +6,7 @@ from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.finance.api.filters import CashFilter
 from apps.finance.api.serializers import CashCategorySerializer, CashSerializer
 from apps.finance.models import CashCategory, CashEntry
 
@@ -23,6 +24,8 @@ class CashCategoryViewSet(
     serializer_class = CashCategorySerializer
     filterset_fields = ["direction", "active", "counts_in_result"]
     search_fields = ["name"]
+    ordering_fields = ["name", "direction", "entries_count", "counts_in_result", "active"]
+    ordering_text_fields = ["name"]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -37,7 +40,10 @@ class CashViewSet(
 ):
     queryset = CashEntry.objects.select_related("category").all()
     serializer_class = CashSerializer
-    filterset_fields = ["direction", "category"]
+    filterset_class = CashFilter
+    search_fields = ["description", "category__name"]
+    ordering_fields = ["occurred_on", "created_at", "amount", "description", "category__name", "direction"]
+    ordering_text_fields = ["description", "category__name"]
     # só PATCH: reclassificar é a única edição permitida num lançamento
     http_method_names = ["get", "post", "patch", "head", "options"]
 

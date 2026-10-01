@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from apps.inventory.api.filters import MovementFilter, ReceiptFilter
 from apps.inventory.api.serializers import MovementSerializer, PaymentInput, ReceiptInput, ReceiptSerializer
 from apps.inventory.models import Movement, Receipt
 from apps.inventory.services import cancel_receipt, create_receipt, pay_receipt
@@ -12,13 +13,21 @@ from apps.inventory.services import cancel_receipt, create_receipt, pay_receipt
 class MovementViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Movement.objects.select_related("product").all()
     serializer_class = MovementSerializer
-    filterset_fields = ["product"]
+    filterset_class = MovementFilter
+    search_fields = ["product__name", "product__sku", "reason"]
+    ordering_fields = ["created_at", "product__name", "delta", "balance_after", "value_delta"]
+    ordering_text_fields = ["product__name"]
 
 
 class ReceiptViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Receipt.objects.all()
     serializer_class = ReceiptSerializer
-    filterset_fields = ["product", "kind"]
+    filterset_class = ReceiptFilter
+    search_fields = ["product_name", "supplier", "reference", "notes"]
+    ordering_fields = [
+        "occurred_on", "created_at", "product_name", "quantity", "unit_cost", "total", "kind", "status", "paid_at",
+    ]
+    ordering_text_fields = ["product_name"]
 
     @extend_schema(request=ReceiptInput, responses={201: ReceiptSerializer})
     def create(self, request):

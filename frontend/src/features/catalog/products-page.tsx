@@ -9,7 +9,10 @@ import { allSupplies } from "@/features/supplies/api";
 import { type Supply } from "@/features/supplies/types";
 import { type Page } from "@/shared/api/types";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
+import { useListQuery } from "@/shared/hooks/use-list-query";
+import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "@/shared/components/list-toolbar";
+import { SortableTh } from "@/shared/components/sortable-th";
+import { type SortColumn } from "@/shared/lib/list";
 import { FormActions } from "@/shared/components/form-actions";
 import { PageHeader } from "@/shared/components/page-header";
 import { Pagination } from "@/shared/components/pagination";
@@ -311,11 +314,20 @@ function ProductForm({
     </Card>
   );
 }
+const productColumns: SortColumn[] = [
+  { key: "name", label: "Produto", kind: "text" },
+  { key: "category__name", label: "Categoria", kind: "text" },
+  { key: "cost_price", label: "Custo de referência", kind: "number" },
+  { key: "sale_price", label: "Preço", kind: "number" },
+  { key: "stock__quantity", label: "Estoque", kind: "number" },
+  { key: "active", label: "Status", kind: "text" },
+];
+
 export default function Products() {
   const [data, setData] = useState<Page<Product> | null>(null);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  // busca, filtros, ordem e página (spec 027): a ordem e os filtros valem para a lista inteira, no servidor
+  const q = useListQuery({ category: "", active: "", in_stock: "" });
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
   const [categories, setCategories] = useState<Category[] | null>(null);
   useEffect(() => {
@@ -325,12 +337,10 @@ export default function Products() {
   }, []);
   const load = useCallback(() => {
     setError("");
-    api<Page<Product>>(
-      `products?search=${encodeURIComponent(search)}&page=${page}`,
-    )
+    api<Page<Product>>(`products?${q.queryString}`)
       .then(setData)
       .catch((e) => setError(e.message));
-  }, [search, page]);
+  }, [q.queryString]);
   useEffect(load, [load]);
   return (
     <>
@@ -353,17 +363,34 @@ export default function Products() {
         />
       )}
       <Card>
-        <Input
-          aria-label="Buscar produtos"
-          placeholder="Buscar por nome ou código…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          type="search"
-          className="sm:max-w-md mb-5"
-        />
+        <ListToolbar>
+          <SearchBox
+            value={q.search}
+            onChange={q.setSearch}
+            placeholder="Nome, código, marca, modelo ou categoria…"
+          />
+          <FilterSelect
+            label="Categoria"
+            value={q.filters.category}
+            onChange={(v) => q.setFilter("category", v)}
+            options={(categories || []).map((c) => [c.id, c.name])}
+            allLabel="Todas"
+          />
+          <FilterSelect
+            label="Situação"
+            value={q.filters.active}
+            onChange={(v) => q.setFilter("active", v)}
+            options={[["true", "Ativos"], ["false", "Inativos"]]}
+          />
+          <FilterSelect
+            label="Estoque"
+            value={q.filters.in_stock}
+            onChange={(v) => q.setFilter("in_stock", v)}
+            options={[["true", "Com saldo"], ["false", "Sem saldo"]]}
+          />
+          <SortSelect columns={productColumns} sort={q.sort} onChange={q.setSort} />
+          <ClearFilters visible={q.hasActiveFilters} onClick={q.clear} />
+        </ListToolbar>
         {!data ? (
           <p role="status">Carregando catálogo…</p>
         ) : !data.results.length ? (
@@ -373,12 +400,12 @@ export default function Products() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Produto</th>
-                  <th>Categoria</th>
-                  <th>Custo de referência</th>
-                  <th>Preço</th>
-                  <th>Estoque</th>
-                  <th>Status</th>
+                  <SortableTh label="Produto" sortKey="name" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Categoria" sortKey="category__name" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Custo de referência" sortKey="cost_price" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Preço" sortKey="sale_price" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Estoque" sortKey="stock__quantity" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Status" sortKey="active" sort={q.sort} onSort={q.toggleSort} />
                   <th>
                     <span className="sr-only">Ações</span>
                   </th>
@@ -427,9 +454,9 @@ export default function Products() {
         <Pagination
           count={data?.count || 0}
           noun={["produto", "produtos"]}
-          page={page}
+          page={q.page}
           hasNext={!!data?.next}
-          onPage={setPage}
+          onPage={q.setPage}
         />
       </Card>
     </>

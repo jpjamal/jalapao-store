@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from apps.sales.api.filters import SaleFilter
 from apps.sales.api.serializers import SaleInput, SaleSerializer
 from apps.sales.models import Sale
 from apps.sales.services import cancel_sale, create_sale, receive_sale
@@ -12,7 +13,10 @@ from apps.sales.services import cancel_sale, create_sale, receive_sale
 class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Sale.objects.prefetch_related("items", "supply_lines").all()
     serializer_class = SaleSerializer
-    filterset_fields = ["channel", "status"]
+    filterset_class = SaleFilter
+    search_fields = ["reference", "external_id", "items__product_name"]
+    ordering_fields = ["created_at", "gross", "net", "profit", "channel", "status", "received_at", "reference"]
+    ordering_text_fields = ["reference"]
 
     @extend_schema(request=SaleInput, responses={201: SaleSerializer})
     def create(self, request):
