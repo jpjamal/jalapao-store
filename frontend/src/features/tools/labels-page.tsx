@@ -37,7 +37,8 @@ export default function Etiquetas() {
   const [cfg, setCfg] = useState<Config>({
     tamanho: "4x6",
     dpmm: "8",
-    pagina: "A4",
+    // vazio = PDF do tamanho da etiqueta (como na página original); A4 centraliza a etiqueta na folha
+    pagina: "",
     rotacao: "0",
     padrao: "nome_cidade",
     ocr: true,

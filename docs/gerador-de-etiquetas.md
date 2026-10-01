@@ -66,6 +66,14 @@ antes de baixar, e trocar o padrão renomeia tudo de uma vez.
 Se o OCR não achar o nome, o arquivo cai para `<nome do txt>_<número>`, e o cartão avisa
 "não consegui ler o nome — digite".
 
+## Tamanho da página do PDF
+
+O seletor **Página do PDF** começa em **Do tamanho da etiqueta**: cada PDF tem só a etiqueta (4 × 6 pol,
+102 × 152 mm), pronto para a impressora térmica. **A4** e **Carta** põem a etiqueta **centralizada**
+numa folha comum, com o resto em branco — serve para imprimir em impressora de papel, mas não para a
+térmica. O padrão voltou a ser o tamanho da etiqueta em 01/10/2026: na migração para o app ele tinha
+ficado em A4 por engano, e os PDFs saíam numa folha inteira.
+
 ## Onde os PDFs caem
 
 - **Botão "Escolher pasta de destino"**: salva direto na pasta escolhida. Funciona no
