@@ -1,6 +1,6 @@
 # Plano
 
-> Proposta. Só vale depois da aprovação da [spec](spec.md).
+> Aprovada; ver a [spec](spec.md).
 
 **Modelo.** `CashCategory(Entity)` no app `finance`: `name` (único sem diferenciar maiúscula, com `casefold()`
 no serializer, como nas outras categorias), `direction` (entrada, saída, ambas), `counts_in_result`, `active`
@@ -9,8 +9,7 @@ código as encontra, para renomear não quebrar nada). `CashEntry.category` é c
 
 **Categoria automática pela origem.** O `save()` do `CashEntry` preenche a categoria do sistema quando ela
 falta, pelas ligações que o lançamento já tem (`sale`, `receipt`, `supply_receipt` e os estornos
-`refund_of_receipt` e `refund_of_supply_receipt`); no insumo, a chave é **Compra de filamento** quando a
-categoria do insumo tem `is_filament` e **Compra de insumos** nos demais casos, no mesmo estilo do SKU e da categoria padrão do produto.
+`refund_of_receipt` e `refund_of_supply_receipt`), no mesmo estilo do SKU e da categoria padrão do produto.
 Assim todo caminho que cria lançamento (venda, compra, insumo, estorno, API) fica coberto sem mexer nos
 serviços. Lançamento sem origem e sem categoria é recusado pela API; no código vai para **A classificar**.
 
@@ -24,10 +23,11 @@ sistema, e ganha `PATCH` que **só** altera `category` de lançamento manual (qu
 com `change_cashentry`. A resposta traz `category_name` e `origin` (venda, compra de produto, compra de
 insumo, estorno ou manual). Um resumo por categoria (`cash/summary/`) soma entradas e saídas.
 
-**Resultado.** `DashboardView` ganha `business_result` (lucro real mais as entradas manuais que contam menos as
-saídas manuais que contam) e `unclassified_count`. O cálculo é uma soma sobre `CashEntry` das categorias com
-`counts_in_result`: as do dono e as do sistema **Compra de insumos** e seu estorno (o estorno entra com o
-sinal contrário). As outras categorias do sistema ficam de fora.
+**Resultado.** `DashboardView` ganha `business_result` e `unclassified_count`. O resultado é o lucro real mais
+as entradas e menos as saídas dos lançamentos manuais cujas categorias têm `counts_in_result`, menos os
+pagamentos de compra de insumo (e mais os estornos) **cuja categoria de insumo tem `counts_as_expense`**.
+`SupplyCategory.counts_as_expense` é um campo novo (migração em `supplies`, com os valores iniciais da
+spec); o cálculo olha a categoria do insumo na hora, então mudar a opção vale também para o passado.
 
 **Frontend.** `features/finance/`: formulário com categoria, coluna e filtro, resumo por categoria e painel
 **Gerenciar categorias** (como em Insumos); a coluna Origem usa o `origin` da API. Tela inicial: cartão

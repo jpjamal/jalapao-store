@@ -20,6 +20,8 @@ const labels: Record<string, string> = {
   roll_price: "Preço do rolo",
   unit: "Unidade",
   is_filament: "Categoria de filamento",
+  counts_as_expense: "Conta como despesa",
+  counts_in_result: "Conta no resultado",
   filaments: "Filamentos",
   filament: "Filamento",
   grams: "Gramas",

@@ -64,7 +64,13 @@ completo e regras de dependência em [../docs/architecture.md](../docs/architect
 - inventory.Receipt: compras/produções por produto com custo congelado; Stock.value mantém
   avaliação pelo custo médio móvel. Product.cost_price é apenas referência de novas entradas.
 - sales: Sale 1:N SaleItem; snapshots, chave idempotente e cancelamento reversível.
-- finance: entradas/saídas imutáveis. Recebimento e estorno por venda são únicos.
+- finance: entradas/saídas imutáveis. Recebimento e estorno por venda são únicos. Spec 026: todo
+  lançamento tem `CashCategory` (direção, `counts_in_result`, ativa; categorias do sistema têm `system_key`
+  e são só leitura). `CashEntry.save()` põe a categoria do sistema pela origem (`domain/categories.py`); o
+  manual exige categoria de direção compatível pela API e depois só a categoria muda (PATCH). `cash/summary/`
+  soma por categoria e `origin` diz de onde veio o lançamento. O Resultado do negócio (`services.py`, no
+  painel como `business_result`) soma o lucro real, os manuais que contam e a despesa de insumos das
+  categorias com `SupplyCategory.counts_as_expense`; `unclassified_count` avisa os "A classificar".
 - integrations: Listing relaciona produto interno a item/user_product/family; outbox transacional.
   Tokens de marketplace são cifrados em repouso com chave derivada de DJANGO_SECRET_KEY;
   preserve esse segredo ao atualizar a instalação. Cada anúncio Shopee acompanha a versão

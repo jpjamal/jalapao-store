@@ -56,6 +56,7 @@ erDiagram
   Receipt ||--o| Movement : gera
   Receipt ||--o| CashEntry : pagamento
   Receipt ||--o| CashEntry : estorno_ao_cancelar
+  CashCategory ||--o{ CashEntry : classifica
   Product ||--o{ ProductImage : fotos
   Product ||--o{ ListingDraft : rascunho_por_canal
   ListingDraft ||--o| Listing : publicado_como
@@ -187,6 +188,7 @@ As specs anteriores à 017 citam os caminhos da época; a tabela acima faz a pon
 | Lucro real | O mesmo lucro, só das vendas confirmadas que já foram recebidas (spec 025) |
 | A receber | Líquido das vendas confirmadas não recebidas |
 | Caixa | Entradas efetivas − saídas efetivas, incluindo estornos |
+| Resultado do negócio | Lucro real + entradas manuais que contam − saídas manuais que contam − compras de insumo pagas (menos estornos) das categorias de insumo que contam como despesa (spec 026); ver [caixa](caixa.md) |
 
 Fluxo de caixa manual não altera automaticamente lucro de vendas. Compra/produção de
 estoque é registrada como entrada e movimento; pagar uma compra gera saída de caixa uma vez.

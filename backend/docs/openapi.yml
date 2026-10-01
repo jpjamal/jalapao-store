@@ -103,6 +103,11 @@ paths:
       operationId: cash_list
       parameters:
       - in: query
+        name: category
+        schema:
+          type: string
+          format: uuid
+      - in: query
         name: direction
         schema:
           type: string
@@ -159,6 +164,251 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Cash'
+          description: ''
+  /cash-categories/:
+    get:
+      operationId: cash_categories_list
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`). As do
+        sistema são só de leitura.'
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+      - in: query
+        name: counts_in_result
+        schema:
+          type: boolean
+      - in: query
+        name: direction
+        schema:
+          type: string
+          enum:
+          - both
+          - in
+          - out
+        description: |-
+          * `in` - Entrada
+          * `out` - Saída
+          * `both` - Entrada ou saída
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - cash-categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCashCategoryList'
+          description: ''
+    post:
+      operationId: cash_categories_create
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`). As do
+        sistema são só de leitura.'
+      tags:
+      - cash-categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CashCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CashCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashCategory'
+          description: ''
+  /cash-categories/{id}/:
+    get:
+      operationId: cash_categories_retrieve
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`). As do
+        sistema são só de leitura.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este cash category.
+        required: true
+      tags:
+      - cash-categories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashCategory'
+          description: ''
+    put:
+      operationId: cash_categories_update
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`). As do
+        sistema são só de leitura.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este cash category.
+        required: true
+      tags:
+      - cash-categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CashCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CashCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashCategory'
+          description: ''
+    patch:
+      operationId: cash_categories_partial_update
+      description: 'Sem DELETE: categoria sai de uso desativando (`active`). As do
+        sistema são só de leitura.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este cash category.
+        required: true
+      tags:
+      - cash-categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCashCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCashCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCashCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashCategory'
+          description: ''
+  /cash/{id}/:
+    patch:
+      operationId: cash_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este cash entry.
+        required: true
+      tags:
+      - cash
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCash'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCash'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCash'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cash'
+          description: ''
+  /cash/summary/:
+    get:
+      operationId: cash_summary_list
+      description: Entradas e saídas somadas por categoria, de todos os lançamentos.
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: direction
+        schema:
+          type: string
+          enum:
+          - in
+          - out
+        description: |-
+          * `in` - Entrada
+          * `out` - Saída
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Um termo de busca.
+        schema:
+          type: string
+      tags:
+      - cash
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCashSummaryList'
           description: ''
   /categories/:
     get:
@@ -2268,13 +2518,16 @@ components:
       - ''
     Cash:
       type: object
+      description: |-
+        Lançamento do Caixa. Manual exige categoria; depois de criado, só a categoria do manual muda
+        (reclassificar). Valor, data, descrição e direção são imutáveis: correção é por lançamento inverso.
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
         direction:
-          $ref: '#/components/schemas/DirectionEnum'
+          $ref: '#/components/schemas/CashDirectionEnum'
         amount:
           type: string
           format: decimal
@@ -2285,6 +2538,15 @@ components:
         occurred_on:
           type: string
           format: date
+        category:
+          type: string
+          format: uuid
+        category_name:
+          type: string
+          readOnly: true
+        origin:
+          type: string
+          readOnly: true
         sale:
           type: string
           format: uuid
@@ -2304,13 +2566,98 @@ components:
           readOnly: true
       required:
       - actor
+      - category_name
       - created_at
       - description
       - direction
       - id
       - occurred_on
+      - origin
       - receipt
       - sale
+    CashCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        direction:
+          $ref: '#/components/schemas/CashCategoryDirectionEnum'
+        counts_in_result:
+          type: boolean
+        active:
+          type: boolean
+        is_system:
+          type: boolean
+          readOnly: true
+        entries_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - direction
+      - entries_count
+      - id
+      - is_system
+      - name
+      - updated_at
+    CashCategoryDirectionEnum:
+      enum:
+      - in
+      - out
+      - both
+      type: string
+      description: |-
+        * `in` - Entrada
+        * `out` - Saída
+        * `both` - Entrada ou saída
+    CashDirectionEnum:
+      enum:
+      - in
+      - out
+      type: string
+      description: |-
+        * `in` - Entrada
+        * `out` - Saída
+    CashSummary:
+      type: object
+      properties:
+        category:
+          type: string
+          format: uuid
+        category_name:
+          type: string
+        is_system:
+          type: boolean
+        counts_in_result:
+          type: boolean
+        entries:
+          type: integer
+        in_total:
+          type: string
+        out_total:
+          type: string
+      required:
+      - category
+      - category_name
+      - counts_in_result
+      - entries
+      - in_total
+      - is_system
+      - out_total
     Category:
       type: object
       properties:
@@ -2408,11 +2755,15 @@ components:
           type: string
         realized_profit:
           type: string
+        business_result:
+          type: string
         receivable:
           type: string
         cash_balance:
           type: string
         product_count:
+          type: integer
+        unclassified_count:
           type: integer
         certificate:
           allOf:
@@ -2424,6 +2775,7 @@ components:
             $ref: '#/components/schemas/AuthorizationAlert'
       required:
       - authorization_alerts
+      - business_result
       - cash_balance
       - certificate
       - gross
@@ -2432,14 +2784,7 @@ components:
       - realized_profit
       - receivable
       - stock_value
-    DirectionEnum:
-      enum:
-      - in
-      - out
-      type: string
-      description: |-
-        * `in` - Entrada
-        * `out` - Saída
+      - unclassified_count
     DraftPublication:
       type: object
       properties:
@@ -2902,6 +3247,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Account'
+    PaginatedCashCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashCategory'
     PaginatedCashList:
       type: object
       required:
@@ -2925,6 +3293,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Cash'
+    PaginatedCashSummaryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashSummary'
     PaginatedCategoryList:
       type: object
       required:
@@ -3224,6 +3615,85 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SupplyReceipt'
+    PatchedCash:
+      type: object
+      description: |-
+        Lançamento do Caixa. Manual exige categoria; depois de criado, só a categoria do manual muda
+        (reclassificar). Valor, data, descrição e direção são imutáveis: correção é por lançamento inverso.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        direction:
+          $ref: '#/components/schemas/CashDirectionEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        description:
+          type: string
+          maxLength: 240
+        occurred_on:
+          type: string
+          format: date
+        category:
+          type: string
+          format: uuid
+        category_name:
+          type: string
+          readOnly: true
+        origin:
+          type: string
+          readOnly: true
+        sale:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        receipt:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        actor:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedCashCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        direction:
+          $ref: '#/components/schemas/CashCategoryDirectionEnum'
+        counts_in_result:
+          type: boolean
+        active:
+          type: boolean
+        is_system:
+          type: boolean
+          readOnly: true
+        entries_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedCategory:
       type: object
       properties:
@@ -3503,6 +3973,8 @@ components:
           type: string
           maxLength: 100
         is_filament:
+          type: boolean
+        counts_as_expense:
           type: boolean
         active:
           type: boolean
@@ -4196,6 +4668,8 @@ components:
           type: string
           maxLength: 100
         is_filament:
+          type: boolean
+        counts_as_expense:
           type: boolean
         active:
           type: boolean

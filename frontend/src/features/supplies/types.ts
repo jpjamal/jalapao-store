@@ -3,6 +3,8 @@ export type SupplyCategory = {
   id: string;
   name: string;
   is_filament: boolean;
+  /* a compra paga entra como despesa no Resultado do negócio */
+  counts_as_expense: boolean;
   active: boolean;
   supplies_count: number;
   created_at: string;

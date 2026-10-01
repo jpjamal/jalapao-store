@@ -16,6 +16,9 @@ class SupplyCategory(Entity):
 
     name = models.CharField(max_length=100)
     is_filament = models.BooleanField(default=False)
+    # a compra paga de insumos desta categoria entra como despesa no Resultado do negócio (spec 026).
+    # Fica desligado onde o custo já está no custo da peça (filamento, acabamento, colas e fitas).
+    counts_as_expense = models.BooleanField(default=True)
     active = models.BooleanField(default=True)
 
     class Meta:

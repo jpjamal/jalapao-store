@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from apps.catalog.models import Product
 from apps.common.certificado import estado as estado_do_certificado
 from apps.finance.models import CashEntry
+from apps.finance.services import business_result, unclassified_count
 from apps.integrations.services.avisos import autorizacoes_a_vencer
 from apps.sales.models import Sale
 
@@ -32,9 +33,13 @@ class DashboardView(APIView):
             fields={
                 **{
                     key: serializers.CharField()
-                    for key in ("stock_value", "gross", "profit", "realized_profit", "receivable", "cash_balance")
+                    for key in (
+                        "stock_value", "gross", "profit", "realized_profit", "business_result",
+                        "receivable", "cash_balance",
+                    )
                 },
                 "product_count": serializers.IntegerField(),
+                "unclassified_count": serializers.IntegerField(),
                 "certificate": inline_serializer(
                     name="CertificateStatus",
                     fields={
@@ -64,6 +69,7 @@ class DashboardView(APIView):
             raise PermissionDenied()
         sales = Sale.objects.filter(status="confirmed")
         totals = sales.aggregate(gross=Sum("gross"), profit=Sum("profit"))
+        realized_profit = sales.filter(received_at__isnull=False).aggregate(total=Sum("profit"))["total"] or 0
         stock = Product.objects.aggregate(value=Sum("stock__value"))["value"] or 0
         cash = dict(CashEntry.objects.values_list("direction").annotate(total=Sum("amount")))
         return Response(
@@ -72,9 +78,10 @@ class DashboardView(APIView):
                 "gross": str(totals["gross"] or 0),
                 "profit": str(totals["profit"] or 0),
                 # lucro real: só das vendas confirmadas que já foram recebidas
-                "realized_profit": str(
-                    sales.filter(received_at__isnull=False).aggregate(total=Sum("profit"))["total"] or 0
-                ),
+                "realized_profit": str(realized_profit),
+                # resultado do negócio (spec 026): lucro real mais entradas e menos despesas que contam
+                "business_result": str(business_result(realized_profit)),
+                "unclassified_count": unclassified_count(),
                 "receivable": str(
                     sales.filter(received_at__isnull=True).aggregate(total=Sum("net"))["total"] or 0
                 ),

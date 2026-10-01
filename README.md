@@ -39,7 +39,7 @@ Documentação própria: [backend](backend/README.md) e [frontend](frontend/READ
 [Operação e recuperação](docs/operations.md). [Decisão monorepo](docs/adr/001-monorepo-modular.md).
 [Arquitetura, organização do código e relações do banco](docs/architecture.md).
 
-Guias: [manutenção (onde mexer)](docs/manutencao.md) · [produtos](docs/produtos.md) · [insumos](docs/insumos.md) ·
+Guias: [manutenção (onde mexer)](docs/manutencao.md) · [produtos](docs/produtos.md) · [insumos](docs/insumos.md) · [caixa](docs/caixa.md) ·
 [integrações](docs/integracoes.md) · ferramentas: [taxas de marketplace](docs/calculadora-marketplace.md),
 [custo de impressão 3D](docs/custo-impressao-3d.md), [etiquetas](docs/gerador-de-etiquetas.md).
 Versões antigas guardadas: [originais/LEIA-ME.md](originais/LEIA-ME.md).

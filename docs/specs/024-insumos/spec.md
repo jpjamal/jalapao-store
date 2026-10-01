@@ -51,6 +51,11 @@ cadastro, não há tela de estoque separada):
 
 - Embalagem para peça 3D e embalagem para produto comum ficam na mesma categoria; se quiser
   distinguir, é pelo nome do insumo (ex.: "Caixa pequena – peças 3D"). Não há categoria por uso.
+- **`counts_as_expense`** (conta como despesa quando comprado, spec 026): diz se a compra paga de insumos da
+  categoria entra como despesa no **Resultado do negócio**. Iniciais: sim em Embalagens, Etiquetas e papelaria,
+  Ferramentas e Outros; **não** em Filamentos, Acabamento e Colas e fitas, cujo custo já está no custo da peça
+  (linhas de filamento e custos fixos). Editável a qualquer momento; categoria nova nasce contando. Não
+  altera estoque, caixa nem o lucro das vendas.
 - `is_filament` **trava** depois que a categoria recebe o primeiro insumo, para nenhum insumo ficar
   sem os dados de filamento. A migração cria "Filamentos" com a opção ligada.
 

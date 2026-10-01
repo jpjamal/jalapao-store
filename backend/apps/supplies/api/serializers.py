@@ -13,7 +13,9 @@ class SupplyCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SupplyCategory
-        fields = ["id", "name", "is_filament", "active", "supplies_count", "created_at", "updated_at"]
+        fields = [
+            "id", "name", "is_filament", "counts_as_expense", "active", "supplies_count", "created_at", "updated_at",
+        ]
         read_only_fields = ["id", "supplies_count", "created_at", "updated_at"]
 
     def validate_name(self, value):

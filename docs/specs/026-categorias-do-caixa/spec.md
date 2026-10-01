@@ -1,9 +1,8 @@
 # 026 — Categorias nos lançamentos do Caixa e resultado do negócio
 
-> **Situação: proposta com todas as decisões fechadas, aguardando só o "pode implementar" do dono.** Nada
-> desta spec foi implementado. Decisões do dono (01/10/2026): compra de insumo também é despesa;
-> lançamentos manuais antigos ficam em "A classificar"; regra única de que o que já está no custo da peça
-> não vira despesa (filamento e energia).
+> **Situação: implementada localmente (01/10/2026).** Decisões do dono: o que já está no custo da peça
+> não vira despesa (filamento e energia); compra de insumo conta como despesa **conforme a categoria do
+> insumo** (opção por categoria); lançamentos manuais antigos ficam em "A classificar".
 
 ## Objetivo
 
@@ -24,10 +23,9 @@ resultado.
   estimada já está no custo da peça (ver "Decisões em aberto").
 - **Categorias do sistema**, criadas pela migração e usadas só pelos lançamentos automáticos (o dono não as
   escolhe nem as altera): Venda recebida, Estorno de venda, Compra de produtos, Estorno de compra de
-  produtos, Compra de filamento, Estorno de compra de filamento, **Compra de insumos**, **Estorno de compra
-  de insumos** e **A classificar**. Só **Compra de insumos** e seu estorno **contam no resultado** (o estorno
-  reduz a despesa); as demais não contam, porque esses valores já aparecem no lucro real (venda, custo do
-  produto, custo do filamento na peça) ou no estoque.
+  produtos, Compra de insumos, Estorno de compra de insumos e **A classificar**. Nenhuma delas tem a marca
+  "conta no resultado": venda, custo do produto e estoque já aparecem no lucro real, e o **insumo é tratado à
+  parte**, pela opção da categoria dele (ver "Resultado do negócio").
 - **Categorias iniciais do dono** (podem ser renomeadas, desativadas e acrescidas):
 
 | Categoria | Direção | Conta no resultado |
@@ -64,24 +62,22 @@ resultado.
 **Lançamento automático**
 - Venda recebida, estorno de venda, compra de produto paga e seu estorno, compra de insumo paga e seu
   estorno recebem a categoria do sistema **sozinhos, pela origem**, em qualquer caminho que os crie. A
-  categoria deles não muda. O insumo vai para **Compra de filamento** se a categoria dele for de filamento, e
-  para **Compra de insumos** nos demais casos; o estorno segue a do pagamento.
+  categoria deles não muda.
 
 **Lançamentos que já existem**
-- Os automáticos vão para a categoria do sistema da origem deles (os pagamentos de insumo já feitos vão
-  para **Compra de filamento** ou **Compra de insumos**, e estes últimos passam a contar como despesa). Os
-  manuais vão para **A classificar**, que **não conta no resultado**: o sistema não adivinha a categoria, e assim nenhum valor entra no
+- Os automáticos vão para a categoria do sistema da origem deles. Os manuais vão para **A classificar**, que **não conta no resultado**: o sistema não adivinha a categoria, e assim nenhum valor entra no
   resultado por engano. O dono reclassifica um por um. A tela do Caixa avisa quantos faltam.
 
 **Resultado do negócio**
 - `resultado = lucro real + entradas manuais que contam − saídas manuais que contam`, somando tudo desde o
   começo, como os demais números do painel.
 - Compra de **produto** não é despesa: é estoque, e o custo do produto já está no lucro de cada venda.
-- Compra de **insumo comum** (embalagem, etiqueta, cola, fita, verniz, lixa, ferramenta) **é despesa**, na
-  data do pagamento; o estorno dela reduz a despesa.
-- Compra de **filamento não é despesa** no resultado: o custo do filamento já está no custo de cada peça 3D
-  (linhas de filamento) e portanto já reduz o lucro da venda, quando a peça é vendida. Contar de novo
-  descontaria duas vezes. Os demais insumos não entram no custo da peça e por isso contam como despesa.
+- Compra de **insumo** conta como despesa, **na data do pagamento**, **se a categoria do insumo estiver com a
+  opção "conta como despesa quando comprado"** (campo `counts_as_expense` da categoria de insumo, spec 024);
+  o estorno da compra reduz a despesa. Valores iniciais: **conta** em Embalagens, Etiquetas e papelaria,
+  Ferramentas e Outros; **não conta** em Filamentos (o custo já está nas linhas de filamento da peça),
+  Acabamento e Colas e fitas (cabem nos custos fixos da peça). A opção é editável a qualquer momento e vale na
+  hora, inclusive para o passado; categoria de insumo nova nasce contando.
 - Empréstimo, aporte e retirada não entram no resultado, mas continuam no saldo do Caixa.
 
 ## Telas
@@ -120,7 +116,7 @@ Decididos: compra de insumo comum conta como despesa no pagamento; **filamento f
 Testar categorias (criar, nome repetido sem diferenciar acento, trava da direção, sem DELETE, sistema não
 selecionável), lançamento manual exigindo categoria de direção compatível, reclassificar só a categoria,
 recusa de mudar valor, data ou descrição, categoria automática atribuída por origem em venda recebida,
-estorno, compra de produto, compra de insumo comum, compra de filamento e seus estornos, migração dos lançamentos existentes (origem →
-categoria do sistema, manual → A classificar), resultado do negócio (despesa que conta, insumo comum que conta e filamento que não, estorno de insumo
-reduzindo a despesa, empréstimo e retirada que não contam, categoria a classificar fora, mudar "conta no resultado" refletindo no cálculo), contagem de
+estorno, compra de produto, compra de insumo e seus estornos, migração dos lançamentos existentes (origem →
+categoria do sistema, manual → A classificar), resultado do negócio (despesa que conta, insumo de categoria que conta e de categoria que não conta, estorno de
+insumo reduzindo a despesa, mudar a opção da categoria refletindo no cálculo, empréstimo e retirada que não contam, categoria a classificar fora, mudar "conta no resultado" refletindo no cálculo), contagem de
 lançamentos a classificar, origem exibida na tela, permissões e ausência de migrações pendentes.

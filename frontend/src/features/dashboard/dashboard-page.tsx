@@ -23,6 +23,8 @@ type Summary = {
   gross: string;
   profit: string;
   realized_profit: string;
+  business_result: string;
+  unclassified_count: number;
   receivable: string;
   cash_balance: string;
   product_count: number;
@@ -121,6 +123,17 @@ export default function Dashboard() {
         <p role="status">Carregando indicadores…</p>
       ) : (
         data && (
+          <>
+          {data.unclassified_count > 0 && (
+            <p role="status" className="border border-[var(--cerrado)] rounded-md p-4 mb-6">
+              {data.unclassified_count}{" "}
+              {data.unclassified_count === 1 ? "lançamento do Caixa está" : "lançamentos do Caixa estão"} em{" "}
+              <strong>A classificar</strong> e fora do Resultado do negócio.{" "}
+              <Link href="/caixa" className="underline font-semibold">
+                Classificar agora
+              </Link>
+            </p>
+          )}
           <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {[
               [
@@ -142,6 +155,11 @@ export default function Dashboard() {
                 "Lucro real",
                 brl(data.realized_profit),
                 "Só das vendas já recebidas, após custo, descontos, taxas e frete",
+              ],
+              [
+                "Resultado do negócio",
+                brl(data.business_result),
+                "Lucro real mais entradas e menos despesas que contam (energia e filamento já estão no custo da peça)",
               ],
               [
                 "Saldo de caixa",
@@ -166,6 +184,7 @@ export default function Dashboard() {
               </Card>
             ))}
           </div>
+          </>
         )
       )}
       <Card className="mt-8">

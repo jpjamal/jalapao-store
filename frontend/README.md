@@ -45,7 +45,8 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   descontos/taxas/frete, receber e cancelar. Produto de cada item por busca digitada.
   "Importar do Mercado Livre" traz os pedidos pagos com taxa e frete reais, em prévia, e
   cria as vendas só quando o dono manda (spec 015).
-- /caixa: entradas/saídas, origem automática/manual e histórico preservado.
+- /caixa: entradas/saídas, origem e categoria de cada lançamento (manual escolhe e pode reclassificar), filtro
+  e resumo por categoria, painel *Gerenciar categorias* e aviso dos "A classificar" (spec 026).
 - /ferramentas: índice das três ferramentas.
 - /ferramentas/impressao-3d: custo da peça e botão de salvar no catálogo, com SKU gerado pelo backend.
   Aceita peça multicolor: linhas de filamento cadastrado com as gramas de cada um (spec 024).

@@ -20,7 +20,10 @@ de saldo. Nada ali é apagado.
 Cadastráveis por você e **separadas das categorias de produto**. As iniciais são Filamentos,
 Embalagens, Etiquetas e papelaria, Colas e fitas, Acabamento, Ferramentas e Outros. Categoria não se
 apaga: desative. A opção *É de filamento* trava depois do primeiro insumo e é o que liga material,
-cor, peso e preço do rolo.
+cor, peso e preço do rolo. A opção **Conta como despesa quando comprado** diz se a compra paga daquela
+categoria entra como despesa no **Resultado do negócio** ([caixa](caixa.md)): vem desligada em Filamentos,
+Acabamento e Colas e fitas, cujo custo já está no custo da peça, e ligada nas outras. Você muda quando
+quiser, e vale também para o passado.
 
 O material (PLA, PETG…) é um **campo do filamento**, não uma subcategoria. A lista traz sugestões
 (PLA, PLA+, PETG, ABS, ASA, TPU…) e aceita outro valor digitado.
