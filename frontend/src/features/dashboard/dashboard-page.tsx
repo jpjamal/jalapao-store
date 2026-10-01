@@ -22,6 +22,7 @@ type Summary = {
   stock_value: string;
   gross: string;
   profit: string;
+  realized_profit: string;
   receivable: string;
   cash_balance: string;
   product_count: number;
@@ -133,9 +134,14 @@ export default function Dashboard() {
                 "Valor bruto das vendas confirmadas",
               ],
               [
-                "Lucro estimado",
+                "Lucro previsto",
                 brl(data.profit),
-                "Após custo, descontos, taxas e frete",
+                "De todas as vendas confirmadas, inclusive as a receber",
+              ],
+              [
+                "Lucro real",
+                brl(data.realized_profit),
+                "Só das vendas já recebidas, após custo, descontos, taxas e frete",
               ],
               [
                 "Saldo de caixa",

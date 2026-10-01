@@ -20,7 +20,8 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
 
 ## Telas
 - /login: usuário e senha, erros recebidos da API.
-- /: estoque a custo, faturamento, lucro estimado, caixa, a receber, produtos ativos.
+- /: estoque a custo, faturamento, lucro previsto (todas as vendas confirmadas), lucro real (só as
+  recebidas), caixa, a receber, produtos ativos.
 - /produtos: busca, paginação, cadastro/edição, parâmetros 3D e desativação.
   O SKU aparece após salvar e não é editável; a quantidade é administrada no estoque.
   Código de barras (GTIN/EAN) opcional, validado pelo backend; a busca e o campo de produto

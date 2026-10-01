@@ -183,7 +183,8 @@ As specs anteriores à 017 citam os caminhos da época; a tabela acima faz a pon
 | Estoque em reais | Valor persistido das entradas menos saídas pelo custo médio móvel |
 | Faturamento | Bruto das vendas confirmadas, inclusive ainda não recebidas |
 | Líquido da venda | Bruto − desconto − taxas − frete pago pela loja |
-| Lucro estimado | Líquido − custo dos itens congelado na venda |
+| Lucro previsto | Líquido − custo dos itens congelado na venda, somado em todas as vendas confirmadas (inclusive as a receber) |
+| Lucro real | O mesmo lucro, só das vendas confirmadas que já foram recebidas (spec 025) |
 | A receber | Líquido das vendas confirmadas não recebidas |
 | Caixa | Entradas efetivas − saídas efetivas, incluindo estornos |
 

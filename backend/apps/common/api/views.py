@@ -32,7 +32,7 @@ class DashboardView(APIView):
             fields={
                 **{
                     key: serializers.CharField()
-                    for key in ("stock_value", "gross", "profit", "receivable", "cash_balance")
+                    for key in ("stock_value", "gross", "profit", "realized_profit", "receivable", "cash_balance")
                 },
                 "product_count": serializers.IntegerField(),
                 "certificate": inline_serializer(
@@ -71,6 +71,10 @@ class DashboardView(APIView):
                 "stock_value": str(stock),
                 "gross": str(totals["gross"] or 0),
                 "profit": str(totals["profit"] or 0),
+                # lucro real: só das vendas confirmadas que já foram recebidas
+                "realized_profit": str(
+                    sales.filter(received_at__isnull=False).aggregate(total=Sum("profit"))["total"] or 0
+                ),
                 "receivable": str(
                     sales.filter(received_at__isnull=True).aggregate(total=Sum("net"))["total"] or 0
                 ),

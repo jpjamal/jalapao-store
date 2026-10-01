@@ -2406,6 +2406,8 @@ components:
           type: string
         profit:
           type: string
+        realized_profit:
+          type: string
         receivable:
           type: string
         cash_balance:
@@ -2427,6 +2429,7 @@ components:
       - gross
       - product_count
       - profit
+      - realized_profit
       - receivable
       - stock_value
     DirectionEnum:
