@@ -19,6 +19,7 @@ import { Pagination } from "@/shared/components/pagination";
 import { Card } from "@/shared/ui/card";
 import { ErrorMessage, Empty } from "@/shared/components/feedback";
 import { Field, MoneyField } from "@/shared/components/fields";
+import { StockQuantity, linhaDeEstoque } from "@/shared/components/stock-quantity";
 
 const defaults: Printing = {
   filament_price_kg: "115",
@@ -413,7 +414,7 @@ export default function Products() {
               </thead>
               <tbody>
                 {data.results.map((p) => (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={linhaDeEstoque(p.quantity)}>
                     <td data-role="title">
                       <strong>{p.name}</strong>
                       <p className="text-xs text-muted-foreground font-normal">
@@ -429,7 +430,7 @@ export default function Products() {
                     <td data-label="Categoria">{p.category_name}</td>
                     <td data-label="Custo de referência" className="money">{brl(p.cost_price)}</td>
                     <td data-label="Preço" className="money">{brl(p.sale_price)}</td>
-                    <td data-label="Estoque">{p.quantity}</td>
+                    <td data-label="Estoque"><StockQuantity quantity={p.quantity} /></td>
                     <td data-label="Status">{p.active ? "Ativo" : "Inativo"}</td>
                     <td data-role="actions">
                       <div className="flex flex-wrap items-center justify-end md:justify-start gap-x-3 gap-y-2">

@@ -25,7 +25,7 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [016](016-padronizar-sku/spec.md) | Padronizar o SKU dos produtos antigos | — |
 | [017](017-reestruturacao-ddd/spec.md) | Reestruturação do código por contexto (DDD) | conferir as telas com login |
 | [018](018-https-no-traefik/spec.md) | HTTPS no Traefik (antes numerada 007) | certificados órfãos |
-| [019](019-traefik-unico/spec.md) | Traefik como único proxy (sem Nginx; Certbot central) | apagar o volume antigo de certificados |
+| [019](019-traefik-unico/spec.md) | Traefik como único proxy (sem Nginx; Certbot central) | apagar os volumes antigos de certificados (renovação real já feita em 01/10) |
 | [020](020-servidor-de-arquivos/spec.md) | Servidor de arquivos (SILO): fotos e manuais em buckets | — |
 | [021](021-codigo-de-barras/spec.md) | Código de barras (GTIN/EAN) opcional no produto | conferir com leitor de verdade; enviar GTIN aos marketplaces |
 | [022](022-categorias-e-dados-do-produto/spec.md) | Categorias no lugar do tipo; marca, modelo e peso do produto | conferir as telas com login |
@@ -35,5 +35,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [026](026-categorias-do-caixa/spec.md) | Categorias nos lançamentos do Caixa e resultado do negócio | classificar os lançamentos antigos (o dono) |
 | [027](027-busca-filtros-e-ordenacao/spec.md) | Busca, filtros e ordenação em todas as listagens | guardar busca e ordem na URL (se o dono pedir) |
 | [028](028-pagar-varias-compras/spec.md) | Janela de confirmação ao pagar compra e pagamento de várias de uma vez | escolher a data do pagamento (se o dono pedir) |
+| [029](029-custo-sugerido-e-sem-estoque/spec.md) | Custo sugerido no ajuste de estoque e produtos sem estoque destacados | — |
 
-Próxima spec: **029**.
+Próxima spec: **030**.

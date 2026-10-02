@@ -76,7 +76,11 @@ dá um nome e clica em **Salvar produto**. Ele entra no catálogo na categoria d
 ## Busca e listagem
 
 Busca por nome, código (SKU), código de barras, marca e modelo, paginação de 100 em 100. Cada linha mostra quantidade, custo
-médio, preço e situação.
+médio, preço e situação. Produto com saldo zero aparece com fundo avermelhado e o selo "Sem estoque" (aqui e na
+posição do Estoque); no seletor de produto, "sem estoque" em vermelho (spec 029).
+
+Na entrada de estoque (Compras e produção, ou Estoque → Ajustar inventário), o custo por unidade já vem com o custo
+do cadastro — na peça 3D, o custo de produção calculado. Troque se o lote custou diferente.
 
 ## Onde isso vive
 
@@ -86,7 +90,7 @@ médio, preço e situação.
 | Modelo | `backend/apps/catalog/models.py` — `Product`, `PrintingProfile` |
 | Conta do 3D | `backend/apps/catalog/domain/pricing.py` e `frontend/src/features/tools/lib/custo3d.ts` |
 | SKU automático | `backend/apps/catalog/domain/sku.py` (specs 010 e 016) |
-| API | `/jalapao-store/backend-api/products/` |
+| API | `/api/v1/products/` (rede interna; o navegador usa o BFF `/jalapao-store/api/`) |
 | Importação do legado | `backend/apps/catalog/management/commands/import_legacy.py` |
 
 Ver também [custo de impressão 3D](custo-impressao-3d.md),

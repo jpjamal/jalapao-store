@@ -198,8 +198,12 @@ export function ProductPicker({
               >
                 <span className="truncate">{p.name}</span>
                 {mostrarQuantidade && (
-                  <span className="money text-sm text-muted-foreground shrink-0">
-                    {p.quantity} un.
+                  <span
+                    className={`money text-sm shrink-0 ${
+                      p.quantity <= 0 ? "text-destructive" : "text-muted-foreground"
+                    }`}
+                  >
+                    {p.quantity <= 0 ? "sem estoque" : `${p.quantity} un.`}
                   </span>
                 )}
               </li>

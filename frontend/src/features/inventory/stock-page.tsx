@@ -14,6 +14,7 @@ import { FormActions } from "@/shared/components/form-actions";
 import { PageHeader } from "@/shared/components/page-header";
 import { Pagination } from "@/shared/components/pagination";
 import { ProductPicker } from "@/features/catalog/components/product-picker";
+import { StockQuantity, linhaDeEstoque } from "@/shared/components/stock-quantity";
 import Link from "next/link";
 import { useClientList, useListQuery } from "@/shared/hooks/use-list-query";
 import {
@@ -80,6 +81,9 @@ export default function Inventory() {
   // o produto é estado, e não campo do formulário: form.reset() não limparia
   // o input oculto do seletor de busca
   const [produtoId, setProdutoId] = useState("");
+  const [produto, setProduto] = useState<Product | null>(null);
+  // custo da entrada já vem do cadastro (peça 3D: o custo de produção calculado); dá para trocar
+  const [custo, setCusto] = useState("");
   const [motivo, setMotivo] = useState("");
   const loadProducts = useCallback(() => {
     allProducts()
@@ -140,6 +144,8 @@ export default function Inventory() {
                 setDelta(0);
                 setMotivo("");
                 setProdutoId("");
+                setProduto(null);
+                setCusto("");
                 load();
               } catch (err) {
                 setError((err as Error).message);
@@ -155,7 +161,11 @@ export default function Inventory() {
                 required
                 products={products}
                 value={produtoId}
-                onChange={(id) => setProdutoId(id)}
+                onChange={(id, p) => {
+                  setProdutoId(id);
+                  setProduto(p);
+                  setCusto(p?.cost_price || "");
+                }}
                 somenteAtivos={false}
               />
             </div>
@@ -168,14 +178,25 @@ export default function Inventory() {
               onChange={(e) => setDelta(Number(e.target.value))}
             />
             {delta > 0 && (
-              <Field
-                name="unit_cost"
-                label="Custo unitário da entrada (R$)"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-              />
+              <div>
+                <label htmlFor="unit_cost">Custo unitário da entrada (R$)</label>
+                <Input
+                  id="unit_cost"
+                  name="unit_cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  value={custo}
+                  onChange={(e) => setCusto(e.target.value)}
+                />
+                {produto && Number(produto.cost_price) > 0 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {produto.printing ? "Custo de produção 3D do cadastro" : "Custo do cadastro"}:{" "}
+                    {brl(produto.cost_price)}. Troque se este lote custou diferente.
+                  </p>
+                )}
+              </div>
             )}
             <p className="text-sm text-muted-foreground">
               Ajustes não movimentam caixa. Saídas usam o custo médio; entradas
@@ -251,9 +272,9 @@ export default function Inventory() {
               </thead>
               <tbody>
                 {(position.visible ?? []).map((p) => (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={linhaDeEstoque(p.quantity)}>
                     <td data-role="title">{p.name}</td>
-                    <td data-label="Unidades">{p.quantity}</td>
+                    <td data-label="Unidades"><StockQuantity quantity={p.quantity} /></td>
                     <td data-label="Valor a custo" className="money">{brl(p.stock_value)}</td>
                     <td data-label="Custo médio / un." className="money">
                       {p.quantity ? brl(p.average_cost) : "—"}

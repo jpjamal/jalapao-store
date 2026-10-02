@@ -132,6 +132,22 @@ img.logo {
   border-radius: 0.5rem;
 }
 
+/* Produto sem estoque nas listas: fundo avermelhado suave na linha e selo ao lado da quantidade.
+   A cor vem de --destructive, então acompanha o tema claro e o escuro. */
+table.data-table tr.sem-estoque {
+  background: color-mix(in srgb, var(--destructive) 15%, var(--card));
+}
+.selo-sem-estoque {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--destructive);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
 /* ---------- telas pequenas e toque ---------- */
 
 /* 16px nos campos: abaixo disso o Safari do iPhone dá zoom ao focar */
@@ -183,6 +199,10 @@ select {
     background: var(--background);
     padding: 0.5rem 0.875rem;
     margin-bottom: 0.75rem;
+  }
+  table.data-table tr.sem-estoque {
+    background: color-mix(in srgb, var(--destructive) 15%, var(--background));
+    border-color: color-mix(in srgb, var(--destructive) 45%, var(--border));
   }
   table.data-table td {
     display: flex;
