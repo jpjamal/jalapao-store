@@ -73,7 +73,8 @@ o Portainer. A loja não tem Nginx nem Certbot: só declara as rotas dela em lab
 
 A API do Django **não tem rota pública**: o navegador fala só com o front, e o BFF do Next
 chama `http://jalapao-backend:8000` pela rede interna do Docker. A documentação da API
-(Swagger) fica para o ambiente local. Os serviços têm nomes únicos (`jalapao-db`,
+(Swagger) fica para a cópia local: `http://localhost:8080/api/v1/docs/`, depois de entrar no
+Django Admin — o Traefik local (`infra/traefik/local.yml`) roteia `/api/v1/`; o de produção não. Os serviços têm nomes únicos (`jalapao-db`,
 `jalapao-backend`, `jalapao-frontend`) porque a rede `traefik_proxy` é compartilhada.
 
 Certificados, ambos na infraestrutura central:

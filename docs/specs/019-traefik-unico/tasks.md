@@ -10,5 +10,8 @@
 - [x] Nginx e scripts dele removidos; documentação atualizada.
 - [x] Ensaio local com Traefik central, certificado autoassinado e a loja de verdade.
 - [x] Publicar (traefikproxy, depois a loja) e conferir em produção.
-- [ ] Apagar o volume antigo `jalapao-store_certificates` depois de uma renovação real pelo
-      Certbot central.
+- [x] Renovação real pelo certbot central (01/10/2026, servida pelo Traefik sem intervenção).
+- [ ] Apagar os volumes antigos `jalapao-store_certificates` e `jalapao-store_acme_webroot`
+      (já liberados pela renovação; falta o dono autorizar o deploy que apaga).
+- [x] Documentação da API: o Swagger apontava para `/jalapao-store/backend-api/schema/`, rota
+      que deixou de existir; passou a usar o nome da rota, e a cópia local roteia `/api/v1/`.

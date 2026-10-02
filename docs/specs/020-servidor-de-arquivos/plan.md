@@ -18,9 +18,11 @@
   idempotente) e `export_media` (tar.gz na saída padrão; retirado em 28/09 junto com o backup
   de arquivos).
 - Compose: variáveis `S3_*` (a chave vem por `--env-file` de `~/traefikproxy/.env.silo.jalapao-store`),
-  rede `infra_storage`, `product_media` montado só para leitura em `/app/media-disco`, routers
-  `/manuais/` → `silo-s3@docker` com `replacepathregex` para `/jalapao-manuais/<arquivo>`.
-- `deploy.sh`: confere a rede e a chave do SILO; depois das migrations, migra as fotos,
-  exporta o backup delas do bucket, espelha a pasta `manuais/` (`mc mirror` sem
-  sobrescrever) e confere um manual pelos dois hosts.
+  rede `infra_storage`, routers `/manuais/` → `silo-s3@docker` com `replacepathregex` para
+  `/jalapao-manuais/<arquivo>`. Até 28/09 também montava `product_media` só para leitura em
+  `/app/media-disco`, como fonte da migração.
+- `deploy.sh`: confere a rede e a chave do SILO e, no fim, `/manuais/` (403 do SILO) pelos dois
+  hosts. Na primeira publicação migrou as fotos, fez backup delas do bucket e espelhou a pasta
+  `manuais/`; na segunda (28/09) apagou o volume e a pasta, depois de uma última passada da
+  migração, e o backup de arquivos saiu.
 - CI: variáveis fictícias `S3_*` para validar o compose.

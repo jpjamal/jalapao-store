@@ -96,7 +96,7 @@ o saldo) e a quantidade, por exemplo 1 caixa pequena e 2 etiquetas. Ao confirmar
 | Modelos | `backend/apps/supplies/models.py` |
 | Preço por grama e material | `backend/apps/supplies/domain/pricing.py` |
 | Saldo, compra, pagamento e cancelamento | `backend/apps/supplies/services.py` |
-| API | `/jalapao-store/backend-api/supply-categories/`, `supplies/`, `supply-receipts/`, `supply-movements/` |
+| API | `/api/v1/supply-categories/`, `supplies/`, `supply-receipts/`, `supply-movements/` (rede interna; o navegador usa o BFF `/jalapao-store/api/`) |
 | Insumos na venda | `backend/apps/supplies/services.py` (`consume_supplies_for_sale`, `restore_supplies_for_sale`) e `frontend/src/features/sales/sales-page.tsx` |
 | Linhas de filamento da peça | `backend/apps/catalog/models.py` (`PrintingFilament`) |
 | Testes | `backend/apps/supplies/tests/` e `backend/apps/catalog/tests/test_filamentos.py` |

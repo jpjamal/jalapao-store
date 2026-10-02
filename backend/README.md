@@ -86,7 +86,7 @@ integrations separa ainda `domain/ports.py` (contrato do adaptador), `infrastruc
 (sincronização e os casos de uso do Mercado Livre: anúncio, publicação, pesquisa, pedidos).
 Históricos usam PROTECT. Sem DELETE comercial. Desativar produtos pelo campo active.
 
-API interna `/api/v1/`; pública via `/jalapao-store/backend-api/`.
+API `/api/v1/`, só na rede interna: não tem rota pública (spec 019).
 Autenticação Bearer JWT. Frontend usa BFF `/jalapao-store/api/` com cookies HttpOnly.
 `products/` GET/POST/PATCH, `movements/` GET/POST, `sales/` GET/POST,
 `product-images/` GET/POST/DELETE e `product-images/{uuid}/content/` GET autenticado,
@@ -123,6 +123,6 @@ Todas as specs ficam em ../docs/specs (uma pasta por mudança); as regras gerais
 
 Contrato OpenAPI versionado: docs/openapi.yml. Validar com
 `uv run python manage.py spectacular --validate --fail-on-warn --file docs/openapi.yml`.
-Documentação interativa em `/jalapao-store/backend-api/docs/` após entrar no Django Admin
-ou com autenticação JWT. A sessão Django é aceita somente nas telas de documentação;
+Documentação interativa só na cópia local, em `http://localhost:8080/api/v1/docs/`, depois de
+entrar no Django Admin (`http://localhost:8080/jalapao-store/admin/`) ou com autenticação JWT. A sessão Django é aceita somente nas telas de documentação;
 as operações comerciais da API continuam usando JWT.

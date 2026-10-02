@@ -33,6 +33,7 @@ Django não muda — qualquer servidor S3 serve, trocando só o endereço e a ch
 - **Migração sem perda:** o volume antigo fica montado só para leitura; o deploy copia para o
   bucket o que ainda não está lá (idempotente) e nunca apaga o disco. A pasta `manuais/` da VPS
   alimenta o bucket só com o que falta — um PDF trocado pelo painel não é sobrescrito.
+  *(Feita e encerrada em 28/09/2026: volume e pasta apagados; o bucket é a única fonte.)*
 - ~~Backup das fotos a cada deploy~~ — retirado a pedido do dono em 28/09/2026: sem backup
   de arquivos; só o dump do banco antes das migrations.
 

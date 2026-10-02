@@ -75,5 +75,5 @@ Nada disso muda o saldo do Caixa, o estoque nem o lucro de cada venda.
 | Modelos | `backend/apps/finance/models.py` (`CashCategory`, `CashEntry.category`) |
 | Origem e categorias do sistema | `backend/apps/finance/domain/categories.py` |
 | Resultado | `backend/apps/finance/services.py` e `DashboardView` |
-| API | `/jalapao-store/backend-api/cash/`, `cash/summary/`, `cash-categories/` |
+| API | `/api/v1/cash/`, `cash/summary/`, `cash-categories/` (rede interna; o navegador usa o BFF `/jalapao-store/api/`) |
 | Testes | `backend/apps/finance/tests/` |

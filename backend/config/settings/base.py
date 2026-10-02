@@ -146,8 +146,8 @@ SPECTACULAR_SETTINGS = {
     },
     "SCHEMA_PATH_PREFIX": "/api/v1",
     "SCHEMA_PATH_PREFIX_TRIM": True,
-    "SERVERS": [
-        {"url": "/jalapao-store/backend-api", "description": "Produção"},
-        {"url": "/api/v1", "description": "Backend direto (desenvolvimento)"},
-    ],
+    # A API não tem rota pública (spec 019): em produção só o BFF do front a chama, pela rede
+    # interna. Na cópia local, o Traefik de infra/traefik/local.yml expõe /api/v1/ para a
+    # documentação interativa (http://localhost:8080/api/v1/docs/).
+    "SERVERS": [{"url": "/api/v1", "description": "Backend (rede interna; local em localhost:8080)"}],
 }

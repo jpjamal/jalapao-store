@@ -36,3 +36,9 @@ nada muda na segunda.
   `media-20260928T155037Z.tar.gz` saiu do bucket com as 6.
 - Manuais: `dummy-13.pdf` (1 MiB) copiado para o bucket; `/manuais/dummy-13.pdf` 200
   `application/pdf` pelo domínio e pelo IP; `/manuais/` 403; `http://` 301 para HTTPS.
+
+## Limpeza (28/09/2026, `2069241`)
+- O PDF do bucket tinha o mesmo MD5 do da pasta (`97ecc747…`) antes de apagar.
+- O deploy passou as fotos uma última vez pela migração, apagou o volume
+  `jalapao-store_product_media` e a pasta `manuais/`; sem backup de arquivos, por decisão do dono.
+- Depois: login 200, `/manuais/dummy-13.pdf` 200 e `/manuais/` 403 pelos dois hosts.

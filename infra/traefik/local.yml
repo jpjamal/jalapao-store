@@ -1,9 +1,15 @@
-# Traefik só da cópia local (docker-compose.yml): as mesmas rotas da produção, sem HTTPS.
+# Traefik só da cópia local (docker-compose.yml): as rotas da produção, sem HTTPS, mais a API.
 # Em produção as rotas vêm dos labels de docker-compose.deploy.yml, no Traefik central.
 http:
   routers:
     admin:
       rule: PathPrefix(`/jalapao-store/admin/`) || PathPrefix(`/jalapao-store/django-static/`)
+      priority: 200
+      service: backend
+    # Só na cópia local: a API direto, para a documentação interativa em /api/v1/docs/ (entre
+    # antes no Django Admin). Em produção a API não tem rota pública.
+    api-local:
+      rule: PathPrefix(`/api/v1/`)
       priority: 200
       service: backend
     front:

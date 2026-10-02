@@ -14,6 +14,7 @@
 - [x] Publicar a loja, publicar o Traefik em pré-validação e conferir os certificados.
 - [x] Virada da porta 443: Traefik publica `0.0.0.0:443` e serve os dois certificados.
 - [x] Remover o container parado do Nginx TLS — deploy `f66712f`, com `JALAPAO_TLS=traefik`.
-- [ ] Conferir a primeira renovação do certificado de IP servida pelo Traefik (por volta de 28/09).
+- [x] Conferir a primeira renovação do certificado de IP servida pelo Traefik — feita em
+      01/10/2026, já pelo certbot central (spec 019).
 - [ ] Apagar os certificados órfãos do Certbot — `jalapao-domain` (sslip.io) e `jalapao-duckdns`
       (substituído pelo do Traefik). Não renovam e vencem sozinhos em dezembro; sem pressa.

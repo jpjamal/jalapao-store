@@ -24,7 +24,7 @@ urlpatterns = [
     path(
         "api/v1/docs/",
         SpectacularSwaggerView.as_view(
-            url="/jalapao-store/backend-api/schema/",
+            url_name="schema",
             permission_classes=[IsAdminUser],
             authentication_classes=[SessionAuthentication, JWTAuthentication],
         ),

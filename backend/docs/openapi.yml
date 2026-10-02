@@ -5168,7 +5168,5 @@ components:
       scheme: bearer
       bearerFormat: JWT
 servers:
-- url: /jalapao-store/backend-api
-  description: Produção
 - url: /api/v1
-  description: Backend direto (desenvolvimento)
+  description: Backend (rede interna; local em localhost:8080)

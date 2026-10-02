@@ -35,3 +35,8 @@ o `certbot renew --dry-run` do deploy do traefikproxy.
 - Loja `bed6a6c` publicada: containers com nome novo saudáveis; `gateway`, `tls` e `certbot`
   removidos. Pelos dois hosts: login 200, Admin 200, `backend-api` 404, manifesto 200,
   `no-referrer` no callback, HTTP 301 para HTTPS.
+
+## Primeira renovação real (01/10/2026)
+- O certbot central renovou o certificado do IP sozinho às 02:51 UTC (`cert3.pem`, válido até
+  07/10/2026), e o Traefik passou a servir o novo sem intervenção: o aviso pelo `touch` do
+  `dynamic.yml` funciona. Era a pendência aberta desde 24/09 (spec 018).
