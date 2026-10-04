@@ -158,7 +158,11 @@ export default function Calculadora() {
           >
             {brl(r.lucro)}
           </p>
-          <dl className="grid grid-cols-2 gap-y-3">
+          {/* Coluna dos valores com minmax(0, …): sem isso, um valor longo e sem quebra
+              (a faixa "14% · R$ 100 a R$ 199,99") alargava a grade além do cartão e a página
+              inteira passava da largura do celular. Só a faixa pode quebrar linha; valor em
+              reais fica sempre numa linha. */}
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3">
             {(
               [
                 ["Taxas da plataforma", brl(r.taxas)],
@@ -174,7 +178,14 @@ export default function Calculadora() {
                 <dt className="text-muted-foreground text-sm self-center">
                   {rotulo}
                 </dt>
-                <dd className="money text-right">{valor}</dd>
+                <dd
+                  className="money text-right"
+                  // inline: o .money (nowrap) do globals.css fica fora das camadas do Tailwind
+                  // e ganharia de uma classe utilitária
+                  style={rotulo === "Comissão da faixa" ? { whiteSpace: "normal" } : undefined}
+                >
+                  {valor}
+                </dd>
               </div>
             ))}
           </dl>

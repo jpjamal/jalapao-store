@@ -151,6 +151,12 @@ documentados em [calculadora de marketplace](calculadora-marketplace.md) e
   Por isso `jalapao-backend`, `jalapao-frontend`, `jalapao-db`.
 - **Regra de negócio não muda sozinha.** As taxas de marketplace só mudam com pedido
   explícito e, de preferência, conferidas contra um pedido real do painel.
+- **Texto sem quebra alarga a página no celular.** `.money` (do `globals.css`) é `nowrap`; um valor
+  longo numa grade `grid-cols-2` empurrou a coluna para fora do cartão e a página inteira passou
+  da tela (calculadora, faixa "14% · R$ 100 a R$ 199,99", 03/10/2026). Coluna de valores com
+  `minmax(0, …)` e quebra liberada só no texto que pode quebrar. E o CSS do `globals.css` fica
+  fora das camadas do Tailwind: ganha de classe utilitária (`whitespace-normal` não desfaz o
+  `nowrap` do `.money`) — use estilo inline ou uma classe própria.
 
 ## O canvas de design
 
