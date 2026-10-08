@@ -50,6 +50,8 @@ erDiagram
   Product ||--o{ SaleItem : vendido_em
   Product ||--o{ Listing : anuncio_externo
   Sale ||--|{ SaleItem : contem
+  Sale ||--o{ SaleRevision : historico_de_correcao_exclusao
+  SaleRevision ||--o| CashEntry : diferenca_financeira
   Sale ||--o{ Movement : baixa_ou_estorna
   Sale ||--o{ CashEntry : recebe_ou_estorna
   Product ||--o{ Receipt : entrada_compra_ou_producao
@@ -193,3 +195,8 @@ As specs anteriores à 017 citam os caminhos da época; a tabela acima faz a pon
 Fluxo de caixa manual não altera automaticamente lucro de vendas. Compra/produção de
 estoque é registrada como entrada e movimento; pagar uma compra gera saída de caixa uma vez.
 O operador informa taxas efetivas; calculadoras antigas continuam sendo simulações.
+
+Corrigir uma venda recebida muda seu líquido e lucro, mas lança no Caixa apenas a diferença,
+ligada à `SaleRevision`; esse acerto não entra novamente no Resultado do negócio. A exclusão de
+venda é lógica: reaproveita o cancelamento para devolver estoque e estornar o líquido corrigido,
+marca `deleted_at` e mantém venda, itens, movimentos, caixa e snapshots para auditoria.

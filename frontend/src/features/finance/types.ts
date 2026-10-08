@@ -26,6 +26,7 @@ export type CashEntry = {
 export type CashOrigin =
   | "sale"
   | "sale_refund"
+  | "sale_adjustment"
   | "purchase"
   | "purchase_refund"
   | "supply"
@@ -35,6 +36,7 @@ export type CashOrigin =
 export const originLabels: Record<CashOrigin, string> = {
   sale: "Venda",
   sale_refund: "Estorno de venda",
+  sale_adjustment: "Correção de venda",
   purchase: "Compra de estoque",
   purchase_refund: "Estorno de compra de estoque",
   supply: "Compra de insumo",

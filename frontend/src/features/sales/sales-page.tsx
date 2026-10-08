@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/shared/api/client";
 import { brl } from "@/shared/lib/format";
@@ -24,31 +24,12 @@ import {
 } from "@/shared/components/list-toolbar";
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
-type Item = { product_name: string; quantity: number; unit_price: string };
-/* insumo usado na venda (spec 024): o que foi pedido e o que de fato foi baixado do saldo */
-type SaleSupply = { supply_name: string; requested: number; taken: number; shortfall: number };
-type Sale = {
-  id: string;
-  created_at: string;
-  channel: string;
-  reference: string;
-  gross: string;
-  net: string;
-  profit: string;
-  status: string;
-  received_at: string | null;
-  items: Item[];
-  supplies?: SaleSupply[];
-};
+import { channels, type Sale } from "@/features/sales/types";
+import { EditSaleDialog } from "@/features/sales/components/edit-sale-dialog";
+import { ConfirmDialog } from "@/shared/components/confirm-dialog";
+
 type Draft = { product_id: string; quantity: number; unit_price: string };
 type SupplyDraft = { supply_id: string; quantity: number };
-const channels: Record<string, string> = {
-  direct: "Boca a boca",
-  site: "Site Jalapão",
-  mercado_livre: "Mercado Livre",
-  shopee: "Shopee",
-  other: "Outro",
-};
 const saleColumns: SortColumn[] = [
   { key: "created_at", label: "Data", kind: "date" },
   { key: "channel", label: "Canal", kind: "text" },
@@ -59,6 +40,11 @@ const saleColumns: SortColumn[] = [
 ];
 
 export default function Sales() {
+  const [editing, setEditing] = useState<Sale | null>(null);
+  const [deleting, setDeleting] = useState<Sale | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const deletingNow = useRef(false);
+  const feedback = useRef<HTMLDivElement>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [rows, setRows] = useState<Page<Sale> | null>(null);
   // busca, filtros, ordem e página do histórico, no servidor (spec 027)
@@ -146,12 +132,34 @@ export default function Sales() {
         </>}
       />
       {importando && <ImportarVendasML onImportado={load} />}
+      <div ref={feedback}>
       <ErrorMessage message={error} />
       {notice && (
         <p role="status" className="text-success mb-4">
           {notice}
         </p>
       )}
+      </div>
+      {editing && <EditSaleDialog key={editing.id} sale={editing} onClose={() => setEditing(null)} onSaved={() => {
+        setEditing(null); setNotice("Venda corrigida. Os totais foram atualizados e eventual diferença foi registrada no Caixa.");
+        load(); feedback.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }} />}
+      <ConfirmDialog open={!!deleting} title="Excluir venda?" confirmLabel="Excluir venda"
+        busy={busy} error={deleteError} onCancel={() => setDeleting(null)} onConfirm={async () => {
+          if (!deleting || deletingNow.current) return;
+          deletingNow.current = true; setBusy(true); setDeleteError("");
+          try {
+            await api(`sales/${deleting.id}`, { method: "DELETE" });
+            setDeleting(null); setNotice("Venda excluída da lista. Estoque e eventual recebimento estornados; histórico preservado.");
+            q.setPage(1); load(); feedback.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          } catch (err) { setDeleteError((err as Error).message); }
+          finally { deletingNow.current = false; setBusy(false); }
+        }}>
+        <p>{deleting?.reference || "Venda selecionada"} · líquido {brl(deleting?.net || "0")}</p>
+        <p className="mt-2">A venda sairá da listagem. Os produtos e insumos consumidos serão devolvidos ao estoque,
+          e o recebimento será estornado no Caixa. Se já foi cancelada, esses efeitos não serão repetidos.
+          O histórico interno será mantido.</p>
+      </ConfirmDialog>
       {open && (
         <Card className="mb-5">
           <h2>Registrar venda</h2>
@@ -486,9 +494,15 @@ export default function Sales() {
                           : "A receber"}
                     </td>
                     <td data-role="actions">
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {s.status !== "cancelled" && (
                           <>
+                            <Button size="sm" variant="outline" disabled={busy} onClick={async () => {
+                              setBusy(true); setError("");
+                              try { setEditing(await api<Sale>(`sales/${s.id}`)); }
+                              catch (err) { setError((err as Error).message); }
+                              finally { setBusy(false); }
+                            }}>Editar</Button>
                             {!s.received_at && (
                               <Button
                                 size="sm"
@@ -508,6 +522,8 @@ export default function Sales() {
                             </Button>
                           </>
                         )}
+                        <Button size="sm" variant="outline" disabled={busy}
+                          onClick={() => { setDeleting(s); setDeleteError(""); }}>Excluir</Button>
                       </div>
                     </td>
                   </tr>

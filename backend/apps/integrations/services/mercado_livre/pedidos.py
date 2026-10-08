@@ -45,7 +45,7 @@ def _vinculos():
 def _venda(order_id):
     from apps.sales.models import Sale
 
-    return Sale.objects.filter(channel=CANAL, external_id=str(order_id)).first()
+    return Sale.objects.filter(external_channel=CANAL, external_id=str(order_id)).first()
 
 
 def taxa_do_pedido(pedido):
@@ -197,7 +197,8 @@ def importar(order_ids, *, actor):
                         "items": list(agrupado.values()),
                     }, actor=actor)
                     venda.external_id = order_id
-                    venda.save(update_fields=["external_id", "updated_at"])
+                    venda.external_channel = CANAL
+                    venda.save(update_fields=["external_id", "external_channel", "updated_at"])
                 resultado["importadas"].append(order_id)
             elif situacao == "cancelar":
                 cancel_sale(sale_id=_venda(order_id).id, actor=actor)

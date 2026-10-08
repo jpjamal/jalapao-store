@@ -5,9 +5,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from apps.sales.api.filters import SaleFilter
-from apps.sales.api.serializers import SaleInput, SaleSerializer
+from apps.sales.api.serializers import SaleEditInput, SaleInput, SaleSerializer
 from apps.sales.models import Sale
-from apps.sales.services import cancel_sale, create_sale, receive_sale
+from apps.sales.services import cancel_sale, create_sale, delete_sale, edit_sale, receive_sale
 
 
 class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -17,6 +17,28 @@ class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     search_fields = ["reference", "external_id", "items__product_name"]
     ordering_fields = ["created_at", "gross", "net", "profit", "channel", "status", "received_at", "reference"]
     ordering_text_fields = ["reference"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(deleted_at__isnull=True) if self.action == "list" else queryset
+
+    @extend_schema(request=SaleEditInput, responses=SaleSerializer)
+    def partial_update(self, request, pk=None):
+        serializer = SaleEditInput(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        sale = edit_sale(sale_id=self.get_object().id, data=serializer.validated_data, actor=request.user)
+        return Response(SaleSerializer(sale).data)
+
+    @extend_schema(request=None, responses={204: None})
+    def destroy(self, request, pk=None):
+        if not request.user.has_perm("sales.delete_sale"):
+            raise PermissionDenied("Sem permissão para excluir vendas.")
+        self._change_permission()
+        sale = self.get_object()
+        if sale.supply_lines.filter(taken__gt=0).exists() and not request.user.has_perm("supplies.add_supplymovement"):
+            raise PermissionDenied("Sem permissão para devolver os insumos desta venda.")
+        delete_sale(sale_id=sale.id, actor=request.user)
+        return Response(status=204)
 
     @extend_schema(request=SaleInput, responses={201: SaleSerializer})
     def create(self, request):

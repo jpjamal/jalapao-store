@@ -3,6 +3,7 @@
 # Categorias do sistema: só os lançamentos automáticos as usam. Chave estável, e não o nome, para o
 # código achá-las mesmo que alguém renomeie. (nome, direção)
 SYSTEM_CATEGORIES = {
+    "sale_adjustment": ("Correção de venda", "both"),
     "sale_received": ("Venda recebida", "in"),
     "sale_refund": ("Estorno de venda", "out"),
     "purchase": ("Compra de produtos", "out"),
@@ -14,6 +15,7 @@ SYSTEM_CATEGORIES = {
 
 # Origem do lançamento, para a tela mostrar de onde veio.
 ORIGINS = {
+    "sale_adjustment": "Correção de venda",
     "sale": "Venda",
     "sale_refund": "Estorno de venda",
     "purchase": "Compra de estoque",
@@ -24,6 +26,7 @@ ORIGINS = {
 }
 
 SYSTEM_KEY_OF_ORIGIN = {
+    "sale_adjustment": "sale_adjustment",
     "sale": "sale_received",
     "sale_refund": "sale_refund",
     "purchase": "purchase",
@@ -36,9 +39,11 @@ SYSTEM_KEY_OF_ORIGIN = {
 
 def origin_of(
     *, direction, sale=False, receipt=False, refund_of_receipt=False, supply_receipt=False,
-    refund_of_supply_receipt=False,
+    refund_of_supply_receipt=False, sale_revision=False,
 ) -> str:
     """De onde veio o lançamento. Os argumentos dizem se a ligação existe (id preenchido)."""
+    if sale_revision:
+        return "sale_adjustment"
     if sale:
         return "sale" if direction == "in" else "sale_refund"
     if receipt:

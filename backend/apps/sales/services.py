@@ -11,7 +11,7 @@ from apps.inventory.services import adjust_stock
 from apps.inventory.models import Stock
 from apps.inventory.services import outgoing_cost
 from apps.finance.models import CashEntry
-from apps.sales.models import Sale, SaleItem
+from apps.sales.models import Sale, SaleItem, SaleRevision
 from apps.supplies.services import consume_supplies_for_sale, restore_supplies_for_sale
 
 
@@ -128,4 +128,78 @@ def cancel_sale(*, sale_id, actor):
     sale.status = "cancelled"
     sale.cancelled_at = timezone.now()
     sale.save(update_fields=["status", "cancelled_at", "updated_at"])
+    return sale
+
+
+def _snapshot(sale):
+    fields = ("channel", "reference", "external_channel", "external_id", "gross", "discount",
+              "platform_fee", "shipping_cost", "net", "profit", "cost_total", "status",
+              "received_at", "cancelled_at", "deleted_at")
+    result = {name: str(getattr(sale, name)) if getattr(sale, name) is not None else None for name in fields}
+    result["items"] = [
+        {"id": str(item.id), "product": str(item.product_id), "product_name": item.product_name,
+         "quantity": item.quantity, "unit_price": str(item.unit_price), "cost_total": str(item.cost_total)}
+        for item in sale.items.order_by("id")
+    ]
+    return result
+
+
+@transaction.atomic
+def edit_sale(*, sale_id, data, actor):
+    sale = Sale.objects.select_for_update().get(pk=sale_id)
+    digest = hashlib.sha256(json.dumps(data, sort_keys=True, default=str).encode()).hexdigest()
+    previous = sale.revisions.filter(request_key=data["request_key"]).first()
+    if previous:
+        if previous.request_hash != digest or previous.actor_id != actor.id:
+            raise ValidationError({"request_key": "Chave já utilizada com outro conteúdo."})
+        return sale
+    if sale.status != "confirmed" or sale.deleted_at:
+        raise ValidationError({"status": "Venda cancelada ou excluída não pode ser editada."})
+    if sale.updated_at != data["expected_updated_at"]:
+        raise ValidationError({"version": "Esta venda mudou. Feche e abra a edição para carregar os valores atuais."})
+    if sale.received_at and not actor.has_perm("finance.add_cashentry"):
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied("Sem permissão para corrigir o caixa de uma venda recebida.")
+    before, old_net = _snapshot(sale), sale.net
+    items = list(sale.items.order_by("id"))
+    prices = data.get("items", [])
+    by_id = {item.id: item for item in items}
+    if len({row["id"] for row in prices}) != len(prices) or any(row["id"] not in by_id for row in prices):
+        raise ValidationError({"items": "Item repetido ou que não pertence a esta venda."})
+    for row in prices:
+        by_id[row["id"]].unit_price = row["unit_price"]
+    for field in ("channel", "reference", "discount", "platform_fee", "shipping_cost"):
+        if field in data:
+            setattr(sale, field, data[field])
+    totals = sale_totals(
+        items=[{"quantity": item.quantity, "unit_price": item.unit_price} for item in items],
+        discount=sale.discount, fee=sale.platform_fee, shipping=sale.shipping_cost,
+    )
+    sale.gross, sale.net, sale.profit = totals.gross, totals.net, totals.net - sale.cost_total
+    sale.save(update_fields=["channel", "reference", "discount", "platform_fee", "shipping_cost",
+                             "gross", "net", "profit", "updated_at"])
+    SaleItem.objects.bulk_update(items, ["unit_price"])
+    revision = SaleRevision.objects.create(
+        sale=sale, actor=actor, action="edit", before=before, after=_snapshot(sale),
+        request_key=data["request_key"], request_hash=digest,
+    )
+    difference = sale.net - old_net
+    if sale.received_at and difference:
+        CashEntry.objects.create(
+            sale=sale, sale_revision=revision, actor=actor, direction="in" if difference > 0 else "out",
+            amount=abs(difference), occurred_on=timezone.localdate(), description="Correção de valor de venda",
+        )
+    return sale
+
+
+@transaction.atomic
+def delete_sale(*, sale_id, actor):
+    sale = Sale.objects.select_for_update().get(pk=sale_id)
+    if sale.deleted_at:
+        return sale
+    before = _snapshot(sale)
+    sale = cancel_sale(sale_id=sale.id, actor=actor)
+    sale.deleted_at = timezone.now()
+    sale.save(update_fields=["deleted_at", "updated_at"])
+    SaleRevision.objects.create(sale=sale, actor=actor, action="delete", before=before, after=_snapshot(sale))
     return sale

@@ -63,7 +63,12 @@ completo e regras de dependência em [../docs/architecture.md](../docs/architect
 - inventory: saldo 1:1, histórico N:1, serviços atômicos com bloqueio do produto.
 - inventory.Receipt: compras/produções por produto com custo congelado; Stock.value mantém
   avaliação pelo custo médio móvel. Product.cost_price é apenas referência de novas entradas.
-- sales: Sale 1:N SaleItem; snapshots, chave idempotente e cancelamento reversível.
+- sales: Sale 1:N SaleItem; snapshots, chave idempotente e cancelamento reversível. Spec 030:
+  venda confirmada aceita correção de canal, referência e valores, mantendo produto, quantidade,
+  custo e insumos. `SaleRevision` guarda autor e antes/depois. Venda recebida gera no Caixa somente
+  a diferença da correção; a categoria automática não entra de novo no Resultado do negócio.
+  Excluir é lógico (`deleted_at`): cancela e estorna uma vez, some da lista e preserva o histórico.
+  `external_channel` mantém a origem importada mesmo quando o canal exibido é corrigido.
 - Listagens (spec 027): os filtros de busca e de ordem são globais (`apps/common/filters.py`). Busca e ordem de
   texto ignoram acento e maiúscula por `Fold` (igual no PostgreSQL e no SQLite); cada view declara `search_fields`,
   `ordering_fields`, `ordering_text_fields` e `ordering_zero_fields`; `range_filterset` cria `date_from`/`date_to`.
@@ -91,7 +96,9 @@ Autenticação Bearer JWT. Frontend usa BFF `/jalapao-store/api/` com cookies Ht
 `products/` GET/POST/PATCH, `movements/` GET/POST, `sales/` GET/POST,
 `product-images/` GET/POST/DELETE e `product-images/{uuid}/content/` GET autenticado,
 `listing-drafts/` GET/POST/PATCH para preparar anúncios por canal,
-`sales/{uuid}/receive/` e `cancel/` POST, `cash/` GET/POST, `dashboard/` GET.
+`sales/{uuid}/` GET/PATCH/DELETE, `sales/{uuid}/receive/` e `cancel/` POST,
+`cash/` GET/POST, `dashboard/` GET. PATCH corrige os campos financeiros permitidos com
+`expected_updated_at` e `request_key`; DELETE faz exclusão lógica com estornos.
 `receipts/` GET/POST, `receipts/{uuid}/` GET e `receipts/{uuid}/pay/` POST (occurred_on).
 `receipts/{uuid}/cancel` POST (spec 023) desfaz uma entrada lançada errada sem apagá-la; exige
 change_receipt, add_movement e add_cashentry, e só vale se ela for a última movimentação do

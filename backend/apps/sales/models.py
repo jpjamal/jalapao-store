@@ -16,6 +16,8 @@ class Sale(Entity):
     reference = models.CharField(max_length=100, blank=True)
     # código do pedido no marketplace, quando a venda foi importada de lá (spec 015)
     external_id = models.CharField(max_length=40, blank=True)
+    external_channel = models.CharField(max_length=20, blank=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
     idempotency_key = models.UUIDField(unique=True)
     request_hash = models.CharField(max_length=64)
     gross = amount()
@@ -37,11 +39,25 @@ class Sale(Entity):
         constraints = [
             # um pedido do marketplace vira no máximo uma venda
             models.UniqueConstraint(
-                fields=["channel", "external_id"],
+                fields=["external_channel", "external_id"],
                 condition=~models.Q(external_id=""),
                 name="sale_external_order_unique",
             )
         ]
+
+
+class SaleRevision(Entity):
+    sale = models.ForeignKey(Sale, on_delete=models.PROTECT, related_name="revisions")
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    action = models.CharField(max_length=10, choices=[("edit", "Edição"), ("delete", "Exclusão")])
+    before = models.JSONField()
+    after = models.JSONField()
+    request_key = models.UUIDField(null=True, blank=True)
+    request_hash = models.CharField(max_length=64, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        constraints = [models.UniqueConstraint(fields=["sale", "request_key"], name="sale_revision_request_unique")]
 
 
 class SaleItem(Entity):

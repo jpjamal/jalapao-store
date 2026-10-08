@@ -42,7 +42,10 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   produção nunca gera despesa automática. Ajustes positivos exigem custo explícito.
 - /vendas: seção opcional *Insumos usados* (baixa no saldo de insumos junto com a venda, com aviso do
   que faltou; spec 024), múltiplos itens, canal (boca a boca, Site Jalapão, Mercado Livre, Shopee, outro),
-  descontos/taxas/frete, receber e cancelar. Produto de cada item por busca digitada.
+  descontos/taxas/frete, receber e cancelar. Produto de cada item por busca digitada. Venda confirmada
+  pode ser editada para corrigir canal, referência e valores sem trocar produtos, quantidades ou insumos.
+  Excluir abre confirmação, devolve estoque, estorna eventual recebimento e mantém o histórico interno
+  (spec 030).
   "Importar do Mercado Livre" traz os pedidos pagos com taxa e frete reais, em prévia, e
   cria as vendas só quando o dono manda (spec 015).
 - /caixa: entradas/saídas, origem e categoria de cada lançamento (manual escolhe e pode reclassificar), filtro

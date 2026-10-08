@@ -12,7 +12,9 @@ class CashCategoriesMigrationTests(TransactionTestCase):
     def test_existing_entries_are_classified_by_origin_and_manual_ones_wait(self):
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()
-        before = [("finance", "0004_estoque_compras_insumos")]
+        # A migração 0006 de finance depende da 0005 de sales. As duas precisam voltar juntas
+        # para que o modelo histórico e a tabela física de Sale tenham as mesmas colunas.
+        before = [("finance", "0004_estoque_compras_insumos"), ("sales", "0004_pedidos_de_marketplace")]
         executor.migrate(before)
         try:
             old = executor.loader.project_state(before).apps
@@ -48,7 +50,9 @@ class CashCategoriesMigrationTests(TransactionTestCase):
         self.assertFalse(CashCategory.objects.get(name="Energia").counts_in_result)
         self.assertTrue(CashCategory.objects.get(name="Impostos e taxas").counts_in_result)
         self.assertFalse(CashCategory.objects.get(name="Retirada do dono").counts_in_result)
-        self.assertEqual(CashCategory.objects.filter(system_key__isnull=False).count(), 7)
+        correction = CashCategory.objects.get(system_key="sale_adjustment")
+        self.assertEqual((correction.direction, correction.counts_in_result), ("both", False))
+        self.assertEqual(CashCategory.objects.filter(system_key__isnull=False).count(), 8)
 
 
 class SupplyExpenseOptionMigrationTests(TransactionTestCase):

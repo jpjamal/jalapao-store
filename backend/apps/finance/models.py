@@ -56,6 +56,9 @@ class CashEntry(Entity):
     sale = models.ForeignKey(
         "sales.Sale", null=True, blank=True, on_delete=models.PROTECT, related_name="cash_entries"
     )
+    sale_revision = models.OneToOneField(
+        "sales.SaleRevision", null=True, blank=True, on_delete=models.PROTECT, related_name="cash_adjustment"
+    )
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     receipt = models.OneToOneField(
         "inventory.Receipt", null=True, blank=True, on_delete=models.PROTECT, related_name="payment"
@@ -78,6 +81,7 @@ class CashEntry(Entity):
         return origin_of(
             direction=self.direction,
             sale=self.sale_id,
+            sale_revision=self.sale_revision_id,
             receipt=self.receipt_id,
             refund_of_receipt=self.refund_of_receipt_id,
             supply_receipt=self.supply_receipt_id,
@@ -95,7 +99,14 @@ class CashEntry(Entity):
         ordering = ["-occurred_on", "-created_at"]
         constraints = [
             models.CheckConstraint(condition=models.Q(amount__gt=0), name="cash_amount_positive"),
-            models.UniqueConstraint(fields=["sale", "direction"], name="cash_sale_direction_unique"),
+            models.UniqueConstraint(
+                fields=["sale", "direction"], condition=models.Q(sale_revision__isnull=True),
+                name="cash_sale_direction_unique",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(sale_revision__isnull=True) | models.Q(sale__isnull=False),
+                name="cash_revision_requires_sale",
+            ),
             models.CheckConstraint(
                 condition=models.Q(sale__isnull=True) | models.Q(receipt__isnull=True),
                 name="cash_single_origin",

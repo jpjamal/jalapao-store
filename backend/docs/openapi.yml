@@ -142,10 +142,12 @@ paths:
           - purchase
           - purchase_refund
           - sale
+          - sale_adjustment
           - sale_refund
           - supply
           - supply_refund
         description: |-
+          * `sale_adjustment` - Correção de venda
           * `sale` - Venda
           * `sale_refund` - Estorno de venda
           * `purchase` - Compra de estoque
@@ -454,10 +456,12 @@ paths:
           - purchase
           - purchase_refund
           - sale
+          - sale_adjustment
           - sale_refund
           - supply
           - supply_refund
         description: |-
+          * `sale_adjustment` - Correção de venda
           * `sale` - Venda
           * `sale_refund` - Estorno de venda
           * `purchase` - Compra de estoque
@@ -1990,6 +1994,55 @@ paths:
               schema:
                 $ref: '#/components/schemas/Sale'
           description: ''
+    patch:
+      operationId: sales_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este sale.
+        required: true
+      tags:
+      - sales
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSaleEditInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSaleEditInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSaleEditInput'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+          description: ''
+    delete:
+      operationId: sales_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este sale.
+        required: true
+      tags:
+      - sales
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /sales/{id}/cancel/:
     post:
       operationId: sales_cancel_create
@@ -3157,8 +3210,9 @@ components:
           maxLength: 200
         quantity:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         unit_price:
           type: string
           format: decimal
@@ -3176,6 +3230,19 @@ components:
       - product
       - product_name
       - quantity
+    ItemPriceInput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - id
+      - unit_price
     Listing:
       type: object
       properties:
@@ -3431,8 +3498,9 @@ components:
           readOnly: true
         delta:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
         reason:
           type: string
           maxLength: 240
@@ -4161,6 +4229,36 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedSaleEditInput:
+      type: object
+      properties:
+        request_key:
+          type: string
+          format: uuid
+        expected_updated_at:
+          type: string
+          format: date-time
+        channel:
+          $ref: '#/components/schemas/SaleChannelEnum'
+        reference:
+          type: string
+          maxLength: 100
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        platform_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        shipping_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemPriceInput'
     PatchedSupply:
       type: object
       properties:
@@ -4301,8 +4399,9 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
         hours:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         minutes:
           type: integer
           maximum: 59
@@ -4556,8 +4655,9 @@ components:
           $ref: '#/components/schemas/ReceiptKindEnum'
         quantity:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 1
+          format: int64
         unit_cost:
           type: string
           format: decimal
@@ -4689,6 +4789,13 @@ components:
         external_id:
           type: string
           maxLength: 40
+        external_channel:
+          type: string
+          maxLength: 20
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
         idempotency_key:
           type: string
           format: uuid
@@ -4736,6 +4843,7 @@ components:
       - actor
       - channel
       - created_at
+      - external_channel
       - external_id
       - id
       - idempotency_key
@@ -4822,12 +4930,14 @@ components:
           maxLength: 120
         requested:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 1
+          format: int64
         taken:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         shortfall:
           type: integer
           readOnly: true
@@ -4977,8 +5087,9 @@ components:
           readOnly: true
         delta:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
         balance_after:
           type: integer
           readOnly: true
@@ -5035,8 +5146,9 @@ components:
           maxLength: 120
         quantity:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 1
+          format: int64
         unit_cost:
           type: string
           format: decimal
