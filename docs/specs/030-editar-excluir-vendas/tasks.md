@@ -4,4 +4,4 @@
 - [x] Modelos, migrações, serviços e permissões.
 - [x] Editor e confirmação de exclusão na tela.
 - [x] Testes, contrato, build e documentação de validação.
-- [ ] Commit e deploy, somente após autorização do dono.
+- [x] Commit e deploy autorizados pelo dono; publicação validada em produção.

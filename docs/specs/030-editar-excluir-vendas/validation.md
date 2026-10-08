@@ -18,4 +18,8 @@ em janela flutuante com canal, referência, preços, desconto, taxas e frete pre
 explicou que produtos, quantidades e insumos são mantidos. A confirmação de exclusão reaproveita o
 `ConfirmDialog` já usado no sistema e o fluxo foi coberto pela API automatizada.
 
-Commit e deploy foram autorizados pelo dono após essa validação.
+## Publicação
+
+Commit funcional `ae21021` criado por `jpjamal <jpfisica3@gmail.com>`, sem coautor. Workflow
+GitHub Actions `37788728317` concluído com sucesso em 08/10/2026; testes, PostgreSQL/Next.js,
+build e deploy passaram. Smoke check público: login e manifesto responderam HTTP 200.
