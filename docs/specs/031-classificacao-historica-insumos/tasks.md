@@ -6,4 +6,4 @@
 - [x] Informação da classificação no histórico de compras.
 - [x] Documentação funcional atualizada.
 - [x] Validação completa no PostgreSQL 17, contrato e frontend.
-- [ ] Commit e deploy, quando autorizados pelo dono.
+- [x] Commit e deploy autorizados pelo dono; publicação validada em produção.

@@ -19,4 +19,6 @@ mudanças no cadastro.
 
 ## Publicação
 
-Ainda não publicada. Commit e deploy dependem de autorização do dono.
+Commit funcional `d22ee66` criado por `jpjamal <jpfisica3@gmail.com>`, sem coautor. Workflow GitHub
+Actions `37850459154` concluído com sucesso em 08/10/2026; testes, PostgreSQL/Next.js, build e deploy
+passaram. Smoke check público: login e manifesto responderam HTTP 200.
