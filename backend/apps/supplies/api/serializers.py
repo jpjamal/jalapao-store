@@ -144,6 +144,7 @@ class SupplyReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupplyReceipt
         exclude = ["request_hash", "previous_roll_price"]
+        read_only_fields = ["counts_as_expense_snapshot"]
 
 
 class SupplyMovementSerializer(serializers.ModelSerializer):

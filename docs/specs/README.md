@@ -37,5 +37,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [028](028-pagar-varias-compras/spec.md) | Janela de confirmação ao pagar compra e pagamento de várias de uma vez | escolher a data do pagamento (se o dono pedir) |
 | [029](029-custo-sugerido-e-sem-estoque/spec.md) | Custo sugerido no ajuste de estoque e produtos sem estoque destacados | — |
 | [030](030-editar-excluir-vendas/spec.md) | Corrigir canal e valores da venda; excluir com estorno e histórico interno | — |
+| [031](031-classificacao-historica-insumos/spec.md) | Congelar por compra a classificação de despesa dos insumos | — |
 
-Próxima spec: **031**.
+Próxima spec: **032**.

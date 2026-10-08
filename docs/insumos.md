@@ -23,7 +23,8 @@ apaga: desative. A opção *É de filamento* trava depois do primeiro insumo e �
 cor, peso e preço do rolo. A opção **Conta como despesa quando comprado** diz se a compra paga daquela
 categoria entra como despesa no **Resultado do negócio** ([caixa](caixa.md)): vem desligada em Filamentos,
 Acabamento e Colas e fitas, cujo custo já está no custo da peça, e ligada nas outras. Você muda quando
-quiser, e vale também para o passado.
+quiser. A regra é copiada para cada compra quando ela é cadastrada: alterar a opção ou trocar o insumo de
+categoria afeta somente compras futuras. O histórico mostra se cada compra conta como despesa.
 
 O material (PLA, PETG…) é um **campo do filamento**, não uma subcategoria. A lista traz sugestões
 (PLA, PLA+, PETG, ABS, ASA, TPU…) e aceita outro valor digitado.
@@ -56,7 +57,8 @@ entradas, mas ainda dá baixa no que sobrou.
 ## Comprar e pagar
 
 1. **Comprar** pede quantidade, custo unitário (o preço do rolo, no filamento), data, fornecedor e
-   referência. O saldo sobe na hora e a compra fica *a pagar*.
+   referência. O saldo sobe na hora, a compra fica *a pagar* e fica registrado se ela conta como despesa
+   no Resultado do negócio. Essa classificação não muda depois.
 2. **Pagar**, na aba Compras e movimentos, pede a data do pagamento (não pode ser futura) e gera **uma**
    saída no caixa com o total, uma única vez. Sem pagar, o caixa não é tocado.
 3. Comprar **filamento** atualiza o **preço do rolo** do cadastro para o preço pago (o último preço

@@ -82,6 +82,7 @@ def create_supply_receipt(*, data, actor):
         supply=supply,
         supply_name=supply.name,
         total=total,
+        counts_as_expense_snapshot=supply.category.counts_as_expense,
         request_hash=digest,
         previous_roll_price=supply.roll_price if supply.category.is_filament else None,
         actor=actor,

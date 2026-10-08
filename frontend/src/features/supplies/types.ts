@@ -36,6 +36,7 @@ export type SupplyReceipt = {
   quantity: number;
   unit_cost: string;
   total: string;
+  counts_as_expense_snapshot: boolean;
   occurred_on: string;
   supplier: string;
   reference: string;

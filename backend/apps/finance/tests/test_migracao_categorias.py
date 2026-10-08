@@ -5,7 +5,7 @@ from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
 
 from apps.finance.models import CashCategory, CashEntry
-from apps.supplies.models import SupplyCategory
+from apps.supplies.models import SupplyCategory, SupplyReceipt
 
 
 class CashCategoriesMigrationTests(TransactionTestCase):
@@ -80,3 +80,38 @@ class SupplyExpenseOptionMigrationTests(TransactionTestCase):
                 "Outra do dono": True,
             },
         )
+
+
+class SupplyExpenseSnapshotMigrationTests(TransactionTestCase):
+    def test_existing_receipts_copy_the_current_category_rule(self):
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        before = [("supplies", "0004_despesa_por_categoria")]
+        executor.migrate(before)
+        try:
+            old = executor.loader.project_state(before).apps
+            User = old.get_model("accounts", "User")
+            Category = old.get_model("supplies", "SupplyCategory")
+            Supply = old.get_model("supplies", "Supply")
+            Receipt = old.get_model("supplies", "SupplyReceipt")
+            user = User.objects.create(username="historical-supply-expense")
+            counted = Category.objects.create(name="Conta no histórico", counts_as_expense=True)
+            free = Category.objects.create(name="Fora do histórico", counts_as_expense=False)
+            for category, name in [(counted, "Caixa histórica"), (free, "Verniz histórico")]:
+                supply = Supply.objects.create(category=category, name=name)
+                Receipt.objects.create(
+                    supply=supply,
+                    supply_name=name,
+                    quantity=1,
+                    unit_cost=10,
+                    total=10,
+                    occurred_on="2026-10-01",
+                    idempotency_key=uuid.uuid4(),
+                    request_hash="historical",
+                    actor=user,
+                )
+        finally:
+            MigrationExecutor(connection).migrate(latest)
+
+        snapshots = dict(SupplyReceipt.objects.values_list("supply_name", "counts_as_expense_snapshot"))
+        self.assertEqual(snapshots, {"Caixa histórica": True, "Verniz histórico": False})

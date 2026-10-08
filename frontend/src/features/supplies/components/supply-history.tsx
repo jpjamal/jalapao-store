@@ -233,6 +233,9 @@ export function SupplyHistory({ refreshKey, onChanged }: { refreshKey: number; o
                       <div className="text-xs text-muted-foreground">
                         {[r.supplier, r.reference, r.notes].filter(Boolean).join(" · ")}
                       </div>
+                      <div className="text-xs text-muted-foreground">
+                        Resultado do negócio: {r.counts_as_expense_snapshot ? "conta como despesa" : "não conta"}
+                      </div>
                     </td>
                     <td data-label="Quantidade">{r.quantity}</td>
                     <td data-label="Custo unitário" className="money">

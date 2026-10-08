@@ -121,15 +121,35 @@ class SupplyExpenseTests(TestCase):
         cancel_supply_receipt(receipt_id=receipt.id, actor=self.user)
         self.assertEqual(self.result(), Decimal(0))
 
-    def test_switching_the_category_option_changes_the_past_too(self):
-        self.buy_and_pay(self.varnish, 1, "200")
+    def test_switching_the_category_option_preserves_the_past_and_applies_to_future_purchases(self):
+        historical = self.buy_and_pay(self.varnish, 1, "200")
         self.assertEqual(self.result(), Decimal(0))
         edited = self.client.patch(
             f"/api/v1/supply-categories/{self.free.pk}/", {"counts_as_expense": True}, format="json"
         )
         self.assertEqual(edited.status_code, 200)
         self.assertTrue(edited.json()["counts_as_expense"])
-        self.assertEqual(self.result(), Decimal("-200"))
+        historical.refresh_from_db()
+        self.assertFalse(historical.counts_as_expense_snapshot)
+        self.assertEqual(self.result(), Decimal(0))
+
+        future = self.buy_and_pay(self.varnish, 1, "30")
+        self.assertTrue(future.counts_as_expense_snapshot)
+        self.assertEqual(self.result(), Decimal("-30"))
+
+    def test_moving_a_supply_to_another_category_does_not_reclassify_old_purchases(self):
+        receipt = self.buy_and_pay(self.box, 2, "50")
+        self.assertEqual(self.result(), Decimal("-100"))
+
+        moved = self.client.patch(
+            f"/api/v1/supplies/{self.box.pk}/", {"category": str(self.free.pk)}, format="json"
+        )
+        self.assertEqual(moved.status_code, 200)
+        receipt.refresh_from_db()
+        self.assertTrue(receipt.counts_as_expense_snapshot)
+        self.assertEqual(self.result(), Decimal("-100"))
+        cancel_supply_receipt(receipt_id=receipt.id, actor=self.user)
+        self.assertEqual(self.result(), Decimal(0))
 
     def test_new_supply_category_counts_by_default(self):
         created = self.client.post("/api/v1/supply-categories/", {"name": "Nova r"}, format="json")

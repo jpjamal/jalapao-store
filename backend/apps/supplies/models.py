@@ -92,6 +92,9 @@ class SupplyReceipt(Entity):
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     unit_cost = amount()
     total = amount()
+    # Congela a regra vigente quando a compra é criada. Trocar a categoria do insumo ou mudar a
+    # opção da categoria depois não pode reclassificar uma compra histórica no Resultado do negócio.
+    counts_as_expense_snapshot = models.BooleanField()
     occurred_on = models.DateField()
     supplier = models.CharField(max_length=200, blank=True)
     reference = models.CharField(max_length=100, blank=True)

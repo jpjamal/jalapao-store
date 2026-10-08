@@ -21,16 +21,13 @@ def manual_result() -> Decimal:
 
 def supply_expense() -> Decimal:
     """Despesa com insumos: pagamentos de compra menos estornos, só das categorias de insumo com a opção
-    "conta como despesa" ligada. Olha a opção na hora: mudá-la vale também para o passado."""
+    "conta como despesa" ligada quando cada compra foi criada. A classificação histórica fica congelada."""
     paid = _total(
-        CashEntry.objects.filter(
-            supply_receipt__isnull=False, supply_receipt__supply__category__counts_as_expense=True
-        )
+        CashEntry.objects.filter(supply_receipt__counts_as_expense_snapshot=True)
     )
     refunded = _total(
         CashEntry.objects.filter(
-            refund_of_supply_receipt__isnull=False,
-            refund_of_supply_receipt__supply__category__counts_as_expense=True,
+            refund_of_supply_receipt__counts_as_expense_snapshot=True,
         )
     )
     return paid - refunded

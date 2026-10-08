@@ -51,7 +51,7 @@ Cartão da tela inicial:
 resultado = lucro real
           + entradas manuais cujas categorias contam
           − saídas manuais cujas categorias contam
-          − compras de insumo pagas (menos estornos) de categorias de insumo que contam como despesa
+          − compras de insumo pagas (menos estornos) marcadas como despesa quando foram cadastradas
 ```
 
 - **Lucro real** é o das vendas já recebidas ([lucro real](specs/025-lucro-real/spec.md)).
@@ -63,9 +63,11 @@ resultado = lucro real
 - Empréstimo, aporte e retirada não entram, mas estão no saldo do Caixa.
 - Tudo desde o começo, como os outros números da tela inicial; não há filtro por período.
 
-Mudar **conta no resultado** de uma categoria do Caixa, ou **conta como despesa** de uma categoria de insumo
-([insumos](insumos.md)), vale na hora, **também para o passado**, porque o resultado é calculado a cada vez.
-Nada disso muda o saldo do Caixa, o estoque nem o lucro de cada venda.
+Mudar **conta no resultado** de uma categoria manual do Caixa vale na hora, também para os lançamentos
+manuais antigos daquela categoria. Nas compras de insumo, a regra fica congelada em cada compra: mudar
+**conta como despesa** ou trocar o insumo de categoria afeta apenas compras futuras. Pagamento e estorno
+usam a mesma classificação gravada na compra. Nada disso muda o saldo do Caixa, o estoque nem o lucro de
+cada venda.
 
 ## Onde isso vive
 
