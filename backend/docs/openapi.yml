@@ -2065,6 +2065,61 @@ paths:
               schema:
                 $ref: '#/components/schemas/Sale'
           description: ''
+  /sales/{id}/label/:
+    get:
+      operationId: sales_label_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este sale.
+        required: true
+      tags:
+      - sales
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleLabel'
+          description: ''
+    put:
+      operationId: sales_label_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este sale.
+        required: true
+      tags:
+      - sales
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaleLabelInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SaleLabelInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SaleLabelInput'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleLabel'
+          description: ''
   /sales/{id}/receive/:
     post:
       operationId: sales_receive_create
@@ -4666,9 +4721,6 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
-        counts_as_expense_snapshot:
-          type: boolean
-          readOnly: true
         occurred_on:
           type: string
           format: date
@@ -4701,7 +4753,6 @@ components:
           type: integer
       required:
       - actor
-      - counts_as_expense_snapshot
       - created_at
       - id
       - idempotency_key
@@ -4777,6 +4828,15 @@ components:
           items:
             $ref: '#/components/schemas/SaleSupplyOutput'
           readOnly: true
+        has_label:
+          type: boolean
+          readOnly: true
+        label_order_id:
+          type: string
+          readOnly: true
+        label_filename:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -4849,9 +4909,12 @@ components:
       - created_at
       - external_channel
       - external_id
+      - has_label
       - id
       - idempotency_key
       - items
+      - label_filename
+      - label_order_id
       - net
       - profit
       - supplies
@@ -4873,6 +4936,30 @@ components:
     SaleInput:
       type: object
       properties:
+        zpl:
+          type: string
+          writeOnly: true
+          maxLength: 5000000
+        label_filename:
+          type: string
+          writeOnly: true
+          maxLength: 255
+        label_order_id:
+          type: string
+          writeOnly: true
+          maxLength: 100
+        label_name:
+          type: string
+          writeOnly: true
+          maxLength: 200
+        label_city:
+          type: string
+          writeOnly: true
+          maxLength: 120
+        label_state:
+          type: string
+          writeOnly: true
+          maxLength: 60
         idempotency_key:
           type: string
           format: uuid
@@ -4909,6 +4996,66 @@ components:
       - channel
       - idempotency_key
       - items
+    SaleLabel:
+      type: object
+      properties:
+        zpl:
+          type: string
+        source_name:
+          type: string
+          maxLength: 255
+        order_id:
+          type: string
+          maxLength: 100
+        recipient_name:
+          type: string
+          maxLength: 200
+        recipient_city:
+          type: string
+          maxLength: 120
+        recipient_state:
+          type: string
+          maxLength: 60
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - updated_at
+      - zpl
+    SaleLabelInput:
+      type: object
+      properties:
+        zpl:
+          type: string
+          maxLength: 5000000
+        source_name:
+          type: string
+          default: ''
+          maxLength: 255
+        order_id:
+          type: string
+          default: ''
+          maxLength: 100
+        recipient_name:
+          type: string
+          default: ''
+          maxLength: 200
+        recipient_city:
+          type: string
+          default: ''
+          maxLength: 120
+        recipient_state:
+          type: string
+          default: ''
+          maxLength: 60
+      required:
+      - zpl
     SaleSupplyInput:
       type: object
       description: Insumo usado na venda (spec 024, etapa 3).
@@ -5161,6 +5308,9 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        counts_as_expense_snapshot:
+          type: boolean
+          readOnly: true
         occurred_on:
           type: string
           format: date
@@ -5193,6 +5343,7 @@ components:
           type: integer
       required:
       - actor
+      - counts_as_expense_snapshot
       - created_at
       - id
       - idempotency_key

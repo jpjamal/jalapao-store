@@ -60,7 +60,9 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   ações Comprar, Dar baixa, Ajustar, Editar) e *Compras e movimentos* (Pagar, Cancelar e o razão do
   saldo).
 - /ferramentas/calculadora: taxas de Shopee e Mercado Livre, com a tabela de regras.
-- /ferramentas/etiquetas: ZPL → Labelary → PDF nomeado pelo destinatário, com OCR.
+- /ferramentas/etiquetas: ZPL → Labelary → PDF nomeado por pedido e destinatário, com OCR por múltiplas regiões.
+- /vendas: o formulário e o histórico usam o mesmo gerador para salvar o ZPL, corrigir os dados lidos e
+  baixar ou abrir novamente o PDF da etiqueta.
 - /integracoes: conectar Shopee e Mercado Livre, importar anúncios, vincular por SKU e
   ligar o envio de estoque por anúncio.
 - /callback: retorno da autorização; troca o código por tokens assim que abre.

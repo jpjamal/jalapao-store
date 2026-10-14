@@ -14,8 +14,22 @@ export type Sale = {
   profit: string;
   status: string;
   received_at: string | null;
+  has_label: boolean;
+  label_order_id: string;
+  label_filename: string;
   items: SaleItem[];
   supplies?: { supply_name: string; requested: number; taken: number; shortfall: number }[];
+};
+
+export type SaleLabel = {
+  zpl: string;
+  source_name: string;
+  order_id: string;
+  recipient_name: string;
+  recipient_city: string;
+  recipient_state: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export const channels: Record<string, string> = {

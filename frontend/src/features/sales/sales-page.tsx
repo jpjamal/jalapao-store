@@ -26,6 +26,9 @@ import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
 import { channels, type Sale } from "@/features/sales/types";
 import { EditSaleDialog } from "@/features/sales/components/edit-sale-dialog";
+import { SaleLabelDialog } from "@/features/sales/components/sale-label-dialog";
+import { SaleLabelEditor } from "@/features/sales/components/sale-label-editor";
+import { emptySaleLabel, type SaleLabelDraft } from "@/features/sales/label";
 import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 
 type Draft = { product_id: string; quantity: number; unit_price: string };
@@ -41,6 +44,7 @@ const saleColumns: SortColumn[] = [
 
 export default function Sales() {
   const [editing, setEditing] = useState<Sale | null>(null);
+  const [labelSale, setLabelSale] = useState<Sale | null>(null);
   const [deleting, setDeleting] = useState<Sale | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const deletingNow = useRef(false);
@@ -60,6 +64,10 @@ export default function Sales() {
   // por que a lista de insumos veio vazia: falha ao carregar (ex.: sem permissão) ou nada cadastrado
   const [suppliesError, setSuppliesError] = useState("");
   const [key, setKey] = useState(() => crypto.randomUUID());
+  const [reference, setReference] = useState("");
+  const automaticReference = useRef("");
+  const [saleLabel, setSaleLabel] = useState<SaleLabelDraft>(emptySaleLabel);
+  const [readingLabel, setReadingLabel] = useState(false);
   const [items, setItems] = useState<Draft[]>([
     { product_id: "", quantity: 1, unit_price: "0" },
   ]);
@@ -91,6 +99,21 @@ export default function Sales() {
   }, [loadAux, loadRows]);
   function update(index: number, patch: Partial<Draft>) {
     setItems(items.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  }
+  function updateSaleLabel(next: SaleLabelDraft) {
+    setSaleLabel(next);
+    setReference((current) => {
+      if (!next.zpl && current === automaticReference.current) {
+        automaticReference.current = "";
+        return "";
+      }
+      const order = next.campos.pedido;
+      if (order && (!current || current === automaticReference.current)) {
+        automaticReference.current = order;
+        return order;
+      }
+      return current;
+    });
   }
   async function action(id: string, kind: "receive" | "cancel") {
     if (
@@ -144,6 +167,10 @@ export default function Sales() {
         setEditing(null); setNotice("Venda corrigida. Os totais foram atualizados e eventual diferença foi registrada no Caixa.");
         load(); feedback.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }} />}
+      {labelSale && <SaleLabelDialog key={labelSale.id} sale={labelSale} onClose={() => setLabelSale(null)} onSaved={() => {
+        setLabelSale(null); setNotice("Etiqueta salva na venda. Ela pode ser gerada novamente pelo histórico.");
+        load(); feedback.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }} />}
       <ConfirmDialog open={!!deleting} title="Excluir venda?" confirmLabel="Excluir venda"
         busy={busy} error={deleteError} onCancel={() => setDeleting(null)} onConfirm={async () => {
           if (!deleting || deletingNow.current) return;
@@ -178,6 +205,14 @@ export default function Sales() {
                     items,
                     supplies: usedSupplies.filter((u) => u.supply_id),
                     idempotency_key: key,
+                    ...(saleLabel.zpl ? {
+                      zpl: saleLabel.zpl,
+                      label_filename: saleLabel.source_name,
+                      label_order_id: saleLabel.campos.pedido,
+                      label_name: saleLabel.campos.nome,
+                      label_city: saleLabel.campos.cidade,
+                      label_state: saleLabel.campos.uf,
+                    } : {}),
                   }),
                 });
                 // falta de saldo de insumo não impede a venda: baixa só o que tem e avisa o que faltou
@@ -193,6 +228,9 @@ export default function Sales() {
                 setOpen(false);
                 setItems([{ product_id: "", quantity: 1, unit_price: "0" }]);
                 setUsedSupplies([]);
+                setSaleLabel(emptySaleLabel());
+                setReference("");
+                automaticReference.current = "";
                 setKey(crypto.randomUUID());
                 load();
               } catch (err) {
@@ -213,11 +251,18 @@ export default function Sales() {
                   ))}
                 </select>
               </div>
-              <Field
-                name="reference"
-                label="Referência / número do pedido"
-                maxLength={100}
-              />
+              <div>
+                <label htmlFor="reference">Referência / número do pedido</label>
+                <Input id="reference" name="reference" maxLength={100} value={reference}
+                  onChange={(event) => {
+                    automaticReference.current = "";
+                    setReference(event.target.value);
+                  }} />
+              </div>
+            </div>
+            <div className="mb-5">
+              <SaleLabelEditor value={saleLabel} onChange={updateSaleLabel}
+                idPrefix="new-sale-label" onBusyChange={setReadingLabel} allowPdfActions />
             </div>
             <div className="space-y-3">
               {items.map((item, index) => (
@@ -403,8 +448,8 @@ export default function Sales() {
               </strong>
             </p>
             <FormActions>
-              <Button disabled={busy}>
-                {busy ? "Registrando…" : "Confirmar venda e baixar estoque"}
+              <Button disabled={busy || readingLabel}>
+                {busy ? "Registrando…" : readingLabel ? "Lendo etiqueta…" : "Confirmar venda e baixar estoque"}
               </Button>
             </FormActions>
           </form>
@@ -522,6 +567,10 @@ export default function Sales() {
                             </Button>
                           </>
                         )}
+                        <Button size="sm" variant="outline" disabled={busy}
+                          onClick={() => setLabelSale(s)}>
+                          {s.has_label ? "Etiqueta" : "Adicionar etiqueta"}
+                        </Button>
                         <Button size="sm" variant="outline" disabled={busy}
                           onClick={() => { setDeleting(s); setDeleteError(""); }}>Excluir</Button>
                       </div>

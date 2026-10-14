@@ -77,6 +77,8 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "pt-br"
 TIME_ZONE = "America/Sao_Paulo"
 USE_I18N = USE_TZ = True
+# Uma etiqueta ZPL da Shopee pode carregar a arte rasterizada e chegar a alguns MB.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 STATIC_URL = "/jalapao-store/django-static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_ROOT = BASE_DIR / "media"

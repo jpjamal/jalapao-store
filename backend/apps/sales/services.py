@@ -11,7 +11,7 @@ from apps.inventory.services import adjust_stock
 from apps.inventory.models import Stock
 from apps.inventory.services import outgoing_cost
 from apps.finance.models import CashEntry
-from apps.sales.models import Sale, SaleItem, SaleRevision
+from apps.sales.models import Sale, SaleItem, SaleLabel, SaleRevision
 from apps.supplies.services import consume_supplies_for_sale, restore_supplies_for_sale
 
 
@@ -48,9 +48,10 @@ def create_sale(*, data, actor):
     )
     totals = sale_totals(items=rows, discount=discount, fee=fee, shipping=shipping)
     gross, net = totals.gross, totals.net
+    label_order_id = data.get("label_order_id", "").strip()
     sale = Sale.objects.create(
         channel=data["channel"],
-        reference=data.get("reference", ""),
+        reference=data.get("reference", "").strip() or label_order_id,
         idempotency_key=data["idempotency_key"],
         request_hash=digest,
         gross=gross,
@@ -78,7 +79,41 @@ def create_sale(*, data, actor):
         )
     # insumos usados (caixa, etiqueta…): baixa só do que tem, sem mexer no custo nem no lucro
     consume_supplies_for_sale(sale=sale, lines=data.get("supplies") or [], actor=actor)
+    if data.get("zpl"):
+        SaleLabel.objects.create(
+            sale=sale,
+            zpl=data["zpl"],
+            source_name=data.get("label_filename", "").strip(),
+            order_id=label_order_id,
+            recipient_name=data.get("label_name", "").strip(),
+            recipient_city=data.get("label_city", "").strip(),
+            recipient_state=data.get("label_state", "").strip(),
+            actor=actor,
+        )
     return sale
+
+
+@transaction.atomic
+def save_sale_label(*, sale_id, data, actor):
+    sale = Sale.objects.select_for_update().get(pk=sale_id)
+    if sale.deleted_at:
+        raise ValidationError({"status": "Venda excluída não pode receber uma nova etiqueta."})
+    label, _ = SaleLabel.objects.update_or_create(
+        sale=sale,
+        defaults={
+            "zpl": data["zpl"],
+            "source_name": data.get("source_name", "").strip(),
+            "order_id": data.get("order_id", "").strip(),
+            "recipient_name": data.get("recipient_name", "").strip(),
+            "recipient_city": data.get("recipient_city", "").strip(),
+            "recipient_state": data.get("recipient_state", "").strip(),
+            "actor": actor,
+        },
+    )
+    if not sale.reference and label.order_id:
+        sale.reference = label.order_id
+        sale.save(update_fields=["reference", "updated_at"])
+    return label
 
 
 @transaction.atomic

@@ -38,5 +38,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [029](029-custo-sugerido-e-sem-estoque/spec.md) | Custo sugerido no ajuste de estoque e produtos sem estoque destacados | — |
 | [030](030-editar-excluir-vendas/spec.md) | Corrigir canal e valores da venda; excluir com estorno e histórico interno | — |
 | [031](031-classificacao-historica-insumos/spec.md) | Congelar por compra a classificação de despesa dos insumos | — |
+| [032](032-etiqueta-zpl-na-venda/spec.md) | Etiqueta confiável e ZPL salvo na venda para regenerar o PDF | conferir com etiquetas reais da Shopee |
 
-Próxima spec: **032**.
+Próxima spec: **033**.

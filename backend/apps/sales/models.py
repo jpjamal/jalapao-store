@@ -46,6 +46,19 @@ class Sale(Entity):
         ]
 
 
+class SaleLabel(Entity):
+    """ZPL original kept with the sale so the shipping label can be regenerated."""
+
+    sale = models.OneToOneField(Sale, on_delete=models.PROTECT, related_name="label")
+    zpl = models.TextField()
+    source_name = models.CharField(max_length=255, blank=True)
+    order_id = models.CharField(max_length=100, blank=True)
+    recipient_name = models.CharField(max_length=200, blank=True)
+    recipient_city = models.CharField(max_length=120, blank=True)
+    recipient_state = models.CharField(max_length=60, blank=True)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+
+
 class SaleRevision(Entity):
     sale = models.ForeignKey(Sale, on_delete=models.PROTECT, related_name="revisions")
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)

@@ -62,7 +62,7 @@ portadas linha a linha dos arquivos antigos, **sem alterar nenhuma fórmula**:
 |---|---|---|
 | `features/tools/lib/custo3d.ts` | `site/assets/custo-3d.js` | precisa dar o mesmo número que `apps/catalog/domain/pricing.py` |
 | `features/tools/lib/marketplace.ts` | o miolo de `site/calculadora.html` | as faixas de taxa são regra de negócio do dono |
-| `features/tools/lib/etiquetas.ts` | o miolo de `site/etiquetas.html` | os recortes do OCR são calibrados; mexer quebra a leitura |
+| `features/tools/lib/etiquetas.ts` | OCR, Labelary e nome dos PDFs da ferramenta e das vendas | os recortes são calibrados e comparados; valide layouts diferentes ao mudar |
 
 O Tesseract continua vindo de CDN, carregado sob demanda na primeira leitura. A etiqueta é
 desenhada pela API pública do Labelary, limitada a 3 requisições por segundo — daí a fila

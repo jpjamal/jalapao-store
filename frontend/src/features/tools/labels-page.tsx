@@ -5,6 +5,7 @@ import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import {
   camposVazios,
+  extrairPedidoZpl,
   labelary,
   lerEtiqueta,
   naFila,
@@ -20,17 +21,18 @@ import { PageHeader } from "@/shared/components/page-header";
 
 /* O ZPL da Shopee é uma imagem, não texto: o destinatário só sai por OCR sobre a
    etiqueta renderizada pelo Labelary. Toda essa lógica está em
-   lib/ferramentas/etiquetas.ts, igual à da versão anterior. */
+   lib/etiquetas.ts. A leitura atual compara mais de uma região para não confundir
+   destinatário e remetente quando o marketplace muda o layout. */
 
 const padroes: [Padrao, string][] = [
-  ["nome_cidade", "Nome e cidade"],
-  ["nome", "Só o nome"],
-  ["nome_uf", "Nome e estado"],
-  ["nome_cidade_uf", "Nome, cidade e estado"],
-  ["curto_cidade", "Primeiro e último nome, e cidade"],
+  ["nome_cidade", "Pedido, nome e cidade"],
+  ["nome", "Pedido e nome"],
+  ["nome_uf", "Pedido, nome e estado"],
+  ["nome_cidade_uf", "Pedido, nome, cidade e estado"],
+  ["curto_cidade", "Pedido, primeiro e último nome, e cidade"],
   ["pedido", "ID do pedido"],
-  ["rastreio", "Código de rastreio"],
-  ["arquivo", "Nome do arquivo enviado"],
+  ["rastreio", "Pedido e código de rastreio"],
+  ["arquivo", "Pedido e nome do arquivo enviado"],
 ];
 
 export default function Etiquetas() {
@@ -111,12 +113,13 @@ export default function Etiquetas() {
           estado: c.ocr ? "lendo o nome..." : "pronta",
         });
 
-        let campos = camposVazios();
+        let campos = { ...camposVazios(), pedido: extrairPedidoZpl(zpl) };
         let estado = "pronta";
         let erro = false;
         if (c.ocr) {
           try {
             campos = await lerEtiqueta(png, log);
+            campos.pedido ||= extrairPedidoZpl(zpl);
             estado = campos.nome
               ? "nome lido"
               : "não consegui ler o nome — digite";

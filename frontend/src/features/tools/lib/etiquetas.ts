@@ -1,8 +1,8 @@
 /* Gerador de etiquetas — ZPL → Labelary → PDF, com OCR para achar o destinatário.
 
-   Porte literal de site/etiquetas.html: mesmos recortes, mesmos limiares, mesmas
-   regras de nome de arquivo. O ZPL da Shopee é uma imagem (~DG/^XG) e não tem
-   texto dentro, então o nome do destinatário só sai lendo a etiqueta renderizada. */
+   O ZPL da Shopee costuma ser uma imagem (~DG/^XG), sem nome em texto. A leitura
+   compara regiões diferentes da etiqueta e escolhe o conjunto mais coerente de
+   destinatário, CEP, cidade e UF; isso evita usar o remetente quando o layout muda. */
 
 const API = "https://api.labelary.com/v1/printers";
 
@@ -230,72 +230,190 @@ export async function lerEtiqueta(
     i.src = url;
   });
 
-  // bloco do destinatário (abaixo da tarja DESTINATÁRIO, antes do remetente)
-  const t1 = (await w.recognize(recortar(img, 0.02, 0.45, 0.575, 0.665, 3))).data
-    .text;
-
-  // faixa do topo: ID do pedido e código de rastreio
-  const t2 = (await w.recognize(recortar(img, 0.02, 0.18, 0.99, 0.24, 3))).data
-    .text;
-
-  // o ID do pedido é curto e sem espaço: lê de novo só ele, ampliado e
-  // com o alfabeto travado em maiúsculas + números (evita trocar J por I)
-  let t3 = "";
   try {
-    await w.setParameters({
-      tessedit_char_whitelist: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-      tessedit_pageseg_mode: "7",
-    });
-    t3 = (await w.recognize(recortar(img, 0.04, 0.203, 0.3, 0.232, 6, false)))
-      .data.text;
-  } catch {
-    /* segue com a leitura da faixa larga */
-  } finally {
-    await w.setParameters({
-      tessedit_char_whitelist: "",
-      tessedit_pageseg_mode: "3",
-    });
-  }
+    // Primeiro tenta o recorte histórico, que é rápido e preciso no layout conhecido.
+    const destinos = [
+      (await w.recognize(recortar(img, 0.02, 0.45, 0.575, 0.665, 3))).data.text,
+    ];
+    aoAvisar?.("  conferindo nome, cidade e CEP...");
+    destinos.push(
+      (await w.recognize(recortar(img, 0, 0.39, 0.7, 0.76, 3))).data.text,
+    );
+    const leituras = destinos.map(candidatoDestino);
+    const nomes = new Set(leituras.map((item) => item.campos.nome).filter(Boolean));
+    const ceps = new Set(leituras.map((item) => item.campos.cep).filter(Boolean));
+    if (Math.max(...leituras.map((item) => item.pontos)) < 10 || nomes.size > 1 || ceps.size > 1) {
+      destinos.push(
+        (await w.recognize(recortar(img, 0, 0.3, 1, 0.84, 2))).data.text,
+      );
+    }
 
-  URL.revokeObjectURL(url);
-  return interpretar(t1, t2, t3);
+    // Faixa do topo: ID do pedido e código de rastreio.
+    const topo = (await w.recognize(recortar(img, 0.02, 0.17, 0.99, 0.25, 3))).data
+      .text;
+    let pedido = "";
+    try {
+      await w.setParameters({
+        tessedit_char_whitelist: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        tessedit_pageseg_mode: "7",
+      });
+      pedido = (
+        await w.recognize(recortar(img, 0.025, 0.195, 0.36, 0.238, 6, false))
+      ).data.text;
+    } catch {
+      /* a faixa larga ainda pode fornecer o número */
+    } finally {
+      await w.setParameters({
+        tessedit_char_whitelist: "",
+        tessedit_pageseg_mode: "3",
+      });
+    }
+    return interpretar(destinos, topo, pedido);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
-export function interpretar(
-  textoDest: string,
-  textoTopo: string,
-  textoPedido: string,
-): Campos {
-  const linhas = (textoDest || "")
-    .split("\n")
-    .map((s) => s.trim())
-    .filter((s) => s && !/destinat/i.test(s) && /[A-Za-zÀ-ÿ0-9]/.test(s));
+type Candidato = { campos: Campos; pontos: number; cep: string };
 
+const PREFIXO_ENDERECO =
+  /^(rua|r\.?|av\.?|avenida|travessa|alameda|rodovia|estrada|quadra|qd\.?|lote|casa|apto|apt\.?|bloco|bairro|complemento)\b/i;
+const ROTULO =
+  /^(destinat[aá]rio|remetente|nome|endere[cç]o|cidade|munic[ií]pio|estado|uf|cep|pedido|n[uú]mero do pedido|rastreio)\s*:?\s*$/i;
+
+function limparLinha(valor: string): string {
+  return valor.replace(/[|_]+/g, " ").replace(/\s{2,}/g, " ").trim();
+}
+
+function linhasDoDestinatario(texto: string): { linhas: string[]; ancorado: boolean } {
+  let linhas = String(texto || "")
+    .split(/\r?\n/)
+    .map(limparLinha)
+    .filter((linha) => linha && /[A-Za-zÀ-ÿ0-9]/.test(linha));
+  const inicio = linhas.findIndex((linha) => /destinat/i.test(linha));
+  if (inicio >= 0) linhas = linhas.slice(inicio + 1);
+  const fim = linhas.findIndex((linha) => /remetente/i.test(linha));
+  if (fim >= 0) linhas = linhas.slice(0, fim);
+  return { linhas: linhas.filter((linha) => !ROTULO.test(linha)), ancorado: inicio >= 0 };
+}
+
+function cepDaLinha(linha: string): string {
+  const numerica = linha.toUpperCase().replace(/[OQ]/g, "0");
+  const achado = numerica.match(/\b(\d{5})\s*[-.]?\s*(\d{3})\b/);
+  return achado ? `${achado[1]}${achado[2]}` : "";
+}
+
+function retirarCep(linha: string): string {
+  return linha.replace(/\b[0-9OQ]{5}\s*[-.]?\s*[0-9OQ]{3}\b/gi, " ");
+}
+
+function ufDaLinha(linha: string): string {
+  const limpa = linha.replace(/\b\d{5}\s*[-.]?\s*\d{3}\b/g, " ").trim();
+  const siglaDireta = limpa.match(/(?:^|[\s/\-])([A-Z]{2})(?:$|[\s/\-])/);
+  if (siglaDireta && Object.values(UF).includes(siglaDireta[1])) return siglaDireta[1];
+  const chave = slug(limpa.replace(/^(estado|uf)\s*:?\s*/i, "")).replace(/_/g, " ");
+  return UF[chave] || "";
+}
+
+function textoSemRotulo(linha: string): string {
+  return limparLinha(linha.replace(/^(nome|cidade|munic[ií]pio|estado|uf|cep)\s*:?\s*/i, ""));
+}
+
+function pareceNome(linha: string): boolean {
+  const valor = textoSemRotulo(linha)
+    .replace(/[^A-Za-zÀ-ÿ' .-]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return (
+    valor.length >= 5 &&
+    valor.split(/\s+/).length >= 2 &&
+    !PREFIXO_ENDERECO.test(valor) &&
+    !/(destinat|remetente|declara[cç][aã]o|conte[uú]do|transportadora|shopee|correios|entrega|frete|pacote)/i.test(valor)
+  );
+}
+
+function candidatoDestino(texto: string): Candidato {
+  const { linhas, ancorado } = linhasDoDestinatario(texto);
   const campos = camposVazios();
+  const iCep = linhas.findIndex((linha) => cepDaLinha(linha));
+  if (iCep >= 0) campos.cep = cepDaLinha(linhas[iCep]);
 
-  // nome = primeira linha com cara de nome (só letras, pelo menos duas palavras)
-  for (const l of linhas) {
-    const limpo = l
+  if (iCep >= 0) {
+    const mesmaLinha = textoSemRotulo(
+      retirarCep(linhas[iCep]),
+    );
+    campos.uf = ufDaLinha(mesmaLinha);
+    const cidadeMesmaLinha = mesmaLinha
+      .replace(new RegExp(`(?:[/\\-]\\s*)?${campos.uf}$`, "i"), "")
+      .trim();
+    if (cidadeMesmaLinha && !PREFIXO_ENDERECO.test(cidadeMesmaLinha)) campos.cidade = cidadeMesmaLinha;
+
+    for (const indice of [iCep - 1, iCep + 1, iCep - 2, iCep + 2]) {
+      if (indice < 0 || indice >= linhas.length) continue;
+      const original = linhas[indice];
+      const linha = textoSemRotulo(original);
+      if (!campos.cidade && /^(cidade|munic[ií]pio)\s*:/i.test(original)) campos.cidade = linha;
+      if (!campos.uf) campos.uf = ufDaLinha(linha);
+      if (
+        !campos.cidade &&
+        linha &&
+        !ufDaLinha(linha) &&
+        !PREFIXO_ENDERECO.test(linha) &&
+        !/\d/.test(linha) &&
+        !pareceNome(linha)
+      )
+        campos.cidade = linha;
+    }
+    // No layout conhecido, a cidade fica imediatamente acima do CEP, mesmo com duas palavras.
+    const acima = textoSemRotulo(linhas[iCep - 1] || "");
+    if (acima && !PREFIXO_ENDERECO.test(acima) && !/\d/.test(acima) && !ufDaLinha(acima))
+      campos.cidade = acima;
+    if (ufDaLinha(acima)) {
+      const acimaDoEstado = textoSemRotulo(linhas[iCep - 2] || "");
+      if (acimaDoEstado && !PREFIXO_ENDERECO.test(acimaDoEstado) && !/\d/.test(acimaDoEstado))
+        campos.cidade = acimaDoEstado;
+    }
+    const abaixo = textoSemRotulo(linhas[iCep + 1] || "");
+    if (!campos.cidade && abaixo && !PREFIXO_ENDERECO.test(abaixo) && !/\d/.test(abaixo)) {
+      const depois = textoSemRotulo(linhas[iCep + 2] || "");
+      if (ufDaLinha(depois) || /^(cidade|munic[ií]pio)\s*:/i.test(linhas[iCep + 1] || ""))
+        campos.cidade = abaixo;
+    }
+  }
+
+  const limiteNome = iCep >= 0 ? iCep : linhas.length;
+  for (let indice = 0; indice < limiteNome; indice++) {
+    const linha = linhas[indice];
+    if (linha === campos.cidade || cepDaLinha(linha) || ufDaLinha(linha) || !pareceNome(linha)) continue;
+    campos.nome = textoSemRotulo(linha)
       .replace(/[^A-Za-zÀ-ÿ' .-]/g, "")
       .replace(/\s{2,}/g, " ")
       .trim();
-    if (
-      limpo.length >= 5 &&
-      limpo.split(/\s+/).length >= 2 &&
-      !/^(rua|av|avenida|travessa|alameda|rodovia|estrada|quadra|qd|lote|casa|apto|apt)\b/i.test(
-        limpo,
-      )
-    ) {
-      campos.nome = limpo;
-      break;
-    }
+    break;
   }
-  // o CEP ancora cidade (linha de cima) e estado (linha de baixo)
-  const iCep = linhas.findIndex((l) => /^\d{5}-?\d{3}$/.test(l.replace(/\s/g, "")));
-  if (iCep > 0) {
-    campos.cep = linhas[iCep].replace(/\D/g, "");
-    campos.cidade = linhas[iCep - 1] || "";
-    campos.uf = linhas[iCep + 1] || "";
+
+  const pontos = pontuarCampos(campos) + (ancorado ? 3 : 0);
+  return { campos, pontos, cep: campos.cep };
+}
+
+export function pontuarCampos(campos: Campos): number {
+  return (campos.nome ? 5 : 0) + (campos.cep ? 4 : 0) + (campos.cidade ? 3 : 0) + (campos.uf ? 2 : 0);
+}
+
+export function interpretar(
+  textoDest: string | string[],
+  textoTopo: string,
+  textoPedido: string,
+): Campos {
+  const candidatos = (Array.isArray(textoDest) ? textoDest : [textoDest])
+    .map(candidatoDestino)
+    .sort((a, b) => b.pontos - a.pontos);
+  const campos = candidatos[0]?.campos || camposVazios();
+  // Completa lacunas somente com uma leitura do mesmo CEP; evita misturar remetente e destinatário.
+  for (const candidato of candidatos.slice(1)) {
+    if (campos.cep && candidato.cep && candidato.cep !== campos.cep) continue;
+    for (const campo of ["nome", "cidade", "uf", "cep"] as const)
+      if (!campos[campo] && candidato.campos[campo]) campos[campo] = candidato.campos[campo];
   }
   const topo = (textoTopo || "").replace(/\s+/g, " ");
   const r = topo.match(/\b[A-Z]{2}\s?\d{9}\s?[A-Z]{2}\b/);
@@ -312,6 +430,15 @@ export function interpretar(
   return campos;
 }
 
+export function extrairPedidoZpl(zpl: string): string {
+  const camposTexto = Array.from(
+    String(zpl || "").toUpperCase().matchAll(/\^FD([^\^]{1,250})\^FS/g),
+    (achado) => achado[1],
+  ).join(" ");
+  const candidatos = camposTexto.match(/\b\d{7}[A-Z0-9]{5,10}\b/g) || [];
+  return candidatos[0] || "";
+}
+
 /* ---------- nome do arquivo ---------- */
 export function slug(s: unknown): string {
   return String(s || "")
@@ -320,7 +447,7 @@ export function slug(s: unknown): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
-    .slice(0, 70);
+    .slice(0, 120);
 }
 
 // estado por extenso na etiqueta -> sigla no nome do arquivo
@@ -374,16 +501,16 @@ export function nomeArquivo(
     partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : c.nome || "";
   const uf = sigla(c.uf);
   let base = "";
-  if (padrao === "nome_cidade") base = [c.nome, c.cidade].filter(Boolean).join(" ");
-  else if (padrao === "nome_uf") base = [c.nome, uf].filter(Boolean).join(" ");
+  if (padrao === "nome_cidade") base = [c.pedido, c.nome, c.cidade].filter(Boolean).join(" ");
+  else if (padrao === "nome_uf") base = [c.pedido, c.nome, uf].filter(Boolean).join(" ");
   else if (padrao === "nome_cidade_uf")
-    base = [c.nome, c.cidade, uf].filter(Boolean).join(" ");
+    base = [c.pedido, c.nome, c.cidade, uf].filter(Boolean).join(" ");
   else if (padrao === "curto_cidade")
-    base = [curto, c.cidade].filter(Boolean).join(" ");
+    base = [c.pedido, curto, c.cidade].filter(Boolean).join(" ");
   else if (padrao === "pedido") base = c.pedido;
-  else if (padrao === "rastreio") base = c.rastreio;
-  else if (padrao === "arquivo") base = `${et.arquivo} ${et.indice + 1}`;
-  else base = c.nome;
+  else if (padrao === "rastreio") base = [c.pedido, c.rastreio].filter(Boolean).join(" ");
+  else if (padrao === "arquivo") base = [c.pedido, et.arquivo, et.indice + 1].filter(Boolean).join(" ");
+  else base = [c.pedido, c.nome].filter(Boolean).join(" ");
   return (
     slug(base) || slug(`${et.arquivo}_${et.indice + 1}`) || `etiqueta_${et.id}`
   );

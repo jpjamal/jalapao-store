@@ -5,13 +5,19 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from apps.sales.api.filters import SaleFilter
-from apps.sales.api.serializers import SaleEditInput, SaleInput, SaleSerializer
-from apps.sales.models import Sale
-from apps.sales.services import cancel_sale, create_sale, delete_sale, edit_sale, receive_sale
+from apps.sales.api.serializers import (
+    SaleEditInput,
+    SaleInput,
+    SaleLabelInput,
+    SaleLabelSerializer,
+    SaleSerializer,
+)
+from apps.sales.models import Sale, SaleLabel
+from apps.sales.services import cancel_sale, create_sale, delete_sale, edit_sale, receive_sale, save_sale_label
 
 
 class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    queryset = Sale.objects.prefetch_related("items", "supply_lines").all()
+    queryset = Sale.objects.select_related("label").prefetch_related("items", "supply_lines").all()
     serializer_class = SaleSerializer
     filterset_class = SaleFilter
     search_fields = ["reference", "external_id", "items__product_name"]
@@ -72,6 +78,32 @@ class SaleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         ):
             raise PermissionDenied("Sem permissão para devolver os insumos desta venda.")
         return Response(SaleSerializer(cancel_sale(sale_id=self.get_object().id, actor=request.user)).data)
+
+    @extend_schema(
+        methods=["GET"],
+        request=None,
+        responses=SaleLabelSerializer,
+    )
+    @extend_schema(
+        methods=["PUT"],
+        request=SaleLabelInput,
+        responses=SaleLabelSerializer,
+    )
+    @action(detail=True, methods=["get", "put"])
+    def label(self, request, pk=None):
+        sale = self.get_object()
+        if request.method == "GET":
+            try:
+                saved = sale.label
+            except SaleLabel.DoesNotExist:
+                from rest_framework.exceptions import NotFound
+
+                raise NotFound("Esta venda ainda não tem etiqueta salva.")
+            return Response(SaleLabelSerializer(saved).data)
+        serializer = SaleLabelInput(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        saved = save_sale_label(sale_id=sale.id, data=serializer.validated_data, actor=request.user)
+        return Response(SaleLabelSerializer(saved).data)
 
     # ---------- vendas do Mercado Livre, importadas sob comando do dono (spec 015) ----------
 

@@ -52,7 +52,7 @@ async function handle(
       );
   }
   if (
-    !/^(auth\/(login|logout|me)|dashboard|categories(?:\/[a-f0-9-]+)?|supply-categories(?:\/[a-f0-9-]+)?|supplies(?:\/(?:[a-f0-9-]+|materials))?|supply-receipts(?:\/[a-f0-9-]+(?:\/(?:pay|cancel))?)?|supply-movements|products(?:\/[a-f0-9-]+)?|product-images(?:\/[a-f0-9-]+(?:\/content)?)?|listing-drafts(?:\/[a-f0-9-]+(?:\/(?:validate|publish|push))?)?|listing-drafts\/(?:ml-categories|ml-attributes|ml-category-tree)|movements|cash(?:\/(?:summary|[a-f0-9-]+))?|cash-categories(?:\/[a-f0-9-]+)?|receipts(?:\/[a-f0-9-]+(?:\/(?:pay|cancel))?)?|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel))?)?|sales\/(?:ml-preview|ml-import)|integrations(?:\/[a-f0-9-]+(?:\/(?:import-listings|push-stock))?)?|integrations\/(?:auth-link|ml-auth-link|connect|status|price-products|price-best-sellers)|listings(?:\/[a-f0-9-]+)?)$/.test(
+    !/^(auth\/(login|logout|me)|dashboard|categories(?:\/[a-f0-9-]+)?|supply-categories(?:\/[a-f0-9-]+)?|supplies(?:\/(?:[a-f0-9-]+|materials))?|supply-receipts(?:\/[a-f0-9-]+(?:\/(?:pay|cancel))?)?|supply-movements|products(?:\/[a-f0-9-]+)?|product-images(?:\/[a-f0-9-]+(?:\/content)?)?|listing-drafts(?:\/[a-f0-9-]+(?:\/(?:validate|publish|push))?)?|listing-drafts\/(?:ml-categories|ml-attributes|ml-category-tree)|movements|cash(?:\/(?:summary|[a-f0-9-]+))?|cash-categories(?:\/[a-f0-9-]+)?|receipts(?:\/[a-f0-9-]+(?:\/(?:pay|cancel))?)?|sales(?:\/[a-f0-9-]+(?:\/(?:receive|cancel|label))?)?|sales\/(?:ml-preview|ml-import)|integrations(?:\/[a-f0-9-]+(?:\/(?:import-listings|push-stock))?)?|integrations\/(?:auth-link|ml-auth-link|connect|status|price-products|price-best-sellers)|listings(?:\/[a-f0-9-]+)?)$/.test(
       path,
     )
   )
@@ -86,7 +86,8 @@ async function handle(
       access = rotated?.access;
     }
     const multipart = request.headers.get("content-type")?.startsWith("multipart/form-data") || false;
-    const limit = multipart ? 11 * 1024 * 1024 : 1000000;
+    const labelRequest = request.method !== "GET" && /^sales(?:\/[a-f0-9-]+\/label)?$/.test(path);
+    const limit = multipart ? 11 * 1024 * 1024 : labelRequest ? 8 * 1024 * 1024 : 1000000;
     if (Number(request.headers.get("content-length") || 0) > limit)
       return NextResponse.json(
         { errors: { detail: "Solicitação muito grande." } },
