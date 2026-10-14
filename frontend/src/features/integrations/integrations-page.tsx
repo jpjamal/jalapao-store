@@ -12,6 +12,7 @@ import { useClientList } from "@/shared/hooks/use-list-query";
 import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "@/shared/components/list-toolbar";
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
+import { ListAction } from "@/shared/components/list-action";
 
 type Account = {
   id: string;
@@ -216,9 +217,9 @@ export default function Integracoes() {
                     <td data-label="Última sincronia">{quando(c.last_synced_at)}</td>
                     <td data-role="actions">
                       <div className="flex flex-wrap gap-2 justify-end">
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      <ListAction
+                        kind="import"
+                        label="Importar anúncios"
                         disabled={!!ocupado}
                         onClick={() =>
                           acao("importar", async () => {
@@ -236,12 +237,10 @@ export default function Integracoes() {
                             );
                           })
                         }
-                      >
-                        Importar anúncios
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      />
+                      <ListAction
+                        kind="stock"
+                        label="Enviar estoque"
                         disabled={!!ocupado}
                         onClick={() =>
                           acao("estoque", async () => {
@@ -259,9 +258,7 @@ export default function Integracoes() {
                             );
                           })
                         }
-                      >
-                        Enviar estoque
-                      </Button>
+                      />
                       </div>
                     </td>
                   </tr>

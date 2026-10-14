@@ -227,3 +227,6 @@ playwright-report/
 test-results/
 !frontend/src/lib/
 !frontend/src/lib/**
+
+# cópias de banco soltas por ferramentas de apoio
+backend/.codex-db-backup.sqlite3

@@ -15,6 +15,7 @@ import {
 } from "@/shared/components/list-toolbar";
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
+import { ListAction } from "@/shared/components/list-action";
 
 function CategoryForm({
   category,
@@ -199,9 +200,7 @@ export default function Categories() {
                     <td data-label="Produtos">{c.products_count}</td>
                     <td data-label="Status">{c.active ? "Ativa" : "Inativa"}</td>
                     <td data-role="actions">
-                      <Button variant="outline" size="sm" onClick={() => setEditing(c)}>
-                        Editar
-                      </Button>
+                      <ListAction kind="edit" label="Editar categoria" onClick={() => setEditing(c)} />
                     </td>
                   </tr>
                 ))}

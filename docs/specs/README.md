@@ -39,5 +39,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [030](030-editar-excluir-vendas/spec.md) | Corrigir canal e valores da venda; excluir com estorno e histórico interno | — |
 | [031](031-classificacao-historica-insumos/spec.md) | Congelar por compra a classificação de despesa dos insumos | — |
 | [032](032-etiqueta-zpl-na-venda/spec.md) | Etiqueta confiável e ZPL salvo na venda para regenerar o PDF | conferir com etiquetas reais da Shopee |
+| [033](033-formulario-venda-e-acoes-compactas/spec.md) | Arrastar ZPL, reorganizar a venda e usar ações compactas nas listagens | conferir com etiqueta real da Shopee |
 
-Próxima spec: **033**.
+Próxima spec: **034**.

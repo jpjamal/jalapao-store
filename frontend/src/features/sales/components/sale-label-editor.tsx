@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { FileUp } from "lucide-react";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { ErrorMessage } from "@/shared/components/feedback";
@@ -28,6 +29,7 @@ export function SaleLabelEditor({
   const latest = useRef(onChange);
   const run = useRef(0);
   const [busy, setBusy] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   latest.current = onChange;
@@ -88,12 +90,26 @@ export function SaleLabelEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value.zpl]);
 
+  // Soltar um arquivo fora da área faria o navegador abri-lo e sair do sistema.
+  useEffect(() => {
+    const guard = (event: DragEvent) => {
+      if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
+    };
+    window.addEventListener("dragover", guard);
+    window.addEventListener("drop", guard);
+    return () => {
+      window.removeEventListener("dragover", guard);
+      window.removeEventListener("drop", guard);
+    };
+  }, []);
+
   async function readFile(file?: File) {
     if (!file) return;
     if (file.size > 5_000_000) {
       setError("O arquivo ultrapassa o limite de 5 MB.");
       return;
     }
+    setError("");
     const zpl = await file.text();
     onChange({ ...emptySaleLabel(), zpl, source_name: file.name });
   }
@@ -127,34 +143,45 @@ export function SaleLabelEditor({
       <div>
         <h3>Etiqueta ZPL (opcional)</h3>
         <p className="text-sm text-muted-foreground">
-          Cole o código ou escolha o .txt. O número do pedido será preenchido automaticamente quando for localizado.
+          Arraste o arquivo ou clique para escolher. O número do pedido será preenchido automaticamente quando for localizado.
         </p>
       </div>
       <div>
-        <label htmlFor={`${idPrefix}-file`}>Arquivo .txt</label>
-        <Input
+        <input
           id={`${idPrefix}-file`}
           type="file"
-          accept=".txt,text/plain"
+          accept=".txt,.zpl,text/plain,application/octet-stream"
           disabled={busy}
+          className="sr-only"
           onChange={(event) => {
             void readFile(event.target.files?.[0]);
             event.currentTarget.value = "";
           }}
         />
-      </div>
-      <div>
-        <label htmlFor={`${idPrefix}-zpl`}>Código ZPL</label>
-        <textarea
-          id={`${idPrefix}-zpl`}
-          rows={5}
-          value={value.zpl}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm"
-          placeholder="^XA ... ^XZ"
-          onChange={(event) =>
-            onChange({ ...emptySaleLabel(), zpl: event.target.value, source_name: value.source_name })
-          }
-        />
+        <label
+          htmlFor={`${idPrefix}-file`}
+          className={`flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed p-5 text-center transition-colors ${
+            dragging ? "border-primary bg-muted" : "border-input hover:bg-muted/60"
+          } ${busy ? "pointer-events-none opacity-50" : ""}`}
+          onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
+          onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragging(false);
+            void readFile(event.dataTransfer.files?.[0]);
+          }}
+        >
+          <FileUp size={28} aria-hidden className="mb-2 text-primary" />
+          <strong>{value.zpl ? "Etiqueta carregada" : "Arraste o arquivo ZPL aqui"}</strong>
+          <span className="mt-1 text-sm text-muted-foreground">
+            {value.zpl
+              ? `${value.source_name || "ZPL salvo"} · arraste ou clique para substituir`
+              : "ou clique para escolher um arquivo .txt ou .zpl"}
+          </span>
+        </label>
       </div>
       {value.zpl && (
         <button

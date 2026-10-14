@@ -12,6 +12,7 @@ import { useClientList } from "@/shared/hooks/use-list-query";
 import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "@/shared/components/list-toolbar";
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
+import { ListAction } from "@/shared/components/list-action";
 
 const directionLabel = { in: "Entrada", out: "Saída", both: "Entrada ou saída" } as const;
 const columns: SortColumn[] = [
@@ -215,9 +216,7 @@ export function CashCategoriesPanel({ onChanged }: { onChanged: () => void }) {
                   <td data-label="Status">{c.active ? "Ativa" : "Inativa"}</td>
                   <td data-role="actions">
                     {!c.is_system && (
-                      <Button variant="outline" size="sm" onClick={() => setEditing(c)}>
-                        Editar
-                      </Button>
+                      <ListAction kind="edit" label="Editar categoria" onClick={() => setEditing(c)} />
                     )}
                   </td>
                 </tr>

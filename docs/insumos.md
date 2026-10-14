@@ -8,11 +8,11 @@ impressora, fita, cola, verniz, lixa, ferramentas. Fica em **/jalapao-store/insu
 
 ## Duas abas
 
-**Cadastro e estoque** — a lista de insumos com categoria, **saldo**, preço do rolo (filamento) e as
-ações de cada linha: **Comprar**, **Dar baixa**, **Ajustar** e **Editar**. O botão *Gerenciar
+**Cadastro e estoque** — a lista de insumos com categoria, **saldo**, preço do rolo (filamento) e ícones para
+**Comprar**, **Dar baixa**, **Ajustar** e **Editar**; passar o mouse mostra o nome da ação. O botão *Gerenciar
 categorias* abre o cadastro das categorias de insumo.
 
-**Compras e movimentos** — as compras (com **Pagar** e **Cancelar**) e o razão de todas as mudanças
+**Compras e movimentos** — as compras (com ícones para **Pagar** e **Cancelar**) e o razão de todas as mudanças
 de saldo. Nada ali é apagado.
 
 ## Categorias
@@ -66,7 +66,7 @@ entradas, mas ainda dá baixa no que sobrou.
 
 ## Cancelar uma compra lançada errada
 
-O botão **Cancelar** não apaga: a compra fica no histórico como *Cancelada*, o saldo volta ao que era e,
+O ícone de **cancelar** não apaga: a compra fica no histórico como *Cancelada*, o saldo volta ao que era e,
 se já estava paga, o caixa recebe um **estorno de entrada**. Só vale enquanto a compra for a **última
 movimentação daquele insumo**: se já houve baixa, ajuste ou outra compra depois dela, o sistema recusa e
 explica, e a correção passa por um ajuste. Se era filamento, o preço do rolo volta ao de antes, **a menos

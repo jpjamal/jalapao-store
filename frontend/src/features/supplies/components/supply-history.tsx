@@ -20,6 +20,7 @@ import {
 } from "@/shared/components/list-toolbar";
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
+import { ListAction } from "@/shared/components/list-action";
 
 const today = () => new Date().toLocaleDateString("en-CA");
 const receiptColumns: SortColumn[] = [
@@ -250,16 +251,14 @@ export function SupplyHistory({ refreshKey, onChanged }: { refreshKey: number; o
                       ) : r.paid_at ? (
                         "Paga"
                       ) : (
-                        <Button variant="outline" disabled={busy} onClick={() => { setPayError(""); setPaying([r]); }}>
-                          Pagar {brl(r.total)}
-                        </Button>
+                        <ListAction kind="pay" label={`Pagar ${brl(r.total)}`} disabled={busy}
+                          onClick={() => { setPayError(""); setPaying([r]); }} />
                       )}
                     </td>
                     <td data-role="actions">
                       {r.status !== "cancelled" && (
-                        <Button size="sm" variant="outline" disabled={busy} onClick={() => cancel(r)}>
-                          Cancelar
-                        </Button>
+                        <ListAction kind="cancel" label="Cancelar compra" disabled={busy}
+                          onClick={() => cancel(r)} />
                       )}
                     </td>
                   </tr>

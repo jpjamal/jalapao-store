@@ -75,11 +75,12 @@ Se o OCR não achar o nome, o arquivo cai para `<nome do txt>_<número>`, e o ca
 
 ## Etiqueta salva na venda
 
-Em **Vendas → Nova venda**, a seção **Etiqueta ZPL** aceita o `.txt` ou código colado. Depois da leitura,
+Em **Vendas → Nova venda**, a seção **Etiqueta ZPL**, no final do formulário, aceita `.txt` ou `.zpl` por
+clique ou arrastando o arquivo para a área tracejada. O código bruto não fica editável. Depois da leitura,
 pedido, destinatário, cidade e estado ficam editáveis. O pedido preenche a referência automaticamente se ela
 ainda estiver vazia; uma referência digitada manualmente não é substituída.
 
-No histórico de vendas, **Adicionar etiqueta** liga um ZPL a uma venda antiga. **Etiqueta** abre o conteúdo
+No histórico de vendas, o ícone de etiqueta liga um ZPL a uma venda antiga ou abre o conteúdo
 salvo e oferece **Baixar PDF** e **Abrir para imprimir**. Os dados corrigidos também ficam salvos, portanto a
 regeneração mantém o mesmo nome de arquivo. A listagem não recebe o conteúdo ZPL; ele é buscado somente ao
 abrir a venda específica. O limite por etiqueta salva é 5 MB.

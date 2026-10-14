@@ -19,6 +19,7 @@ import { useClientList } from "@/shared/hooks/use-list-query";
 import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "@/shared/components/list-toolbar";
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
+import { ListAction } from "@/shared/components/list-action";
 import { ChevronLeft, ChevronRight, ImagePlus } from "lucide-react";
 
 type Channel = "mercado_livre" | "shopee";
@@ -472,9 +473,9 @@ export default function Anuncios() {
           <td data-label="Situação">{item.published_item_id
             ? `Publicado · ${item.published_item_id}${item.pending_changes ? " · alterações não enviadas" : ""}`
             : "Rascunho"}</td>
-          <td data-role="actions"><Button size="sm" variant="outline" onClick={() => {
+          <td data-role="actions"><ListAction kind="edit" label="Editar rascunho" onClick={() => {
             setProductId(item.product); setChannel(item.channel); window.scrollTo({ top: 0, behavior: "smooth" });
-          }}>Editar</Button></td>
+          }} /></td>
         </tr>)}</tbody></table></div>
     </Card>}
   </>;

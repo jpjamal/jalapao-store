@@ -61,8 +61,9 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   saldo).
 - /ferramentas/calculadora: taxas de Shopee e Mercado Livre, com a tabela de regras.
 - /ferramentas/etiquetas: ZPL → Labelary → PDF nomeado por pedido e destinatário, com OCR por múltiplas regiões.
-- /vendas: o formulário e o histórico usam o mesmo gerador para salvar o ZPL, corrigir os dados lidos e
-  baixar ou abrir novamente o PDF da etiqueta.
+- /vendas: produto, quantidade e preço abrem o formulário; a etiqueta fica no final e recebe `.txt`/`.zpl`
+  por clique ou arrastar, sem expor o código bruto para edição. O histórico usa o mesmo gerador para baixar
+  ou abrir novamente o PDF.
 - /integracoes: conectar Shopee e Mercado Livre, importar anúncios, vincular por SKU e
   ligar o envio de estoque por anúncio.
 - /callback: retorno da autorização; troca o código por tokens assim que abre.
@@ -90,6 +91,8 @@ Pensado para celular e computador (reorganização no commit 6563091):
 - Tabelas com `className="data-table"` viram cartões no celular: cada `<td>` leva
   `data-label` (nome da coluna), a célula que identifica a linha `data-role="title"` e a de
   botões `data-role="actions"`. O CSS está em `globals.css`.
+- `shared/components/list-action.tsx`: ícones específicos nas ações repetidas das tabelas, sempre com
+  nome acessível e explicação no mouse ou foco do teclado.
 - Alvos de toque de 44 px no celular e campos com 16 px (evita o zoom do iPhone).
 
 ## App instalável (PWA)

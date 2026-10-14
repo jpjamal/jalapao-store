@@ -30,6 +30,7 @@ import { SaleLabelDialog } from "@/features/sales/components/sale-label-dialog";
 import { SaleLabelEditor } from "@/features/sales/components/sale-label-editor";
 import { emptySaleLabel, type SaleLabelDraft } from "@/features/sales/label";
 import { ConfirmDialog } from "@/shared/components/confirm-dialog";
+import { ListAction } from "@/shared/components/list-action";
 
 type Draft = { product_id: string; quantity: number; unit_price: string };
 type SupplyDraft = { supply_id: string; quantity: number };
@@ -240,30 +241,6 @@ export default function Sales() {
               }
             }}
           >
-            <div className="grid md:grid-cols-2 gap-4 mb-5">
-              <div>
-                <label htmlFor="channel">Canal de venda</label>
-                <select id="channel" name="channel">
-                  {Object.entries(channels).map(([v, l]) => (
-                    <option key={v} value={v}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="reference">Referência / número do pedido</label>
-                <Input id="reference" name="reference" maxLength={100} value={reference}
-                  onChange={(event) => {
-                    automaticReference.current = "";
-                    setReference(event.target.value);
-                  }} />
-              </div>
-            </div>
-            <div className="mb-5">
-              <SaleLabelEditor value={saleLabel} onChange={updateSaleLabel}
-                idPrefix="new-sale-label" onBusyChange={setReadingLabel} allowPdfActions />
-            </div>
             <div className="space-y-3">
               {items.map((item, index) => (
                 <div
@@ -342,6 +319,26 @@ export default function Sales() {
             >
               Adicionar item
             </Button>
+            <div className="grid md:grid-cols-2 gap-4 mb-5">
+              <div>
+                <label htmlFor="channel">Canal de venda</label>
+                <select id="channel" name="channel">
+                  {Object.entries(channels).map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="reference">Referência / número do pedido</label>
+                <Input id="reference" name="reference" maxLength={100} value={reference}
+                  onChange={(event) => {
+                    automaticReference.current = "";
+                    setReference(event.target.value);
+                  }} />
+              </div>
+            </div>
             {(
               <div className="border rounded-md p-4 mb-5">
                 <h3>Insumos usados (opcional)</h3>
@@ -447,6 +444,10 @@ export default function Sales() {
                 )}
               </strong>
             </p>
+            <div className="mb-5">
+              <SaleLabelEditor value={saleLabel} onChange={updateSaleLabel}
+                idPrefix="new-sale-label" onBusyChange={setReadingLabel} allowPdfActions />
+            </div>
             <FormActions>
               <Button disabled={busy || readingLabel}>
                 {busy ? "Registrando…" : readingLabel ? "Lendo etiqueta…" : "Confirmar venda e baixar estoque"}
@@ -542,37 +543,34 @@ export default function Sales() {
                       <div className="flex flex-wrap gap-2">
                         {s.status !== "cancelled" && (
                           <>
-                            <Button size="sm" variant="outline" disabled={busy} onClick={async () => {
+                            <ListAction kind="edit" label="Editar venda" disabled={busy} onClick={async () => {
                               setBusy(true); setError("");
                               try { setEditing(await api<Sale>(`sales/${s.id}`)); }
                               catch (err) { setError((err as Error).message); }
                               finally { setBusy(false); }
-                            }}>Editar</Button>
+                            }} />
                             {!s.received_at && (
-                              <Button
-                                size="sm"
+                              <ListAction
+                                kind="receive"
+                                label="Marcar como recebida"
+                                variant="default"
                                 disabled={busy}
                                 onClick={() => action(s.id, "receive")}
-                              >
-                                Receber
-                              </Button>
+                              />
                             )}
-                            <Button
-                              size="sm"
-                              variant="outline"
+                            <ListAction
+                              kind="cancel"
+                              label="Cancelar venda"
                               disabled={busy}
                               onClick={() => action(s.id, "cancel")}
-                            >
-                              Cancelar
-                            </Button>
+                            />
                           </>
                         )}
-                        <Button size="sm" variant="outline" disabled={busy}
-                          onClick={() => setLabelSale(s)}>
-                          {s.has_label ? "Etiqueta" : "Adicionar etiqueta"}
-                        </Button>
-                        <Button size="sm" variant="outline" disabled={busy}
-                          onClick={() => { setDeleting(s); setDeleteError(""); }}>Excluir</Button>
+                        <ListAction kind="label" label={s.has_label ? "Abrir etiqueta" : "Adicionar etiqueta"}
+                          disabled={busy}
+                          onClick={() => setLabelSale(s)} />
+                        <ListAction kind="delete" label="Excluir venda" variant="destructive" disabled={busy}
+                          onClick={() => { setDeleting(s); setDeleteError(""); }} />
                       </div>
                     </td>
                   </tr>

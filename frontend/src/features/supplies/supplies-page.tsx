@@ -22,6 +22,7 @@ import {
 } from "@/shared/components/list-toolbar";
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
+import { ListAction } from "@/shared/components/list-action";
 
 function SupplyForm({
   supply,
@@ -374,24 +375,18 @@ export default function Supplies() {
                     <td data-role="actions">
                       <div className="flex flex-wrap gap-2">
                         {s.active && (
-                          <Button size="sm" onClick={() => { setNotice(""); setAction({ kind: "buy", supply: s }); }}>
-                            Comprar
-                          </Button>
+                          <ListAction kind="buy" label="Registrar compra" variant="default"
+                            onClick={() => { setNotice(""); setAction({ kind: "buy", supply: s }); }} />
                         )}
-                        <Button
-                          size="sm"
-                          variant="outline"
+                        <ListAction
+                          kind="consume"
+                          label="Dar baixa no estoque"
                           disabled={s.quantity === 0}
                           onClick={() => { setNotice(""); setAction({ kind: "baixa", supply: s }); }}
-                        >
-                          Dar baixa
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => { setNotice(""); setAction({ kind: "ajuste", supply: s }); }}>
-                          Ajustar
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setEditing(s)}>
-                          Editar
-                        </Button>
+                        />
+                        <ListAction kind="adjust" label="Ajustar estoque"
+                          onClick={() => { setNotice(""); setAction({ kind: "ajuste", supply: s }); }} />
+                        <ListAction kind="edit" label="Editar insumo" onClick={() => setEditing(s)} />
                       </div>
                     </td>
                   </tr>

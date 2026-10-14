@@ -1,6 +1,5 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { api } from "@/shared/api/client";
 import { brl } from "@/shared/lib/format";
 import { type Category, type Product, type Printing } from "@/features/catalog/types";
@@ -20,6 +19,7 @@ import { Card } from "@/shared/ui/card";
 import { ErrorMessage, Empty } from "@/shared/components/feedback";
 import { Field, MoneyField } from "@/shared/components/fields";
 import { StockQuantity, linhaDeEstoque } from "@/shared/components/stock-quantity";
+import { ListAction } from "@/shared/components/list-action";
 
 const defaults: Printing = {
   filament_price_kg: "115",
@@ -434,16 +434,8 @@ export default function Products() {
                     <td data-label="Status">{p.active ? "Ativo" : "Inativo"}</td>
                     <td data-role="actions">
                       <div className="flex flex-wrap items-center justify-end md:justify-start gap-x-3 gap-y-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditing(p)}
-                      >
-                        Editar
-                      </Button>
-                      <Link className="text-sm underline py-2" href={`/anuncios?product=${p.id}`}>
-                        Fotos e anúncios
-                      </Link>
+                      <ListAction kind="edit" label="Editar produto" onClick={() => setEditing(p)} />
+                      <ListAction kind="photos" label="Fotos e anúncios" href={`/anuncios?product=${p.id}`} />
                       </div>
                     </td>
                   </tr>

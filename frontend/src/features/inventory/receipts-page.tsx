@@ -24,6 +24,7 @@ import {
 } from "@/shared/components/list-toolbar";
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
+import { ListAction } from "@/shared/components/list-action";
 
 type Receipt = {
   id: string;
@@ -401,25 +402,22 @@ export default function Receipts() {
                       ) : r.paid_at ? (
                         "Paga"
                       ) : (
-                        <Button
-                          variant="outline"
+                        <ListAction
+                          kind="pay"
+                          label={`Pagar ${brl(r.total)}`}
                           disabled={busy}
                           onClick={() => { setPayError(""); setPaying([r]); }}
-                        >
-                          Pagar {brl(r.total)}
-                        </Button>
+                        />
                       )}
                     </td>
                     <td data-role="actions">
                       {r.status !== "cancelled" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
+                        <ListAction
+                          kind="cancel"
+                          label="Cancelar entrada"
                           disabled={busy}
                           onClick={() => cancel(r)}
-                        >
-                          Cancelar
-                        </Button>
+                        />
                       )}
                     </td>
                   </tr>
