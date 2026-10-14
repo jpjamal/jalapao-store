@@ -116,3 +116,6 @@ Tokens semânticos mantêm as cores, tipografias e modo escuro do sistema anteri
 
 Todas as specs ficam em ../docs/specs (uma pasta por mudança); critérios gerais da interface
 em ../docs/specs/001-platform e ../docs/specs/002-stock-cost.
+- `shared/components/detail-dialog.tsx`: janela de visualização do item da listagem (`DetailDialog`, `DetailList`),
+  linha clicável (`rowOpen`) e texto principal como botão (`RowTitle`). As ações da linha viram uma função
+  `xxxActions(item, text)` usada pela tabela e pela janela.

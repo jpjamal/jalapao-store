@@ -16,6 +16,7 @@ import {
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
 import { ListAction } from "@/shared/components/list-action";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 
 function CategoryForm({
   category,
@@ -111,6 +112,7 @@ export default function Categories() {
   const [data, setData] = useState<Page<Category> | null>(null);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Category | null | undefined>(undefined);
+  const [viewing, setViewing] = useState<Category | null>(null);
   const list = useClientList(data?.results ?? null, {
     texts: (c) => [c.name],
     filters: {
@@ -139,6 +141,23 @@ export default function Categories() {
         actions={<Button onClick={() => setEditing(null)}>Nova categoria</Button>}
       />
       <ErrorMessage message={error} />
+      {viewing && (
+        <DetailDialog
+          title={viewing.name}
+          subtitle="Categoria de produtos"
+          onClose={() => setViewing(null)}
+          actions={<ListAction showText kind="edit" label="Editar categoria" onClick={() => setEditing(viewing)} />}
+        >
+          <DetailList
+            items={[
+              ["Parâmetros 3D", viewing.uses_printing_profile ? "Sim" : "Não"],
+              ["Produtos", String(viewing.products_count)],
+              ["Situação", viewing.active ? "Ativa" : "Inativa"],
+              ["Criada em", new Date(viewing.created_at).toLocaleDateString("pt-BR")],
+            ]}
+          />
+        </DetailDialog>
+      )}
       {editing !== undefined && (
         <CategoryForm
           key={editing?.id || "new"}
@@ -192,9 +211,9 @@ export default function Categories() {
               </thead>
               <tbody>
                 {list.visible.map((c) => (
-                  <tr key={c.id}>
+                  <tr key={c.id} {...rowOpen(() => setViewing(c))}>
                     <td data-role="title">
-                      <strong>{c.name}</strong>
+                      <RowTitle onOpen={() => setViewing(c)}><strong>{c.name}</strong></RowTitle>
                     </td>
                     <td data-label="Parâmetros 3D">{c.uses_printing_profile ? "Sim" : "Não"}</td>
                     <td data-label="Produtos">{c.products_count}</td>

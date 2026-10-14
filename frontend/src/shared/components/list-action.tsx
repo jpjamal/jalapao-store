@@ -41,6 +41,8 @@ type ListActionProps = Omit<ComponentProps<typeof Button>, "children" | "size"> 
   kind: keyof typeof icons;
   label: string;
   href?: string;
+  /** Na janela de visualização: botão com ícone e texto, sem dica. */
+  showText?: boolean;
 };
 
 /** Ação compacta de listagem, com nome acessível e explicação no mouse/teclado. */
@@ -48,12 +50,30 @@ export function ListAction({
   kind,
   label,
   href,
+  showText = false,
   variant = "outline",
   className,
   ...props
 }: ListActionProps) {
   const Icon = icons[kind];
   const content = <Icon size={18} aria-hidden />;
+  if (showText) {
+    const withText = (
+      <>
+        {content}
+        {label}
+      </>
+    );
+    return href ? (
+      <Link href={href} className={cn(buttonVariants({ variant }), "gap-2", className)}>
+        {withText}
+      </Link>
+    ) : (
+      <Button {...props} type={props.type ?? "button"} variant={variant} className={cn("gap-2", className)}>
+        {withText}
+      </Button>
+    );
+  }
   return (
     <span className="group/action relative inline-flex" title={label}>
       {href ? (

@@ -20,6 +20,7 @@ import { ErrorMessage, Empty } from "@/shared/components/feedback";
 import { Field, MoneyField } from "@/shared/components/fields";
 import { StockQuantity, linhaDeEstoque } from "@/shared/components/stock-quantity";
 import { ListAction } from "@/shared/components/list-action";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 
 const defaults: Printing = {
   filament_price_kg: "115",
@@ -330,6 +331,7 @@ export default function Products() {
   // busca, filtros, ordem e página (spec 027): a ordem e os filtros valem para a lista inteira, no servidor
   const q = useListQuery({ category: "", active: "", in_stock: "" });
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
+  const [viewing, setViewing] = useState<Product | null>(null);
   const [categories, setCategories] = useState<Category[] | null>(null);
   useEffect(() => {
     api<Page<Category>>("categories")
@@ -343,6 +345,14 @@ export default function Products() {
       .catch((e) => setError(e.message));
   }, [q.queryString]);
   useEffect(load, [load]);
+  function productActions(p: Product, text: boolean) {
+    return (
+      <>
+        <ListAction showText={text} kind="edit" label="Editar produto" onClick={() => setEditing(p)} />
+        <ListAction showText={text} kind="photos" label="Fotos e anúncios" href={`/anuncios?product=${p.id}`} />
+      </>
+    );
+  }
   return (
     <>
       <PageHeader
@@ -351,6 +361,30 @@ export default function Products() {
         actions={<Button onClick={() => setEditing(null)}>Novo produto</Button>}
       />
       <ErrorMessage message={error} />
+      {viewing && (
+        <DetailDialog
+          title={viewing.name}
+          subtitle={[viewing.sku, viewing.gtin].filter(Boolean).join(" · ")}
+          onClose={() => setViewing(null)}
+          actions={productActions(viewing, true)}
+        >
+          <DetailList
+            items={[
+              ["Categoria", viewing.category_name],
+              ["Marca", viewing.brand],
+              ["Modelo", viewing.model],
+              ["Peso", viewing.weight_g ? `${viewing.weight_g} g` : ""],
+              ["Custo de referência", brl(viewing.cost_price)],
+              ["Custo médio do estoque", brl(viewing.average_cost)],
+              ["Valor em estoque", brl(viewing.stock_value)],
+              ["Preço de venda", brl(viewing.sale_price)],
+              ["Estoque", <StockQuantity key="q" quantity={viewing.quantity} />],
+              ["Situação", viewing.active ? "Ativo" : "Inativo"],
+            ]}
+          />
+          {viewing.description && <p className="text-sm whitespace-pre-line">{viewing.description}</p>}
+        </DetailDialog>
+      )}
       {editing !== undefined && categories && (
         <ProductForm
           key={editing?.id || "new"}
@@ -414,9 +448,9 @@ export default function Products() {
               </thead>
               <tbody>
                 {data.results.map((p) => (
-                  <tr key={p.id} className={linhaDeEstoque(p.quantity)}>
+                  <tr key={p.id} {...rowOpen(() => setViewing(p), linhaDeEstoque(p.quantity))}>
                     <td data-role="title">
-                      <strong>{p.name}</strong>
+                      <RowTitle onOpen={() => setViewing(p)}><strong>{p.name}</strong></RowTitle>
                       <p className="text-xs text-muted-foreground font-normal">
                         {p.sku}
                         {p.gtin ? ` · ${p.gtin}` : ""}
@@ -434,8 +468,7 @@ export default function Products() {
                     <td data-label="Status">{p.active ? "Ativo" : "Inativo"}</td>
                     <td data-role="actions">
                       <div className="flex flex-wrap items-center justify-end md:justify-start gap-x-3 gap-y-2">
-                      <ListAction kind="edit" label="Editar produto" onClick={() => setEditing(p)} />
-                      <ListAction kind="photos" label="Fotos e anúncios" href={`/anuncios?product=${p.id}`} />
+                      {productActions(p, false)}
                       </div>
                     </td>
                   </tr>

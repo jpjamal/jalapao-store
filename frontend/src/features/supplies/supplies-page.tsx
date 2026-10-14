@@ -23,6 +23,7 @@ import {
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
 import { ListAction } from "@/shared/components/list-action";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 
 function SupplyForm({
   supply,
@@ -200,6 +201,7 @@ export default function Supplies() {
   // busca, filtros, ordem e página, no servidor (spec 027)
   const q = useListQuery({ category: "", active: "", in_stock: "" });
   const [editing, setEditing] = useState<Supply | null | undefined>(undefined);
+  const [viewing, setViewing] = useState<Supply | null>(null);
   const [showCategories, setShowCategories] = useState(false);
   // duas abas (spec 024): o cadastro com o saldo, e as compras e movimentos
   const [tab, setTab] = useState<"cadastro" | "historico">("cadastro");
@@ -224,6 +226,26 @@ export default function Supplies() {
       .catch((e) => setError(e.message));
   }, [q.queryString]);
   useEffect(load, [load]);
+  function supplyActions(s: Supply, text: boolean) {
+    return (
+      <>
+        {s.active && (
+          <ListAction showText={text} kind="buy" label="Registrar compra" variant="default"
+            onClick={() => { setNotice(""); setAction({ kind: "buy", supply: s }); }} />
+        )}
+        <ListAction
+          showText={text}
+          kind="consume"
+          label="Dar baixa no estoque"
+          disabled={s.quantity === 0}
+          onClick={() => { setNotice(""); setAction({ kind: "baixa", supply: s }); }}
+        />
+        <ListAction showText={text} kind="adjust" label="Ajustar estoque"
+          onClick={() => { setNotice(""); setAction({ kind: "ajuste", supply: s }); }} />
+        <ListAction showText={text} kind="edit" label="Editar insumo" onClick={() => setEditing(s)} />
+      </>
+    );
+  }
   return (
     <>
       <PageHeader
@@ -271,6 +293,32 @@ export default function Supplies() {
         <p role="status" className="border border-[var(--success)] text-[var(--success)] rounded-md p-3 mb-4">
           {notice}
         </p>
+      )}
+      {viewing && (
+        <DetailDialog
+          title={viewing.name}
+          subtitle={viewing.category_name}
+          onClose={() => setViewing(null)}
+          actions={supplyActions(viewing, true)}
+        >
+          <DetailList
+            items={[
+              ["Saldo", `${viewing.quantity} ${viewing.unit}`],
+              ["Material", viewing.material],
+              ["Cor", viewing.color],
+              ["Peso do rolo", viewing.roll_weight_g ? `${Number(viewing.roll_weight_g)} g` : ""],
+              ["Preço do rolo", viewing.roll_price != null ? brl(viewing.roll_price) : ""],
+              [
+                "Por grama / por kg",
+                viewing.price_per_gram != null
+                  ? `${brlGrama(viewing.price_per_gram)} / ${brl(viewing.price_per_kg ?? 0)}`
+                  : "",
+              ],
+              ["Situação", viewing.active ? "Ativo" : "Inativo"],
+            ]}
+          />
+          {viewing.notes && <p className="text-sm whitespace-pre-line">{viewing.notes}</p>}
+        </DetailDialog>
       )}
       {tab === "cadastro" && action && (
         <SupplyActionForm
@@ -349,9 +397,9 @@ export default function Supplies() {
               </thead>
               <tbody>
                 {data.results.map((s) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} {...rowOpen(() => setViewing(s))}>
                     <td data-role="title">
-                      <strong>{s.name}</strong>
+                      <RowTitle onOpen={() => setViewing(s)}><strong>{s.name}</strong></RowTitle>
                       {s.category_is_filament && (
                         <p className="text-xs text-muted-foreground font-normal">
                           {[s.material, s.color].filter(Boolean).join(" · ")}
@@ -374,19 +422,7 @@ export default function Supplies() {
                     <td data-label="Status">{s.active ? "Ativo" : "Inativo"}</td>
                     <td data-role="actions">
                       <div className="flex flex-wrap gap-2">
-                        {s.active && (
-                          <ListAction kind="buy" label="Registrar compra" variant="default"
-                            onClick={() => { setNotice(""); setAction({ kind: "buy", supply: s }); }} />
-                        )}
-                        <ListAction
-                          kind="consume"
-                          label="Dar baixa no estoque"
-                          disabled={s.quantity === 0}
-                          onClick={() => { setNotice(""); setAction({ kind: "baixa", supply: s }); }}
-                        />
-                        <ListAction kind="adjust" label="Ajustar estoque"
-                          onClick={() => { setNotice(""); setAction({ kind: "ajuste", supply: s }); }} />
-                        <ListAction kind="edit" label="Editar insumo" onClick={() => setEditing(s)} />
+                        {supplyActions(s, false)}
                       </div>
                     </td>
                   </tr>

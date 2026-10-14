@@ -15,6 +15,7 @@ import {
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
 import { ListAction } from "@/shared/components/list-action";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 
 const categoryColumns: SortColumn[] = [
   { key: "name", label: "Categoria", kind: "text" },
@@ -110,6 +111,7 @@ export function SupplyCategoriesPanel({ onChanged }: { onChanged: () => void }) 
   const [rows, setRows] = useState<SupplyCategory[] | null>(null);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<SupplyCategory | null | undefined>(undefined);
+  const [viewing, setViewing] = useState<SupplyCategory | null>(null);
   const list = useClientList(rows, {
     texts: (c) => [c.name],
     filters: {
@@ -140,6 +142,24 @@ export function SupplyCategoriesPanel({ onChanged }: { onChanged: () => void }) 
           Nova categoria
         </Button>
       </div>
+      {viewing && (
+        <DetailDialog
+          title={viewing.name}
+          subtitle="Categoria de insumos"
+          onClose={() => setViewing(null)}
+          actions={<ListAction showText kind="edit" label="Editar categoria" onClick={() => setEditing(viewing)} />}
+        >
+          <DetailList
+            items={[
+              ["Filamento", viewing.is_filament ? "Sim" : "Não"],
+              ["Conta como despesa", viewing.counts_as_expense ? "Sim" : "Não"],
+              ["Insumos", String(viewing.supplies_count)],
+              ["Situação", viewing.active ? "Ativa" : "Inativa"],
+              ["Criada em", new Date(viewing.created_at).toLocaleDateString("pt-BR")],
+            ]}
+          />
+        </DetailDialog>
+      )}
       <p className="text-sm text-muted-foreground mb-4">
         Categoria não se apaga: desative para tirá-la da lista de escolha. Os insumos que já estão
         nela continuam.
@@ -199,9 +219,9 @@ export function SupplyCategoriesPanel({ onChanged }: { onChanged: () => void }) 
             </thead>
             <tbody>
               {(list.visible ?? []).map((c) => (
-                <tr key={c.id}>
+                <tr key={c.id} {...rowOpen(() => setViewing(c))}>
                   <td data-role="title">
-                    <strong>{c.name}</strong>
+                    <RowTitle onOpen={() => setViewing(c)}><strong>{c.name}</strong></RowTitle>
                   </td>
                   <td data-label="Filamento">{c.is_filament ? "Sim" : "Não"}</td>
                   <td data-label="Conta como despesa">{c.counts_as_expense ? "Sim" : "Não"}</td>

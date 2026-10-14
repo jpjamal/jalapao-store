@@ -13,6 +13,7 @@ import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
 import { ListAction } from "@/shared/components/list-action";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 
 const directionLabel = { in: "Entrada", out: "Saída", both: "Entrada ou saída" } as const;
 const columns: SortColumn[] = [
@@ -114,6 +115,7 @@ export function CashCategoriesPanel({ onChanged }: { onChanged: () => void }) {
   const [rows, setRows] = useState<CashCategory[] | null>(null);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<CashCategory | null | undefined>(undefined);
+  const [viewing, setViewing] = useState<CashCategory | null>(null);
   const list = useClientList(rows, {
     texts: (c) => [c.name],
     filters: {
@@ -144,6 +146,27 @@ export function CashCategoriesPanel({ onChanged }: { onChanged: () => void }) {
           Nova categoria
         </Button>
       </div>
+      {viewing && (
+        <DetailDialog
+          title={viewing.name}
+          subtitle={viewing.is_system ? "Categoria do sistema" : "Categoria do Caixa"}
+          onClose={() => setViewing(null)}
+          actions={
+            !viewing.is_system && (
+              <ListAction showText kind="edit" label="Editar categoria" onClick={() => setEditing(viewing)} />
+            )
+          }
+        >
+          <DetailList
+            items={[
+              ["Vale para", directionLabel[viewing.direction]],
+              ["Conta no resultado", viewing.is_system ? "" : viewing.counts_in_result ? "Sim" : "Não"],
+              ["Lançamentos", String(viewing.entries_count)],
+              ["Situação", viewing.active ? "Ativa" : "Inativa"],
+            ]}
+          />
+        </DetailDialog>
+      )}
       <p className="text-sm text-muted-foreground mb-4">
         Categoria não se apaga: desative para tirá-la da lista de escolha. As marcadas como "do sistema" são
         usadas sozinhas pelos lançamentos automáticos (vendas, compras, insumos e estornos).
@@ -203,9 +226,9 @@ export function CashCategoriesPanel({ onChanged }: { onChanged: () => void }) {
             </thead>
             <tbody>
               {(list.visible ?? []).map((c) => (
-                <tr key={c.id}>
+                <tr key={c.id} {...rowOpen(() => setViewing(c))}>
                   <td data-role="title">
-                    <strong>{c.name}</strong>
+                    <RowTitle onOpen={() => setViewing(c)}><strong>{c.name}</strong></RowTitle>
                     {c.is_system && (
                       <p className="text-xs text-muted-foreground font-normal">do sistema</p>
                     )}

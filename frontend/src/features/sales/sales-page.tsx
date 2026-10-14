@@ -31,6 +31,7 @@ import { SaleLabelEditor } from "@/features/sales/components/sale-label-editor";
 import { emptySaleLabel, type SaleLabelDraft } from "@/features/sales/label";
 import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { ListAction } from "@/shared/components/list-action";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 
 type Draft = { product_id: string; quantity: number; unit_price: string };
 type SupplyDraft = { supply_id: string; quantity: number };
@@ -44,6 +45,7 @@ const saleColumns: SortColumn[] = [
 ];
 
 export default function Sales() {
+  const [viewing, setViewing] = useState<Sale | null>(null);
   const [editing, setEditing] = useState<Sale | null>(null);
   const [labelSale, setLabelSale] = useState<Sale | null>(null);
   const [deleting, setDeleting] = useState<Sale | null>(null);
@@ -140,6 +142,44 @@ export default function Sales() {
       setBusy(false);
     }
   }
+  function saleActions(s: Sale, text: boolean) {
+    return (
+      <>
+        {s.status !== "cancelled" && (
+          <>
+            <ListAction showText={text} kind="edit" label="Editar venda" disabled={busy} onClick={async () => {
+              setBusy(true); setError("");
+              try { setEditing(await api<Sale>(`sales/${s.id}`)); }
+              catch (err) { setError((err as Error).message); }
+              finally { setBusy(false); }
+            }} />
+            {!s.received_at && (
+              <ListAction
+                showText={text}
+                kind="receive"
+                label="Marcar como recebida"
+                variant="default"
+                disabled={busy}
+                onClick={() => action(s.id, "receive")}
+              />
+            )}
+            <ListAction
+              showText={text}
+              kind="cancel"
+              label="Cancelar venda"
+              disabled={busy}
+              onClick={() => action(s.id, "cancel")}
+            />
+          </>
+        )}
+        <ListAction showText={text} kind="label" label={s.has_label ? "Abrir etiqueta" : "Adicionar etiqueta"}
+          disabled={busy}
+          onClick={() => setLabelSale(s)} />
+        <ListAction showText={text} kind="delete" label="Excluir venda" variant="destructive" disabled={busy}
+          onClick={() => { setDeleting(s); setDeleteError(""); }} />
+      </>
+    );
+  }
   return (
     <>
       <PageHeader
@@ -164,6 +204,56 @@ export default function Sales() {
         </p>
       )}
       </div>
+      {viewing && (
+        <DetailDialog
+          title={`Venda de ${new Date(viewing.created_at).toLocaleDateString("pt-BR")}`}
+          subtitle={viewing.reference || "Sem referência"}
+          onClose={() => setViewing(null)}
+          actions={saleActions(viewing, true)}
+        >
+          <DetailList
+            items={[
+              ["Canal", channels[viewing.channel] || viewing.channel],
+              [
+                "Situação",
+                viewing.status === "cancelled" ? "Cancelada" : viewing.received_at ? "Recebida" : "A receber",
+              ],
+              ["Recebida em", viewing.received_at ? new Date(viewing.received_at).toLocaleDateString("pt-BR") : ""],
+              ["Pedido importado", viewing.external_id],
+              ["Valor bruto", brl(viewing.gross)],
+              ["Desconto", Number(viewing.discount) ? brl(viewing.discount) : ""],
+              ["Taxas da plataforma", Number(viewing.platform_fee) ? brl(viewing.platform_fee) : ""],
+              ["Frete pago pela loja", Number(viewing.shipping_cost) ? brl(viewing.shipping_cost) : ""],
+              ["Valor líquido", brl(viewing.net)],
+              ["Lucro", brl(viewing.profit)],
+              ["Etiqueta", viewing.has_label ? viewing.label_filename || "Salva na venda" : ""],
+            ]}
+          />
+          <div>
+            <h3>Produtos</h3>
+            <ul className="text-sm">
+              {viewing.items.map((i) => (
+                <li key={i.id}>
+                  {i.quantity}× {i.product_name} · {brl(i.unit_price)}
+                </li>
+              ))}
+            </ul>
+          </div>
+          {!!viewing.supplies?.length && (
+            <div>
+              <h3>Insumos usados</h3>
+              <ul className="text-sm">
+                {viewing.supplies.map((u, n) => (
+                  <li key={n}>
+                    {u.taken}× {u.supply_name}
+                    {u.shortfall > 0 ? ` (faltou ${u.shortfall} de ${u.requested})` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </DetailDialog>
+      )}
       {editing && <EditSaleDialog key={editing.id} sale={editing} onClose={() => setEditing(null)} onSaved={() => {
         setEditing(null); setNotice("Venda corrigida. Os totais foram atualizados e eventual diferença foi registrada no Caixa.");
         load(); feedback.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -503,12 +593,12 @@ export default function Sales() {
               </thead>
               <tbody>
                 {rows.results.map((s) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} {...rowOpen(() => setViewing(s))}>
                     <td data-role="title">
-                      <p>
+                      <RowTitle onOpen={() => setViewing(s)}>
                         {new Date(s.created_at).toLocaleDateString("pt-BR")}{" "}
                         {s.reference && `· ${s.reference}`}
-                      </p>
+                      </RowTitle>
                       {s.items.map((i, n) => (
                         <p key={n} className="text-xs text-muted-foreground">
                           {i.quantity}× {i.product_name}
@@ -538,36 +628,7 @@ export default function Sales() {
                     </td>
                     <td data-role="actions">
                       <div className="flex flex-wrap gap-2">
-                        {s.status !== "cancelled" && (
-                          <>
-                            <ListAction kind="edit" label="Editar venda" disabled={busy} onClick={async () => {
-                              setBusy(true); setError("");
-                              try { setEditing(await api<Sale>(`sales/${s.id}`)); }
-                              catch (err) { setError((err as Error).message); }
-                              finally { setBusy(false); }
-                            }} />
-                            {!s.received_at && (
-                              <ListAction
-                                kind="receive"
-                                label="Marcar como recebida"
-                                variant="default"
-                                disabled={busy}
-                                onClick={() => action(s.id, "receive")}
-                              />
-                            )}
-                            <ListAction
-                              kind="cancel"
-                              label="Cancelar venda"
-                              disabled={busy}
-                              onClick={() => action(s.id, "cancel")}
-                            />
-                          </>
-                        )}
-                        <ListAction kind="label" label={s.has_label ? "Abrir etiqueta" : "Adicionar etiqueta"}
-                          disabled={busy}
-                          onClick={() => setLabelSale(s)} />
-                        <ListAction kind="delete" label="Excluir venda" variant="destructive" disabled={busy}
-                          onClick={() => { setDeleting(s); setDeleteError(""); }} />
+                        {saleActions(s, false)}
                       </div>
                     </td>
                   </tr>

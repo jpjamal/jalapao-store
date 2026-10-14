@@ -13,6 +13,7 @@ import { Empty, ErrorMessage } from "@/shared/components/feedback";
 import { ProductPicker } from "@/features/catalog/components/product-picker";
 import { FormActions } from "@/shared/components/form-actions";
 import { ConfirmDialog } from "@/shared/components/confirm-dialog";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 import { PayDialogBody, PaySelectionBar, SelectBox } from "@/shared/components/pay-selection";
 import { useSelection } from "@/shared/hooks/use-selection";
 import { payInOrder } from "@/shared/lib/pay";
@@ -67,6 +68,7 @@ export default function Receipts() {
   const [notice, setNotice] = useState("");
   // compras na janela de pagamento (uma ou várias); vazio = janela fechada (spec 028)
   const [paying, setPaying] = useState<Receipt[]>([]);
+  const [viewing, setViewing] = useState<Receipt | null>(null);
   const [payError, setPayError] = useState("");
   const loadProducts = useCallback(() => {
     allProducts()
@@ -130,6 +132,25 @@ export default function Receipts() {
     } finally {
       setBusy(false);
     }
+  }
+  function receiptActions(r: Receipt, text: boolean) {
+    return (
+      <>
+        {isPayable(r) && (
+          <ListAction
+            showText={text}
+            kind="pay"
+            label={`Pagar ${brl(r.total)}`}
+            variant="default"
+            disabled={busy}
+            onClick={() => { setPayError(""); setPaying([r]); }}
+          />
+        )}
+        {r.status !== "cancelled" && (
+          <ListAction showText={text} kind="cancel" label="Cancelar entrada" disabled={busy} onClick={() => cancel(r)} />
+        )}
+      </>
+    );
   }
   return (
     <>
@@ -270,6 +291,35 @@ export default function Receipts() {
           </FormActions>
         </form>
       </Card>
+      {viewing && (
+        <DetailDialog
+          title={viewing.product_name}
+          subtitle={`${viewing.kind === "purchase" ? "Compra" : "Produção"} de ${viewing.occurred_on.split("-").reverse().join("/")}`}
+          onClose={() => setViewing(null)}
+          actions={receiptActions(viewing, true)}
+        >
+          <DetailList
+            items={[
+              ["Quantidade", String(viewing.quantity)],
+              ["Custo unitário", brl(viewing.unit_cost)],
+              ["Total", brl(viewing.total)],
+              ["Fornecedor", viewing.supplier],
+              ["Referência", viewing.reference],
+              [
+                "Pagamento",
+                viewing.status === "cancelled"
+                  ? "Cancelada"
+                  : viewing.kind === "production"
+                    ? "Sem saída automática"
+                    : viewing.paid_at
+                      ? `Paga em ${viewing.paid_at.slice(0, 10).split("-").reverse().join("/")}`
+                      : "A pagar",
+              ],
+              ["Observações", viewing.notes],
+            ]}
+          />
+        </DetailDialog>
+      )}
       <ConfirmDialog
         open={paying.length > 0}
         title={paying.length > 1 ? "Pagar compras?" : "Pagar compra?"}
@@ -363,10 +413,7 @@ export default function Receipts() {
               </thead>
               <tbody>
                 {rows.results.map((r) => (
-                  <tr
-                    key={r.id}
-                    className={r.status === "cancelled" ? "opacity-60" : undefined}
-                  >
+                  <tr key={r.id} {...rowOpen(() => setViewing(r), r.status === "cancelled" ? "opacity-60" : "")}>
                     <td data-label="Selecionar">
                       {isPayable(r) && (
                         <SelectBox
@@ -384,7 +431,7 @@ export default function Receipts() {
                       </span>
                     </td>
                     <td data-role="title">
-                      {r.product_name}
+                      <RowTitle onOpen={() => setViewing(r)}>{r.product_name}</RowTitle>
                       <div className="text-xs text-muted-foreground">
                         {[r.supplier, r.reference, r.notes]
                           .filter(Boolean)

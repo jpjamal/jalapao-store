@@ -40,5 +40,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [031](031-classificacao-historica-insumos/spec.md) | Congelar por compra a classificação de despesa dos insumos | — |
 | [032](032-etiqueta-zpl-na-venda/spec.md) | Etiqueta confiável e ZPL salvo na venda para regenerar o PDF | conferir com etiquetas reais da Shopee |
 | [033](033-formulario-venda-e-acoes-compactas/spec.md) | Arrastar ZPL, reorganizar a venda e usar ações compactas nas listagens | conferir em produção com etiqueta real da Shopee |
+| [034](034-visualizar-item-da-listagem/spec.md) | Janela de visualização ao clicar numa linha das listagens, com os botões de ação | conferir em produção e no celular |
 
-Próxima spec: **034**.
+Próxima spec: **035**.

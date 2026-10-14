@@ -21,6 +21,7 @@ import {
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
 import { ListAction } from "@/shared/components/list-action";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 
 const today = () => new Date().toLocaleDateString("en-CA");
 const receiptColumns: SortColumn[] = [
@@ -53,6 +54,8 @@ export function SupplyHistory({ refreshKey, onChanged }: { refreshKey: number; o
   const [busy, setBusy] = useState(false);
   // compras na janela de pagamento (uma ou várias); vazio = janela fechada (spec 028)
   const [paying, setPaying] = useState<SupplyReceipt[]>([]);
+  const [viewing, setViewing] = useState<SupplyReceipt | null>(null);
+  const [viewingMove, setViewingMove] = useState<SupplyMovement | null>(null);
   const [payError, setPayError] = useState("");
 
   const payable = (receipts?.results ?? []).filter(isPayable);
@@ -125,6 +128,20 @@ export function SupplyHistory({ refreshKey, onChanged }: { refreshKey: number; o
     }
   }
 
+  function receiptActions(r: SupplyReceipt, text: boolean) {
+    return (
+      <>
+        {isPayable(r) && (
+          <ListAction showText={text} kind="pay" label={`Pagar ${brl(r.total)}`} variant="default" disabled={busy}
+            onClick={() => { setPayError(""); setPaying([r]); }} />
+        )}
+        {r.status !== "cancelled" && (
+          <ListAction showText={text} kind="cancel" label="Cancelar compra" disabled={busy} onClick={() => cancel(r)} />
+        )}
+      </>
+    );
+  }
+
   return (
     <>
       <ErrorMessage message={error} />
@@ -132,6 +149,45 @@ export function SupplyHistory({ refreshKey, onChanged }: { refreshKey: number; o
         <p id="aviso-pagamento" role="status" className="border border-[var(--success)] text-[var(--success)] rounded-md p-3 mb-4">
           {notice}
         </p>
+      )}
+      {viewing && (
+        <DetailDialog
+          title={viewing.supply_name}
+          subtitle={`Compra de ${dateBr(viewing.occurred_on)}`}
+          onClose={() => setViewing(null)}
+          actions={receiptActions(viewing, true)}
+        >
+          <DetailList
+            items={[
+              ["Quantidade", String(viewing.quantity)],
+              ["Custo unitário", brl(viewing.unit_cost)],
+              ["Total", brl(viewing.total)],
+              ["Fornecedor", viewing.supplier],
+              ["Referência", viewing.reference],
+              [
+                "Pagamento",
+                viewing.status === "cancelled" ? "Cancelada" : viewing.paid_at ? `Paga em ${dateBr(viewing.paid_at)}` : "A pagar",
+              ],
+              ["Resultado do negócio", viewing.counts_as_expense_snapshot ? "Conta como despesa" : "Não conta"],
+              ["Observações", viewing.notes],
+            ]}
+          />
+        </DetailDialog>
+      )}
+      {viewingMove && (
+        <DetailDialog
+          title={viewingMove.supply_name}
+          subtitle={`Movimento de ${dateBr(viewingMove.created_at)}`}
+          onClose={() => setViewingMove(null)}
+        >
+          <DetailList
+            items={[
+              ["Variação", viewingMove.delta > 0 ? `+${viewingMove.delta}` : String(viewingMove.delta)],
+              ["Saldo depois", String(viewingMove.balance_after)],
+              ["Motivo", viewingMove.reason],
+            ]}
+          />
+        </DetailDialog>
       )}
       <ConfirmDialog
         open={paying.length > 0}
@@ -218,7 +274,7 @@ export function SupplyHistory({ refreshKey, onChanged }: { refreshKey: number; o
               </thead>
               <tbody>
                 {receipts.results.map((r) => (
-                  <tr key={r.id} className={r.status === "cancelled" ? "opacity-60" : undefined}>
+                  <tr key={r.id} {...rowOpen(() => setViewing(r), r.status === "cancelled" ? "opacity-60" : "")}>
                     <td data-label="Selecionar">
                       {isPayable(r) && (
                         <SelectBox
@@ -230,7 +286,7 @@ export function SupplyHistory({ refreshKey, onChanged }: { refreshKey: number; o
                     </td>
                     <td data-label="Data">{dateBr(r.occurred_on)}</td>
                     <td data-role="title">
-                      {r.supply_name}
+                      <RowTitle onOpen={() => setViewing(r)}>{r.supply_name}</RowTitle>
                       <div className="text-xs text-muted-foreground">
                         {[r.supplier, r.reference, r.notes].filter(Boolean).join(" · ")}
                       </div>
@@ -317,9 +373,9 @@ export function SupplyHistory({ refreshKey, onChanged }: { refreshKey: number; o
               </thead>
               <tbody>
                 {movements.results.map((m) => (
-                  <tr key={m.id}>
+                  <tr key={m.id} {...rowOpen(() => setViewingMove(m))}>
                     <td data-label="Data">{dateBr(m.created_at)}</td>
-                    <td data-role="title">{m.supply_name}</td>
+                    <td data-role="title"><RowTitle onOpen={() => setViewingMove(m)}>{m.supply_name}</RowTitle></td>
                     <td data-label="Variação" className="money">
                       {m.delta > 0 ? `+${m.delta}` : m.delta}
                     </td>

@@ -20,6 +20,7 @@ import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
 import { ListAction } from "@/shared/components/list-action";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 import { ChevronLeft, ChevronRight, ImagePlus } from "lucide-react";
 
 type Channel = "mercado_livre" | "shopee";
@@ -76,6 +77,7 @@ const draftColumns: SortColumn[] = [
 export default function Anuncios() {
   const [products, setProducts] = useState<Product[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [viewing, setViewing] = useState<Draft | null>(null);
   // rascunhos salvos: a lista é curta e já vem inteira, então busca, filtros e ordem acontecem na tela (spec 027)
   const draftList = useClientList(drafts, {
     texts: (d) => [d.product_name, d.product_sku, d.title],
@@ -245,6 +247,12 @@ export default function Anuncios() {
 
   const publicado = draft?.published_item_id || "";
   const podePublicar = channel === "mercado_livre" && !publicado && relatorio?.pode_publicar;
+
+  function editarRascunho(item: Draft) {
+    setProductId(item.product);
+    setChannel(item.channel);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   return <>
     <PageHeader
@@ -438,6 +446,32 @@ export default function Anuncios() {
       </Card>}
     </> : <Card className="mb-5"><Empty>Escolha um produto para preparar o anúncio.</Empty></Card>}
 
+    {viewing && (
+      <DetailDialog
+        title={viewing.title || "Sem título"}
+        subtitle={`${viewing.product_name} · ${viewing.product_sku}`}
+        onClose={() => setViewing(null)}
+        actions={<ListAction showText kind="edit" label="Editar rascunho" onClick={() => editarRascunho(viewing)} />}
+      >
+        <DetailList
+          items={[
+            ["Canal", channels[viewing.channel]],
+            [
+              "Situação",
+              viewing.published_item_id
+                ? `Publicado · ${viewing.published_item_id}${viewing.pending_changes ? " · alterações não enviadas" : ""}`
+                : "Rascunho",
+            ],
+            ["Preço", viewing.price ? brl(viewing.price) : ""],
+            ["Marca", viewing.brand],
+            ["Modelo", viewing.model],
+            ["Condição", viewing.condition],
+            ["Fotos", viewing.image_ids.length ? String(viewing.image_ids.length) : ""],
+          ]}
+        />
+        {viewing.description && <p className="text-sm whitespace-pre-line">{viewing.description}</p>}
+      </DetailDialog>
+    )}
     {drafts.length > 0 && <Card>
       <h2>Rascunhos salvos</h2>
       <ListToolbar>
@@ -466,16 +500,14 @@ export default function Anuncios() {
           <SortableTh label="Situação" sortKey="status" sort={draftList.sort} onSort={draftList.toggle} />
           <th><span className="sr-only">Ações</span></th>
         </tr></thead>
-        <tbody>{(draftList.visible ?? []).map((item) => <tr key={item.id}>
-          <td data-role="title">{item.product_name}<span className="block text-xs text-muted-foreground font-normal">{item.product_sku}</span></td>
+        <tbody>{(draftList.visible ?? []).map((item) => <tr key={item.id} {...rowOpen(() => setViewing(item))}>
+          <td data-role="title"><RowTitle onOpen={() => setViewing(item)}>{item.product_name}<span className="block text-xs text-muted-foreground font-normal">{item.product_sku}</span></RowTitle></td>
           <td data-label="Canal">{channels[item.channel]}</td>
           <td data-label="Título">{item.title || "Sem título"}</td>
           <td data-label="Situação">{item.published_item_id
             ? `Publicado · ${item.published_item_id}${item.pending_changes ? " · alterações não enviadas" : ""}`
             : "Rascunho"}</td>
-          <td data-role="actions"><ListAction kind="edit" label="Editar rascunho" onClick={() => {
-            setProductId(item.product); setChannel(item.channel); window.scrollTo({ top: 0, behavior: "smooth" });
-          }} /></td>
+          <td data-role="actions"><ListAction kind="edit" label="Editar rascunho" onClick={() => editarRascunho(item)} /></td>
         </tr>)}</tbody></table></div>
     </Card>}
   </>;

@@ -13,6 +13,7 @@ import { ClearFilters, FilterSelect, ListToolbar, SearchBox, SortSelect } from "
 import { SortableTh } from "@/shared/components/sortable-th";
 import { type SortColumn } from "@/shared/lib/list";
 import { ListAction } from "@/shared/components/list-action";
+import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components/detail-dialog";
 
 type Account = {
   id: string;
@@ -67,6 +68,9 @@ const linkedColumns: SortColumn[] = [
 
 export default function Integracoes() {
   const [contas, setContas] = useState<Account[]>([]);
+  const [viewingAccount, setViewingAccount] = useState<Account | null>(null);
+  const [viewingListing, setViewingListing] = useState<Listing | null>(null);
+  const [viewingPending, setViewingPending] = useState<{ item_id: string; title: string; sku: string } | null>(null);
   const [vinculos, setVinculos] = useState<Listing[]>([]);
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
@@ -136,6 +140,57 @@ export default function Integracoes() {
     }
   }
 
+  function accountActions(c: Account, text: boolean) {
+    return (
+      <>
+        <ListAction
+          showText={text}
+          kind="import"
+          label="Importar anúncios"
+          disabled={!!ocupado}
+          onClick={() =>
+            acao("importar", async () => {
+              const r = await api<{
+                total: number;
+                vinculos_novos: number;
+                pendentes: typeof pendentes;
+              }>(`integrations/${c.id}/import-listings`, {
+                method: "POST",
+                body: "{}",
+              });
+              setPendentes(r.pendentes || []);
+              setAviso(
+                `${r.total} anúncio(s) lidos, ${r.vinculos_novos} vínculo(s) novo(s), ${r.pendentes.length} sem produto correspondente.`,
+              );
+            })
+          }
+        />
+        <ListAction
+          showText={text}
+          kind="stock"
+          label="Enviar estoque"
+          disabled={!!ocupado}
+          onClick={() =>
+            acao("estoque", async () => {
+              const r = await api<{
+                enviados: number;
+                ignorados: number;
+                falhas: string[];
+              }>(`integrations/${c.id}/push-stock`, {
+                method: "POST",
+                body: "{}",
+              });
+              setAviso(
+                `${r.enviados} envio(s) de saldo, ${r.ignorados} sem nada a fazer` +
+                  (r.falhas.length ? `, ${r.falhas.length} falha(s)` : "."),
+              );
+            })
+          }
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
@@ -145,6 +200,61 @@ export default function Integracoes() {
       />
 
       <ErrorMessage message={erro} />
+      {viewingAccount && (
+        <DetailDialog
+          title={viewingAccount.name || viewingAccount.external_id}
+          subtitle={viewingAccount.channel_label}
+          onClose={() => setViewingAccount(null)}
+          actions={accountActions(viewingAccount, true)}
+        >
+          <DetailList
+            items={[
+              ["Código da loja", viewingAccount.external_id],
+              ["Token", viewingAccount.token_valido ? "Válido" : "Vai renovar"],
+              [
+                "Autorização expira",
+                viewingAccount.authorization_days_left !== null
+                  ? `${quando(viewingAccount.authorization_expires_at)} · ${viewingAccount.authorization_days_left} dia${viewingAccount.authorization_days_left === 1 ? "" : "s"}`
+                  : quando(viewingAccount.authorization_expires_at),
+              ],
+              ["Última sincronia", quando(viewingAccount.last_synced_at)],
+              ["Último erro", viewingAccount.last_error],
+            ]}
+          />
+        </DetailDialog>
+      )}
+      {viewingListing && (
+        <DetailDialog
+          title={viewingListing.title || viewingListing.item_id}
+          subtitle={`${viewingListing.marketplace} · ${viewingListing.item_id}`}
+          onClose={() => setViewingListing(null)}
+        >
+          <DetailList
+            items={[
+              ["Produto", viewingListing.product_name],
+              ["Código do produto", viewingListing.product_sku],
+              ["Saldo aqui", String(viewingListing.local_stock ?? "—")],
+              ["Saldo lá", String(viewingListing.remote_stock ?? "—")],
+              ["Último envio", quando(viewingListing.stock_pushed_at)],
+              ["Sincronizar estoque", viewingListing.sync_enabled ? "Sim" : "Não"],
+            ]}
+          />
+        </DetailDialog>
+      )}
+      {viewingPending && (
+        <DetailDialog
+          title={viewingPending.title}
+          subtitle="Anúncio sem produto correspondente"
+          onClose={() => setViewingPending(null)}
+        >
+          <DetailList
+            items={[
+              ["Anúncio", viewingPending.item_id],
+              ["Código no anúncio", viewingPending.sku || "— sem código —"],
+            ]}
+          />
+        </DetailDialog>
+      )}
       {aviso && (
         <p role="status" className="text-success mb-4">
           {aviso}
@@ -193,8 +303,8 @@ export default function Integracoes() {
               </thead>
               <tbody>
                 {(accountList.visible ?? []).map((c) => (
-                  <tr key={c.id}>
-                    <td data-role="title">{c.channel_label}</td>
+                  <tr key={c.id} {...rowOpen(() => setViewingAccount(c))}>
+                    <td data-role="title"><RowTitle onOpen={() => setViewingAccount(c)}>{c.channel_label}</RowTitle></td>
                     <td data-label="Loja">{c.name || c.external_id}</td>
                     <td data-label="Token">{c.token_valido ? "válido" : "vai renovar"}</td>
                     <td data-label="Autorização expira">
@@ -217,48 +327,7 @@ export default function Integracoes() {
                     <td data-label="Última sincronia">{quando(c.last_synced_at)}</td>
                     <td data-role="actions">
                       <div className="flex flex-wrap gap-2 justify-end">
-                      <ListAction
-                        kind="import"
-                        label="Importar anúncios"
-                        disabled={!!ocupado}
-                        onClick={() =>
-                          acao("importar", async () => {
-                            const r = await api<{
-                              total: number;
-                              vinculos_novos: number;
-                              pendentes: typeof pendentes;
-                            }>(`integrations/${c.id}/import-listings`, {
-                              method: "POST",
-                              body: "{}",
-                            });
-                            setPendentes(r.pendentes || []);
-                            setAviso(
-                              `${r.total} anúncio(s) lidos, ${r.vinculos_novos} vínculo(s) novo(s), ${r.pendentes.length} sem produto correspondente.`,
-                            );
-                          })
-                        }
-                      />
-                      <ListAction
-                        kind="stock"
-                        label="Enviar estoque"
-                        disabled={!!ocupado}
-                        onClick={() =>
-                          acao("estoque", async () => {
-                            const r = await api<{
-                              enviados: number;
-                              ignorados: number;
-                              falhas: string[];
-                            }>(`integrations/${c.id}/push-stock`, {
-                              method: "POST",
-                              body: "{}",
-                            });
-                            setAviso(
-                              `${r.enviados} envio(s) de saldo, ${r.ignorados} sem nada a fazer` +
-                                (r.falhas.length ? `, ${r.falhas.length} falha(s)` : "."),
-                            );
-                          })
-                        }
-                      />
+                      {accountActions(c, false)}
                       </div>
                     </td>
                   </tr>
@@ -322,9 +391,9 @@ export default function Integracoes() {
               </thead>
               <tbody>
                 {(pendingList.visible ?? []).map((p) => (
-                  <tr key={p.item_id}>
+                  <tr key={p.item_id} {...rowOpen(() => setViewingPending(p))}>
                     <td data-label="Anúncio" className="money">{p.item_id}</td>
-                    <td data-role="title">{p.title}</td>
+                    <td data-role="title"><RowTitle onOpen={() => setViewingPending(p)}>{p.title}</RowTitle></td>
                     <td data-label="Código no anúncio" className="money">{p.sku || "— sem código —"}</td>
                   </tr>
                 ))}
@@ -379,12 +448,14 @@ export default function Integracoes() {
               </thead>
               <tbody>
                 {linkedList.visible.map((v) => (
-                  <tr key={v.id}>
+                  <tr key={v.id} {...rowOpen(() => setViewingListing(v))}>
                     <td data-role="title">
+                      <RowTitle onOpen={() => setViewingListing(v)}>
                       {v.title || v.item_id}
                       <span className="block text-xs text-muted-foreground font-normal">
                         {v.marketplace} · {v.item_id}
                       </span>
+                      </RowTitle>
                     </td>
                     <td data-label="Produto">
                       <span>
