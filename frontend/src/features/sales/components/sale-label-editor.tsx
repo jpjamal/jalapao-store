@@ -198,13 +198,6 @@ export function SaleLabelEditor({
       {value.zpl && (
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2">
-            <label htmlFor={`${idPrefix}-order`}>Número do pedido identificado</label>
-            <Input id={`${idPrefix}-order`} maxLength={100} value={value.campos.pedido}
-              onChange={(event) => onChange({
-                ...value, campos: { ...value.campos, pedido: event.target.value.trim().toUpperCase() },
-              })} />
-          </div>
-          <div className="sm:col-span-2">
             <label htmlFor={`${idPrefix}-name`}>Nome do destinatário</label>
             <Input id={`${idPrefix}-name`} maxLength={200} value={value.campos.nome}
               onChange={(event) => onChange({

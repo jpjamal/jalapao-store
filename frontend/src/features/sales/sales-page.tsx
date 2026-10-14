@@ -209,7 +209,7 @@ export default function Sales() {
                     ...(saleLabel.zpl ? {
                       zpl: saleLabel.zpl,
                       label_filename: saleLabel.source_name,
-                      label_order_id: saleLabel.campos.pedido,
+                      label_order_id: reference.trim() || saleLabel.campos.pedido,
                       label_name: saleLabel.campos.nome,
                       label_city: saleLabel.campos.cidade,
                       label_state: saleLabel.campos.uf,

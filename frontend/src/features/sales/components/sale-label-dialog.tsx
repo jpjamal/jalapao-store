@@ -99,7 +99,7 @@ export function SaleLabelDialog({ sale, onSaved, onClose }: {
             body: JSON.stringify({
               zpl: ready.zpl,
               source_name: ready.source_name,
-              order_id: ready.campos.pedido,
+              order_id: sale.reference || ready.campos.pedido,
               recipient_name: ready.campos.nome,
               recipient_city: ready.campos.cidade,
               recipient_state: ready.campos.uf,

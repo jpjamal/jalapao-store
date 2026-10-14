@@ -10,7 +10,8 @@ diretamente para a etiqueta e reduzir a poluição visual das listagens trocando
 - A etiqueta ZPL é a última seção antes da confirmação da venda.
 - O ZPL deixa de ser um texto editável. A seção aceita arquivo `.txt` ou `.zpl` por clique ou arrastar e
   soltar; o conteúdo continua sendo lido, validado e salvo da mesma forma.
-- Nome do arquivo, pedido, destinatário, cidade e estado continuam visíveis. É possível substituir ou retirar
+- Nome do arquivo, destinatário, cidade e estado continuam visíveis. O pedido não tem campo próprio:
+  o número lido vai para **Referência / número do pedido** e é o que se grava como pedido da etiqueta. É possível substituir ou retirar
   a etiqueta antes de salvar.
 
 ## Ações das listagens
