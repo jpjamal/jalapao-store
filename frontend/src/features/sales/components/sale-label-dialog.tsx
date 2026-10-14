@@ -39,9 +39,6 @@ export function SaleLabelDialog({ sale, onSaved, onClose }: {
           campos: {
             ...emptySaleLabel().campos,
             pedido: saved.order_id,
-            nome: saved.recipient_name,
-            cidade: saved.recipient_city,
-            uf: saved.recipient_state,
           },
         }),
       )
@@ -52,7 +49,8 @@ export function SaleLabelDialog({ sale, onSaved, onClose }: {
   async function ensuredDraft() {
     const validation = validarZpl(draft.zpl);
     if (validation) throw new Error(validation);
-    if (draft.campos.nome || draft.campos.cidade || draft.campos.pedido) return draft;
+    if (draft.campos.pedido) return draft;
+    if (sale.reference) return { ...draft, campos: { ...draft.campos, pedido: sale.reference } };
     const campos = await lerZplVenda(draft.zpl, setStatus);
     const next = { ...draft, campos };
     setDraft(next);
@@ -100,9 +98,9 @@ export function SaleLabelDialog({ sale, onSaved, onClose }: {
               zpl: ready.zpl,
               source_name: ready.source_name,
               order_id: sale.reference || ready.campos.pedido,
-              recipient_name: ready.campos.nome,
-              recipient_city: ready.campos.cidade,
-              recipient_state: ready.campos.uf,
+              recipient_name: "",
+              recipient_city: "",
+              recipient_state: "",
             }),
           });
           onSaved();

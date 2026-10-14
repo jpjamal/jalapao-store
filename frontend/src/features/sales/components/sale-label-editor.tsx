@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { FileUp } from "lucide-react";
-import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { ErrorMessage } from "@/shared/components/feedback";
 import {
@@ -52,11 +51,11 @@ export function SaleLabelEditor({
       setStatus("");
       return;
     }
-    if (value.campos.nome && value.campos.cidade && value.campos.pedido) {
+    if (value.campos.pedido) {
       setBusy(false);
       onBusyChange?.(false);
       setError("");
-      setStatus("Dados salvos carregados. Confira ou corrija antes de gerar o PDF.");
+      setStatus("Etiqueta carregada.");
       return;
     }
     const timer = window.setTimeout(async () => {
@@ -69,9 +68,9 @@ export function SaleLabelEditor({
         if (currentRun !== run.current) return;
         latest.current({ ...value, campos });
         setStatus(
-          campos.nome || campos.cidade || campos.pedido
-            ? "Etiqueta lida. Confira os dados antes de salvar."
-            : "Etiqueta válida, mas os dados não puderam ser lidos automaticamente.",
+          campos.pedido
+            ? "Número do pedido lido; confira a referência acima."
+            : "Etiqueta válida, mas o número do pedido não foi lido: digite-o na referência.",
         );
       } catch (err) {
         if (currentRun === run.current) setError((err as Error).message);
@@ -132,12 +131,6 @@ export function SaleLabelEditor({
     }
   }
 
-  const resumo = [
-    value.campos.pedido && `Pedido ${value.campos.pedido}`,
-    value.campos.nome,
-    [value.campos.cidade, value.campos.uf].filter(Boolean).join(" / "),
-  ].filter(Boolean);
-
   return (
     <div className="rounded-md border p-4 space-y-3">
       <div>
@@ -195,36 +188,6 @@ export function SaleLabelEditor({
       )}
       {status && <p role="status" className="text-sm text-muted-foreground">{status}</p>}
       <ErrorMessage message={error} />
-      {value.zpl && (
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div className="sm:col-span-2">
-            <label htmlFor={`${idPrefix}-name`}>Nome do destinatário</label>
-            <Input id={`${idPrefix}-name`} maxLength={200} value={value.campos.nome}
-              onChange={(event) => onChange({
-                ...value, campos: { ...value.campos, nome: event.target.value },
-              })} />
-          </div>
-          <div>
-            <label htmlFor={`${idPrefix}-city`}>Cidade</label>
-            <Input id={`${idPrefix}-city`} maxLength={120} value={value.campos.cidade}
-              onChange={(event) => onChange({
-                ...value, campos: { ...value.campos, cidade: event.target.value },
-              })} />
-          </div>
-          <div>
-            <label htmlFor={`${idPrefix}-state`}>Estado / UF</label>
-            <Input id={`${idPrefix}-state`} maxLength={60} value={value.campos.uf}
-              onChange={(event) => onChange({
-                ...value, campos: { ...value.campos, uf: event.target.value },
-              })} />
-          </div>
-        </div>
-      )}
-      {resumo.length > 0 && (
-        <p className="text-sm rounded-md bg-muted p-3">
-          <strong>Leitura:</strong> {resumo.join(" · ")}
-        </p>
-      )}
       {allowPdfActions && value.zpl && !validarZpl(value.zpl) && (
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="button" variant="outline" disabled={busy} onClick={() => void pdf("download")}>

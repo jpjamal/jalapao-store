@@ -15,7 +15,7 @@ export const SALE_LABEL_CONFIG: Config = {
   dpmm: "8",
   pagina: "",
   rotacao: "0",
-  padrao: "nome_cidade_uf",
+  padrao: "pedido",
   ocr: true,
 };
 
@@ -49,9 +49,9 @@ export async function lerZplVenda(
   const renderizada = await naFila(() =>
     labelary(zpl, 0, "image/png", SALE_LABEL_CONFIG, aoAvisar),
   );
-  const campos = await lerEtiqueta(renderizada.blob, aoAvisar);
-  campos.pedido ||= extrairPedidoZpl(zpl);
-  return campos;
+  const lida = await lerEtiqueta(renderizada.blob, aoAvisar);
+  // Só o número do pedido interessa: destinatário, cidade e estado não são guardados nem mostrados.
+  return { ...camposVazios(), pedido: lida.pedido || extrairPedidoZpl(zpl) };
 }
 
 export async function gerarPdfVenda(
@@ -61,7 +61,7 @@ export async function gerarPdfVenda(
   const erro = validarZpl(draft.zpl);
   if (erro) throw new Error(erro);
   let campos = draft.campos;
-  if (!campos.nome || !campos.cidade || !campos.pedido)
+  if (!campos.pedido)
     campos = await lerZplVenda(draft.zpl, aoAvisar);
   campos.pedido ||= extrairPedidoZpl(draft.zpl);
   const pdf = await naFila(() =>
