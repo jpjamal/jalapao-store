@@ -375,7 +375,7 @@ export default function Products() {
               ["Modelo", viewing.model],
               ["Peso", viewing.weight_g ? `${viewing.weight_g} g` : ""],
               ["Custo de referência", brl(viewing.cost_price)],
-              ["Custo médio do estoque", brl(viewing.average_cost)],
+              ["Custo médio unitário do estoque", viewing.quantity > 0 ? brl(viewing.average_cost) : "—"],
               ["Valor em estoque", brl(viewing.stock_value)],
               ["Preço de venda", brl(viewing.sale_price)],
               ["Estoque", <StockQuantity key="q" quantity={viewing.quantity} />],
@@ -440,6 +440,7 @@ export default function Products() {
                   <SortableTh label="Custo de referência" sortKey="cost_price" sort={q.sort} onSort={q.toggleSort} />
                   <SortableTh label="Preço" sortKey="sale_price" sort={q.sort} onSort={q.toggleSort} />
                   <SortableTh label="Estoque" sortKey="stock__quantity" sort={q.sort} onSort={q.toggleSort} />
+                  <th>Custo médio do estoque</th>
                   <SortableTh label="Status" sortKey="active" sort={q.sort} onSort={q.toggleSort} />
                   <th>
                     <span className="sr-only">Ações</span>
@@ -465,6 +466,12 @@ export default function Products() {
                     <td data-label="Custo de referência" className="money">{brl(p.cost_price)}</td>
                     <td data-label="Preço" className="money">{brl(p.sale_price)}</td>
                     <td data-label="Estoque"><StockQuantity quantity={p.quantity} /></td>
+                    <td data-label="Custo médio do estoque" className="money">
+                      {p.quantity > 0 ? brl(p.average_cost) : "—"}
+                      {p.quantity > 0 && (
+                        <p className="text-xs text-muted-foreground">Total {brl(p.stock_value)}</p>
+                      )}
+                    </td>
                     <td data-label="Status">{p.active ? "Ativo" : "Inativo"}</td>
                     <td data-role="actions">
                       <div className="flex flex-wrap items-center justify-end md:justify-start gap-x-3 gap-y-2">

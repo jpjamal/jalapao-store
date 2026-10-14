@@ -76,7 +76,8 @@ dá um nome e clica em **Salvar produto**. Ele entra no catálogo na categoria d
 ## Busca e listagem
 
 Busca por nome, código (SKU), código de barras, marca e modelo, paginação de 100 em 100. Cada linha mostra quantidade, custo
-médio, preço e situação. Produto com saldo zero aparece com fundo avermelhado e o selo "Sem estoque" (aqui e na
+médio unitário do estoque (com o valor total do saldo embaixo), preço e situação; a janela de visualização
+(spec 034) traz os mesmos dados. Produto com saldo zero aparece com fundo avermelhado e o selo "Sem estoque" (aqui e na
 posição do Estoque); no seletor de produto, "sem estoque" em vermelho (spec 029).
 
 Na entrada de estoque (Compras e produção, ou Estoque → Ajustar inventário), o custo por unidade já vem com o custo
