@@ -9,5 +9,6 @@
 - [x] Validação, tamanho máximo, permissões e rota BFF.
 - [x] Documentação e contrato OpenAPI atualizados.
 - [x] Suíte completa SQLite, parser, typecheck e build.
-- [ ] PostgreSQL 17 e conferência com etiqueta real da Shopee no navegador.
-- [ ] Commit e deploy, somente após autorização do dono.
+- [x] Suíte completa no PostgreSQL 17 e build do frontend no GitHub Actions.
+- [x] Commit e deploy, autorizados pelo dono em 14/10/2026.
+- [ ] Conferência final do OCR pelo dono com uma etiqueta real da Shopee.
