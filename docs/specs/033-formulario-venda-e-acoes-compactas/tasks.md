@@ -7,4 +7,5 @@
 - [x] Ações das dez listagens convertidas sem mudar o comportamento.
 - [x] Documentação da etiqueta, frontend e índice de specs atualizados.
 - [x] Validação completa registrada.
-- [ ] Commit e deploy somente quando autorizados pelo dono.
+- [x] Commit e deploy autorizados pelo dono e concluídos.
+- [ ] Conferência em produção com etiqueta real da Shopee.

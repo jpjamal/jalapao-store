@@ -21,4 +21,10 @@
 
 ## Publicação
 
-Ainda não há commit ou deploy desta spec.
+Publicada em 14/10/2026 em https://jpsys.duckdns.org/jalapao-store (e pelo IP), em três commits:
+`c34da91` (formulário, arrastar ZPL e ícones), `c4cbe21` (pedido da etiqueta vai para a Referência, sem campo
+próprio) e `b85be52` (sem destinatário, cidade e estado; só o pedido é lido e o ZPL continua salvo na venda).
+Frontend saudável e login 200 pelo domínio e pelo IP após o último deploy.
+
+Pendente: conferir em produção, logado, com uma etiqueta real da Shopee (arrastar e ver o número na
+Referência).
