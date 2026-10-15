@@ -41,5 +41,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [032](032-etiqueta-zpl-na-venda/spec.md) | Etiqueta confiável e ZPL salvo na venda para regenerar o PDF | conferir com etiquetas reais da Shopee |
 | [033](033-formulario-venda-e-acoes-compactas/spec.md) | Arrastar ZPL, reorganizar a venda e usar ações compactas nas listagens | conferir em produção com etiqueta real da Shopee |
 | [034](034-visualizar-item-da-listagem/spec.md) | Janela de visualização ao clicar numa linha das listagens, com os botões de ação | conferir em produção e no celular |
+| [035](035-fotos-dos-anuncios/spec.md) | Fotos dos anúncios: várias de uma vez e ordem por arrastar | conferir em produção o envio em lote |
 
-Próxima spec: **035**.
+Próxima spec: **036**.

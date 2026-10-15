@@ -83,6 +83,13 @@ posição do Estoque); no seletor de produto, "sem estoque" em vermelho (spec 02
 Na entrada de estoque (Compras e produção, ou Estoque → Ajustar inventário), o custo por unidade já vem com o custo
 do cadastro — na peça 3D, o custo de produção calculado. Troque se o lote custou diferente.
 
+## Fotos para os anúncios
+
+Em **Anúncios**, a etapa *Fotos* usa as fotos do produto. Dá para escolher várias de uma vez (ou soltá-las
+na área); JPG, PNG ou WebP, até 10 MB cada. Tocar numa foto a usa ou a tira do anúncio; a primeira usada é a
+capa. No computador, arrastar uma foto usada sobre outra muda a ordem; as setas fazem o mesmo no teclado e no
+celular. A ordem vale no anúncio depois de salvar o rascunho (spec 035).
+
 ## Onde isso vive
 
 | O quê | Onde |

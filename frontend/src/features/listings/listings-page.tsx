@@ -78,6 +78,9 @@ export default function Anuncios() {
   const [products, setProducts] = useState<Product[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [viewing, setViewing] = useState<Draft | null>(null);
+  // foto sendo arrastada para mudar a ordem e foto sobre a qual ela está (só as usadas no anúncio)
+  const [arrastando, setArrastando] = useState<string | null>(null);
+  const [sobre, setSobre] = useState<string | null>(null);
   // rascunhos salvos: a lista é curta e já vem inteira, então busca, filtros e ordem acontecem na tela (spec 027)
   const draftList = useClientList(drafts, {
     texts: (d) => [d.product_name, d.product_sku, d.title],
@@ -182,6 +185,19 @@ export default function Anuncios() {
     setBusy(false);
   }
 
+  // solta a foto `id` na posição da foto `alvo`
+  function reordenar(id: string, alvo: string) {
+    setSelected((before) => {
+      const de = before.indexOf(id);
+      const para = before.indexOf(alvo);
+      if (de < 0 || para < 0 || de === para) return before;
+      const next = [...before];
+      next.splice(de, 1);
+      next.splice(para, 0, id);
+      return next;
+    });
+  }
+
   function move(id: string, direction: number) {
     setSelected((before) => {
       const next = [...before];
@@ -258,6 +274,12 @@ export default function Anuncios() {
 
   const publicado = draft?.published_item_id || "";
   const podePublicar = channel === "mercado_livre" && !publicado && relatorio?.pode_publicar;
+
+  // as fotos usadas aparecem primeiro, na ordem do anúncio (a capa é a primeira); as demais vêm depois
+  const exibidas = [
+    ...selected.flatMap((id) => images.filter((i) => i.id === id)),
+    ...images.filter((i) => !selected.includes(i.id)),
+  ];
 
   function editarRascunho(item: Draft) {
     setProductId(item.product);
@@ -341,8 +363,8 @@ export default function Anuncios() {
       <Card className="mb-5">
         <h2>3. Fotos</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Toque na foto para usar ou tirar do anúncio. A primeira marcada é a capa; use as setas para
-          mudar a ordem. JPG, PNG ou WebP, até 10 MB cada; escolha ou solte várias fotos de uma vez.
+          Toque na foto para usar ou tirar do anúncio. A primeira marcada é a capa. Para mudar a ordem, arraste
+          a foto sobre outra (no computador) ou use as setas. JPG, PNG ou WebP, até 10 MB cada; escolha ou solte várias fotos de uma vez.
         </p>
         <label htmlFor="photo-file"
           className={`flex items-center justify-center gap-2 rounded-lg border border-dashed min-h-14 px-4 text-sm cursor-pointer hover:bg-muted ${busy ? "opacity-50 pointer-events-none" : ""}`}
@@ -357,17 +379,25 @@ export default function Anuncios() {
             e.target.value = "";
           }} />
         {images.length ? <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mt-4">
-          {images.map((image) => {
+          {exibidas.map((image) => {
             const position = selected.indexOf(image.id);
             const usada = position >= 0;
-            return <li key={image.id} className={`rounded-lg border-2 p-1.5 ${usada ? "border-primary" : "border-transparent bg-muted/40"}`}>
+            return <li key={image.id}
+              className={`rounded-lg border-2 p-1.5 ${usada ? "border-primary" : "border-transparent bg-muted/40"} ${
+                arrastando === image.id ? "opacity-40" : ""} ${sobre === image.id && arrastando !== image.id ? "ring-2 ring-primary ring-offset-2" : ""}`}
+              draggable={usada}
+              onDragStart={(e) => { if (!usada) return; setArrastando(image.id); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", image.id); }}
+              onDragOver={(e) => { if (arrastando && usada) { e.preventDefault(); setSobre(image.id); } }}
+              onDragLeave={() => setSobre((atual) => (atual === image.id ? null : atual))}
+              onDrop={(e) => { e.preventDefault(); if (arrastando && usada) reordenar(arrastando, image.id); setArrastando(null); setSobre(null); }}
+              onDragEnd={() => { setArrastando(null); setSobre(null); }}>
               <button type="button" aria-pressed={usada}
                 aria-label={usada ? `Tirar a foto ${position + 1} do anúncio` : "Usar esta foto no anúncio"}
                 className="relative block w-full cursor-pointer rounded-md overflow-hidden"
                 onClick={() => setSelected((before) =>
                   usada ? before.filter((id) => id !== image.id) : [...before, image.id])}>
                 <img src={imageUrl(image.id)} alt={image.alt_text || `Foto do produto ${product.name}`}
-                  className={`w-full aspect-square object-contain bg-background ${usada ? "" : "opacity-60"}`} />
+                  className={`w-full aspect-square object-contain bg-background ${usada ? "" : "opacity-60"}`} draggable={false} />
                 <span className={`absolute top-1.5 left-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
                   usada ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border"}`}>
                   {usada ? (position === 0 ? "Capa" : `${position + 1}ª`) : "Não usada"}

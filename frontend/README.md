@@ -32,7 +32,8 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   categoria). Salvar não publica. No Mercado Livre: validar (simula sem criar), publicar
   com confirmação e, depois de publicado, "Salvar e enviar" manda as alterações ao anúncio
   — specs 009, 011 e 012. As fotos aceitam várias de uma vez (escolher ou soltar; JPG, PNG ou WebP): o
-  servidor recebe uma por pedido, então o front as envia em fila e avisa quais falharam.
+  servidor recebe uma por pedido, então o front as envia em fila e avisa quais falharam. A ordem se muda
+  arrastando uma foto usada sobre outra (as usadas aparecem primeiro, a primeira é a capa) ou pelas setas — spec 035.
 - /pesquisa-precos: pesquisa de mercado no Mercado Livre, só leitura — mais vendidos por
   categoria e busca no catálogo, com link para ver os preços no site (spec 013).
 - /estoque: entradas/saídas justificadas, valor e histórico. Produto por busca digitada.
