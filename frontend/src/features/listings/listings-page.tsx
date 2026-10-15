@@ -152,23 +152,34 @@ export default function Anuncios() {
     setConfirmando(false);
   }, [draft, productId, channel]);
 
-  async function upload(file: File) {
-    if (!productId) return;
+  // O servidor recebe uma foto por pedido; várias fotos escolhidas (ou soltas) de uma vez vão em fila.
+  async function upload(files: File[]) {
+    if (!productId || !files.length) return;
+    const imagens = files.filter((f) => /^image\/(jpeg|png|webp)$/.test(f.type));
     setBusy(true); setError(""); setNotice("");
-    try {
-      const body = new FormData();
-      body.append("product", productId);
-      body.append("file", file);
-      const result = await fetch(`${BASE}/api/product-images`, { method: "POST", body });
-      const data = await result.json();
-      if (!result.ok) throw new Error(
-        Object.values(data.errors || data).flat().join(" ") || "Falha ao enviar foto."
-      );
-      setImages((before) => [...before, data as ProductImage]);
-      setSelected((before) => [...before, (data as ProductImage).id]);
-      setNotice("Foto adicionada ao produto. Salve o rascunho para usá-la neste canal.");
-    } catch (e) { setError((e as Error).message); }
-    finally { setBusy(false); }
+    const falhas: string[] = [];
+    if (imagens.length < files.length) falhas.push(`${files.length - imagens.length} arquivo(s) ignorado(s): só JPG, PNG ou WebP.`);
+    let enviadas = 0;
+    for (const file of imagens) {
+      try {
+        const body = new FormData();
+        body.append("product", productId);
+        body.append("file", file);
+        const result = await fetch(`${BASE}/api/product-images`, { method: "POST", body });
+        const data = await result.json();
+        if (!result.ok) throw new Error(
+          Object.values(data.errors || data).flat().join(" ") || "Falha ao enviar foto."
+        );
+        setImages((before) => [...before, data as ProductImage]);
+        setSelected((before) => [...before, (data as ProductImage).id]);
+        enviadas += 1;
+      } catch (e) { falhas.push(`${file.name}: ${(e as Error).message}`); }
+    }
+    if (enviadas) setNotice(
+      `${enviadas === 1 ? "Foto adicionada" : `${enviadas} fotos adicionadas`} ao produto. Salve o rascunho para usar no canal.`
+    );
+    if (falhas.length) setError(falhas.join(" "));
+    setBusy(false);
   }
 
   function move(id: string, direction: number) {
@@ -331,16 +342,18 @@ export default function Anuncios() {
         <h2>3. Fotos</h2>
         <p className="text-sm text-muted-foreground mb-4">
           Toque na foto para usar ou tirar do anúncio. A primeira marcada é a capa; use as setas para
-          mudar a ordem. JPG ou PNG, até 10 MB.
+          mudar a ordem. JPG, PNG ou WebP, até 10 MB cada; escolha ou solte várias fotos de uma vez.
         </p>
         <label htmlFor="photo-file"
-          className={`flex items-center justify-center gap-2 rounded-lg border border-dashed min-h-14 px-4 text-sm cursor-pointer hover:bg-muted ${busy ? "opacity-50 pointer-events-none" : ""}`}>
-          <ImagePlus size={18} aria-hidden /> Adicionar foto do produto
+          className={`flex items-center justify-center gap-2 rounded-lg border border-dashed min-h-14 px-4 text-sm cursor-pointer hover:bg-muted ${busy ? "opacity-50 pointer-events-none" : ""}`}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); void upload(Array.from(e.dataTransfer.files)); }}>
+          <ImagePlus size={18} aria-hidden /> Adicionar fotos do produto (várias de uma vez)
         </label>
-        <input id="photo-file" type="file" className="sr-only" accept="image/jpeg,image/png,image/webp"
+        <input id="photo-file" type="file" multiple className="sr-only" accept="image/jpeg,image/png,image/webp"
           disabled={busy} onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void upload(file);
+            const files = Array.from(e.target.files ?? []);
+            if (files.length) void upload(files);
             e.target.value = "";
           }} />
         {images.length ? <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mt-4">

@@ -31,7 +31,8 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
 - /anuncios: rascunho por produto e canal, em etapas (produto e canal, conteúdo, fotos,
   categoria). Salvar não publica. No Mercado Livre: validar (simula sem criar), publicar
   com confirmação e, depois de publicado, "Salvar e enviar" manda as alterações ao anúncio
-  — specs 009, 011 e 012.
+  — specs 009, 011 e 012. As fotos aceitam várias de uma vez (escolher ou soltar; JPG, PNG ou WebP): o
+  servidor recebe uma por pedido, então o front as envia em fila e avisa quais falharam.
 - /pesquisa-precos: pesquisa de mercado no Mercado Livre, só leitura — mais vendidos por
   categoria e busca no catálogo, com link para ver os preços no site (spec 013).
 - /estoque: entradas/saídas justificadas, valor e histórico. Produto por busca digitada.
