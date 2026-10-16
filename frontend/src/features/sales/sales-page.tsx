@@ -613,10 +613,12 @@ export default function Sales() {
                     </td>
                     <td data-label="Canal">{channels[s.channel] || s.channel}</td>
                     <td data-label="Bruto / líquido" className="money">
-                      {brl(s.gross)}
-                      <p className="text-xs text-muted-foreground">
-                        Líquido {brl(s.net)}
-                      </p>
+                      <div className="cell-stack">
+                        {brl(s.gross)}
+                        <p className="text-xs text-muted-foreground">
+                          Líquido {brl(s.net)}
+                        </p>
+                      </div>
                     </td>
                     <td data-label="Lucro" className="money">{brl(s.profit)}</td>
                     <td data-label="Situação">
