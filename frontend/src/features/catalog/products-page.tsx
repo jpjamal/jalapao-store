@@ -467,10 +467,12 @@ export default function Products() {
                     <td data-label="Preço" className="money">{brl(p.sale_price)}</td>
                     <td data-label="Estoque"><StockQuantity quantity={p.quantity} /></td>
                     <td data-label="Custo médio do estoque" className="money">
-                      {p.quantity > 0 ? brl(p.average_cost) : "—"}
-                      {p.quantity > 0 && (
-                        <p className="text-xs text-muted-foreground">Total {brl(p.stock_value)}</p>
-                      )}
+                      <div className="cell-stack">
+                        {p.quantity > 0 ? brl(p.average_cost) : "—"}
+                        {p.quantity > 0 && (
+                          <p className="text-xs text-muted-foreground">Total {brl(p.stock_value)}</p>
+                        )}
+                      </div>
                     </td>
                     <td data-label="Status">{p.active ? "Ativo" : "Inativo"}</td>
                     <td data-role="actions">

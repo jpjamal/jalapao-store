@@ -243,4 +243,19 @@ select {
   table.data-table td:empty {
     display: none;
   }
+  /* valor + linha de apoio (ex.: "Total R$ …") ficam empilhados, não lado a lado */
+  table.data-table td .cell-stack {
+    min-width: 0;
+    text-align: right;
+  }
+  /* sem nowrap no cartão: valor longo quebra em vez de vazar e criar rolagem horizontal */
+  table.data-table td.money {
+    white-space: normal;
+  }
+  table.data-table td > * {
+    min-width: 0;
+  }
+  table.data-table td[data-label]::before {
+    overflow-wrap: normal;
+  }
 }
