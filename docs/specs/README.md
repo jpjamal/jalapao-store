@@ -42,5 +42,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [033](033-formulario-venda-e-acoes-compactas/spec.md) | Arrastar ZPL, reorganizar a venda e usar ações compactas nas listagens | conferir em produção com etiqueta real da Shopee |
 | [034](034-visualizar-item-da-listagem/spec.md) | Janela de visualização ao clicar numa linha das listagens, com os botões de ação | conferir em produção e no celular |
 | [035](035-fotos-dos-anuncios/spec.md) | Fotos dos anúncios: várias de uma vez e ordem por arrastar | conferir em produção o envio em lote |
+| [036](036-mascara-campos-numericos/spec.md) | Máscara brasileira nos campos numéricos | conferir em produção e no celular |
 
-Próxima spec: **036**.
+Próxima spec: **037**.

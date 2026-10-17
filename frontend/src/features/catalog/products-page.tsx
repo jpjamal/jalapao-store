@@ -229,6 +229,7 @@ function ProductForm({
               )}
               <MoneyField
                 name="power_w"
+                mask="decimal"
                 label="Potência (W)"
                 value={profile.power_w}
               />
@@ -272,6 +273,7 @@ function ProductForm({
               />
               <MoneyField
                 name="markup_percent"
+                mask="decimal"
                 label="Acréscimo sobre custo (%)"
                 value={profile.markup_percent}
               />

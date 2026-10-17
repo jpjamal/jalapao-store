@@ -1,10 +1,14 @@
 import * as React from "react";
 import { cn } from "@/shared/lib/utils";
+import { NumberInput, type NumberMask } from "@/shared/ui/number-input";
 export function Input({
   className,
   type,
+  mask,
   ...props
-}: React.ComponentProps<"input">) {
+}: React.ComponentProps<"input"> & { mask?: NumberMask }) {
+  // campos numéricos têm máscara brasileira (spec 036); o valor entregue segue sendo o número puro
+  if (type === "number") return <NumberInput className={className} mask={mask} {...(props as React.ComponentProps<typeof NumberInput>)} />;
   return (
     <input
       type={type}
