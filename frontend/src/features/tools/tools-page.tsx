@@ -21,6 +21,11 @@ export default function Tools() {
             "Quanto sobra no bolso depois do que a plataforma retém.",
           ],
           [
+            "orcamento",
+            "Orçamento",
+            "Escolha produtos 3D e gere o orçamento para o cliente, só com o valor final.",
+          ],
+          [
             "etiquetas",
             "Etiquetas",
             "ZPL da Shopee vira PDF nomeado pelo destinatário.",
