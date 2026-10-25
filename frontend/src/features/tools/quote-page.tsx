@@ -61,7 +61,8 @@ export default function Orcamento() {
   const [error, setError] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const [photos, setPhotos] = useState<Record<string, Photo | null>>({});
-  const [choice, setChoice] = useState("");
+  // produtos marcados na lista para entrar de uma vez no orçamento
+  const [picked, setPicked] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [client, setClient] = useState("");
   const [contact, setContact] = useState("");
@@ -95,6 +96,9 @@ export default function Orcamento() {
     const term = search.trim().toLowerCase();
     return (products ?? []).filter((p) => !term || `${p.name} ${p.sku}`.toLowerCase().includes(term));
   }, [products, search]);
+
+  const inQuoteIds = lines.map((l) => l.product.id);
+  const available = options.filter((p) => !inQuoteIds.includes(p.id));
 
   function setLine(key: string, patch: Partial<Line>) {
     setLines((before) => before.map((l) => (l.key === key ? { ...l, ...patch } : l)));
@@ -177,34 +181,55 @@ export default function Orcamento() {
         ) : !products.length ? (
           <Empty>Nenhum produto 3D cadastrado. Crie um em Ferramentas → Impressão 3D.</Empty>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-[1fr_2fr_auto] items-end">
-            <div>
-              <label htmlFor="q-search">Buscar</label>
-              <Input id="q-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou código" />
+          <div>
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] items-end mb-3">
+              <div>
+                <label htmlFor="q-search">Buscar</label>
+                <Input id="q-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou código" />
+              </div>
+              <Button type="button" variant="outline"
+                onClick={() => setPicked(Array.from(new Set([...picked, ...available.map((p) => p.id)])))}
+                disabled={!available.length}>
+                Marcar todos{search.trim() ? " os encontrados" : ""} ({available.length})
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setPicked([])} disabled={!picked.length}>
+                Limpar marcados
+              </Button>
             </div>
-            <div>
-              <label htmlFor="q-product">Produto</label>
-              <select id="q-product" value={choice} onChange={(e) => setChoice(e.target.value)}>
-                <option value="">Escolha…</option>
-                {options.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} · {p.sku}
-                  </option>
-                ))}
-              </select>
+            {!options.length ? (
+              <Empty>Nenhum produto 3D encontrado.</Empty>
+            ) : (
+              <ul className="max-h-80 overflow-auto rounded-lg border divide-y" aria-label="Produtos 3D">
+                {options.map((p) => {
+                  const inQuote = inQuoteIds.includes(p.id);
+                  return (
+                    <li key={p.id}>
+                      <label className={`flex items-center gap-3 px-3 min-h-11 cursor-pointer hover:bg-muted/50 ${inQuote ? "opacity-60" : ""}`}>
+                        <input type="checkbox" className="h-5 w-5 accent-[var(--primary)]" disabled={inQuote}
+                          checked={inQuote || picked.includes(p.id)}
+                          onChange={(e) => setPicked((before) => e.target.checked ? [...before, p.id] : before.filter((id) => id !== p.id))} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block break-words">{p.name}</span>
+                          <span className="block text-xs text-muted-foreground">{p.sku}</span>
+                        </span>
+                        <span className="money text-sm">{inQuote ? "No orçamento" : brl(num(p.sale_price))}</span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div className="mt-3">
+              <Button type="button" disabled={!picked.length}
+                onClick={() => {
+                  const chosen = (products ?? []).filter((x) => picked.includes(x.id) && !inQuoteIds.includes(x.id));
+                  setLines((before) => [...before, ...chosen.map(newLine)]);
+                  setPicked([]);
+                }}>
+                <Plus size={18} aria-hidden className="mr-2" />
+                {picked.length ? `Adicionar ${picked.length} ao orçamento` : "Marque os produtos para adicionar"}
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!choice}
-              onClick={() => {
-                const p = products.find((x) => x.id === choice);
-                if (p) setLines((before) => [...before, newLine(p)]);
-                setChoice("");
-              }}
-            >
-              <Plus size={18} aria-hidden className="mr-2" /> Adicionar
-            </Button>
           </div>
         )}
 

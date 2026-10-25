@@ -15,6 +15,8 @@ cada produto.
 ## Comportamento
 
 - Ferramenta em **Ferramentas → Orçamento** (`/ferramentas/orcamento`).
+- A escolha é **múltipla**: lista com caixas de marcação, busca, "Marcar todos" (os encontrados) e "Limpar
+  marcados"; um botão adiciona todos os marcados de uma vez. Produto já no orçamento fica travado.
 - Só aparecem produtos **3D** (os que têm parâmetros de impressão) e ativos.
 - Cada item tem quantidade, margem de lucro (%) e valor unitário. O valor começa em
   `custo da peça × (1 + margem ÷ 100)`, com a margem do cadastro do produto. Mudar a margem recalcula o valor;

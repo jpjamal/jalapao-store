@@ -5,8 +5,9 @@ e a margem não aparecem. Spec [036](specs/036-orcamento-de-pecas-3d/spec.md).
 
 ## Como usar
 
-1. **Ferramentas → Orçamento.** Escolha um produto 3D (busque pelo nome ou código) e toque em *Adicionar*;
-   repita para os outros.
+1. **Ferramentas → Orçamento.** A lista mostra os produtos 3D com caixa de marcação: marque quantos quiser
+   (a busca filtra por nome ou código; *Marcar todos* pega todos os encontrados) e toque em
+   *Adicionar N ao orçamento* — todos entram de uma vez. Os já adicionados ficam travados como "No orçamento".
 2. Em cada item, defina a **quantidade** e ajuste a **margem de lucro (%)** ou o **valor unitário**: um
    recalcula o outro. A margem começa na cadastrada no produto.
 3. Preencha cliente, contato, validade (dias), prazo de produção, observações, desconto e frete.
