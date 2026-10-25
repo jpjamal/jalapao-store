@@ -25,8 +25,9 @@ cada produto.
 - O documento mostra logo, Instagram, data de emissão, "válido até" (hoje + validade em dias), cliente,
   tabela de produtos (foto, nome, descrição curta, quantidade, valor unitário e total), totais, prazo e
   observações. **Custo e margem nunca aparecem nele.**
-- "Gerar PDF / imprimir" abre o documento numa aba própria, de fundo branco, e chama a impressão do
-  navegador (Salvar como PDF ou imprimir).
+- **Baixar PDF** gera e baixa o arquivo direto (`orcamento-<cliente>-<data>.pdf`), em A4, com texto de
+  verdade, logo, Instagram, fotos e paginação se passar de uma página. **Imprimir** abre o documento numa aba
+  própria, de fundo branco, e chama a impressão do navegador.
 
 ## Compatibilidade
 

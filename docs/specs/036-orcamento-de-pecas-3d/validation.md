@@ -11,6 +11,8 @@
   margem 200%.
 - Escolha múltipla: marcar 2 de 4 produtos e adicionar de uma vez; "Marcar todos (2)" adicionou os outros
   dois; os adicionados aparecem como "No orçamento" e sem caixa livre; total somou os 4 itens (R$ 118,00).
+- Download do PDF: arquivo `orcamento-maria-da-conceicao-20261025.pdf` (≈ 250 KB, 1 página) aberto e
+  conferido: acentos corretos, logo, Instagram, foto, descrição, desconto, frete, total e rodapé, sem custo.
 - Documento com cliente, desconto de R$ 5,00 e frete de R$ 12,50: subtotal 50,00 → total 57,50; mostra logo
   (carregou), Instagram @storejalapao, emissão e validade; não contém "custo", "margem" nem "lucro".
 - Não conferido: a janela de impressão/PDF (o navegador do teste não abre a caixa de impressão), a foto do

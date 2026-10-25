@@ -28,8 +28,8 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   também encontram por ele (spec 021). Categoria no lugar do tipo, mais marca, modelo e peso
   (spec 022): a categoria de impressão 3D mostra os parâmetros de custo.
 - /categorias: lista e cadastro de categorias; ativar/desativar, sem apagar (spec 022).
-- /ferramentas/orcamento: orçamento de produtos 3D para o cliente (margem ajustável, sem custo no documento, PDF pela
-  impressão do navegador, nada é salvo) — spec 036.
+- /ferramentas/orcamento: orçamento de produtos 3D para o cliente (margem ajustável, sem custo no documento, download direto em PDF (jsPDF) ou
+  impressão, nada é salvo) — spec 036.
 - /anuncios: rascunho por produto e canal, em etapas (produto e canal, conteúdo, fotos,
   categoria). Salvar não publica. No Mercado Livre: validar (simula sem criar), publicar
   com confirmação e, depois de publicado, "Salvar e enviar" manda as alterações ao anúncio

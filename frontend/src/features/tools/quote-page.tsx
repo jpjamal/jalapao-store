@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Printer, Trash2 } from "lucide-react";
+import { Download, Plus, Printer, Trash2 } from "lucide-react";
 import { api, BASE } from "@/shared/api/client";
 import { type Page } from "@/shared/api/types";
 import { type Product } from "@/features/catalog/types";
@@ -9,6 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { PageHeader } from "@/shared/components/page-header";
 import { ErrorMessage, Empty } from "@/shared/components/feedback";
+import { buildQuotePdf } from "@/features/tools/lib/orcamento-pdf";
 
 /* Orçamento de peças 3D (spec 036): escolhe produtos 3D, define a margem de cada um e gera um documento
    para o cliente só com o valor final. Nada é guardado: o documento sai na hora (imprimir ou salvar em PDF).
@@ -71,6 +72,7 @@ export default function Orcamento() {
   const [notes, setNotes] = useState("");
   const [discount, setDiscount] = useState("");
   const [shipping, setShipping] = useState("");
+  const [generating, setGenerating] = useState(false);
   const doc = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,6 +127,47 @@ export default function Orcamento() {
   const until = new Date(issued.getTime() + Math.max(0, Math.floor(num(validity))) * 86_400_000);
   const ready = lines.length > 0 && lines.every((l) => num(l.price) > 0 && qtyOf(l) >= 1);
 
+  // Baixa o PDF direto, sem passar pela caixa de impressão.
+  async function download() {
+    setGenerating(true);
+    setError("");
+    try {
+      const blob = await buildQuotePdf({
+        client: client.trim(),
+        contact: contact.trim(),
+        issued,
+        until: num(validity) > 0 ? until : null,
+        lead: lead.trim(),
+        notes: notes.trim(),
+        discount: num(discount),
+        shipping: num(shipping),
+        subtotal,
+        total,
+        instagram: INSTAGRAM,
+        logoUrl: `${BASE}/assets/logo-jalapao.png`,
+        items: lines.map((l) => ({
+          name: l.product.name,
+          description: l.product.description,
+          qty: qtyOf(l),
+          unit: num(l.price),
+          total: num(l.price) * qtyOf(l),
+          photoUrl: photos[l.product.id] ? imageUrl(photos[l.product.id]!.id) : undefined,
+        })),
+      });
+      const slug = client.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const stamp = issued.toLocaleDateString("en-CA").replace(/-/g, "");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `orcamento${slug ? `-${slug}` : ""}-${stamp}.pdf`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+    } catch (e) {
+      setError(`Não foi possível gerar o PDF: ${(e as Error).message}`);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   // O documento vai para uma aba própria (fundo branco, só ele), onde o navegador imprime ou salva em PDF.
   function print() {
     const node = doc.current;
@@ -167,9 +210,14 @@ export default function Orcamento() {
         description="Escolha produtos 3D, ajuste a margem de cada um e gere o orçamento para o cliente, só com o valor final."
         back={{ href: "/ferramentas", label: "Ferramentas" }}
         actions={
-          <Button type="button" disabled={!ready} onClick={print}>
-            <Printer size={18} aria-hidden className="mr-2" /> Gerar PDF / imprimir
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button type="button" disabled={!ready || generating} onClick={() => void download()}>
+              <Download size={18} aria-hidden className="mr-2" /> {generating ? "Gerando PDF…" : "Baixar PDF"}
+            </Button>
+            <Button type="button" variant="outline" disabled={!ready} onClick={print}>
+              <Printer size={18} aria-hidden className="mr-2" /> Imprimir
+            </Button>
+          </div>
         }
       />
       <ErrorMessage message={error} />
@@ -326,8 +374,7 @@ export default function Orcamento() {
       <Card>
         <h2>3. Orçamento para o cliente</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          É isto que o cliente recebe: sem custo e sem margem. Use o botão no alto da página para salvar em PDF ou
-          imprimir.
+          É isto que o cliente recebe: sem custo e sem margem. Use Baixar PDF (arquivo direto) ou Imprimir no alto da página.
         </p>
         {!lines.length ? (
           <Empty>Adicione ao menos um produto para ver o orçamento.</Empty>
