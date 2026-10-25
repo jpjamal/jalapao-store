@@ -83,6 +83,9 @@ posição do Estoque); no seletor de produto, "sem estoque" em vermelho (spec 02
 Na entrada de estoque (Compras e produção, ou Estoque → Ajustar inventário), o custo por unidade já vem com o custo
 do cadastro — na peça 3D, o custo de produção calculado. Troque se o lote custou diferente.
 
+Para tirar um produto do estoque para **uso pessoal** (nem venda, nem perda, nem defeito), use *Estoque → Ajustar
+inventário* com quantidade negativa e o motivo **Uso pessoal**: sai ao custo médio e não mexe no Caixa (spec 037).
+
 ## Fotos para os anúncios
 
 Em **Anúncios**, a etapa *Fotos* usa as fotos do produto. Dá para escolher várias de uma vez (ou soltá-las

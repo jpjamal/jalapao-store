@@ -37,6 +37,7 @@ const MOTIVOS = [
   "Produção 3D",
   "Contagem de inventário",
   "Perda / defeito",
+  "Uso pessoal",
   "Devolução",
 ];
 
@@ -219,6 +220,13 @@ export default function Inventory() {
                   </button>
                 ))}
               </div>
+              {motivo === "Uso pessoal" && (
+                <p className="text-sm text-muted-foreground mb-2">
+                  {delta > 0
+                    ? "Uso pessoal é uma retirada: informe a quantidade com sinal de menos (−)."
+                    : "Retirada para uso próprio: sai do estoque ao custo médio, sem venda, sem entrada no Caixa e sem contar como perda ou defeito."}
+                </p>
+              )}
               <Input
                 id="reason"
                 name="reason"
