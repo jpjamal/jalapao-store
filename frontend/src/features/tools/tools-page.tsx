@@ -21,6 +21,11 @@ export default function Tools() {
             "Quanto sobra no bolso depois do que a plataforma retém.",
           ],
           [
+            "roas",
+            "Calculadora de ROAS",
+            "Quanto o anúncio precisa vender por R$ 1 gasto em Ads para empatar ou dar lucro.",
+          ],
+          [
             "orcamento",
             "Orçamento",
             "Escolha produtos 3D e gere o orçamento para o cliente, só com o valor final.",

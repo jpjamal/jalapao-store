@@ -28,6 +28,8 @@ Organizado pelos mesmos contextos do backend — detalhes em ../docs/architectur
   também encontram por ele (spec 021). Categoria no lugar do tipo, mais marca, modelo e peso
   (spec 022): a categoria de impressão 3D mostra os parâmetros de custo.
 - /categorias: lista e cadastro de categorias; ativar/desativar, sem apagar (spec 022).
+- /ferramentas/roas: calculadora de ROAS (empate, visibilidade, rentabilidade e ROAS atual), com as taxas de
+  Shopee/Mercado Livre das regras da calculadora de taxas — spec 038.
 - /ferramentas/orcamento: orçamento de produtos 3D para o cliente (margem ajustável, sem custo no documento, download direto em PDF (jsPDF) ou
   impressão, nada é salvo) — spec 036.
 - /anuncios: rascunho por produto e canal, em etapas (produto e canal, conteúdo, fotos,

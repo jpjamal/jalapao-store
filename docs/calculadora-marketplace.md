@@ -4,6 +4,10 @@ Tela **Ferramentas → Taxas de marketplace** (`/jalapao-store/ferramentas/calcu
 quanto sobra no bolso depois que o marketplace tira a parte dele. Até 23/09/2026 era a página
 `site/calculadora.html`; virou tela do app sem mudar nenhuma fórmula (spec 003).
 
+> **Calculadora de ROAS (spec 038):** quanto o anúncio precisa vender por R$ 1 gasto em Ads. Fica em
+> **Ferramentas → Calculadora de ROAS** (`/jalapao-store/ferramentas/roas`), com atalho nesta tela. Usa estas
+> mesmas taxas quando se escolhe o marketplace. Ver [spec 038](specs/038-calculadora-de-roas/spec.md).
+
 ## O que você preenche
 
 | Campo | Observação |

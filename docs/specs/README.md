@@ -44,5 +44,6 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [035](035-fotos-dos-anuncios/spec.md) | Fotos dos anúncios: várias de uma vez e ordem por arrastar | conferir em produção o envio em lote |
 | [036](036-orcamento-de-pecas-3d/spec.md) | Orçamento de peças 3D para o cliente, só com o valor final | conferir o PDF em produção |
 | [037](037-retirada-uso-pessoal/spec.md) | Motivo "Uso pessoal" para retirar produto do estoque sem ser venda, perda ou defeito | conferir em produção |
+| [038](038-calculadora-de-roas/spec.md) | Calculadora de ROAS (empate, visibilidade e rentabilidade) ao lado das taxas de marketplace | conferir em produção e no celular |
 
-Próxima spec: **038**.
+Próxima spec: **039**.

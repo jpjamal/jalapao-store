@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import {
@@ -195,6 +196,13 @@ export default function Calculadora() {
           </p>
         </Card>
       </div>
+
+      <p className="mt-6 text-sm">
+        Vai anunciar com Ads?{" "}
+        <Link href="/ferramentas/roas" className="underline font-semibold">
+          Calcule o ROAS do anúncio →
+        </Link>
+      </p>
 
       <Card className="mt-6">
         <h2>Regras e taxas</h2>
