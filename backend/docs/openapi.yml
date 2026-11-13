@@ -3,6 +3,34 @@ info:
   title: Jalapão Store API
   version: 1.0.0
 paths:
+  /auth/forgot-password/:
+    post:
+      operationId: auth_forgot_password_create
+      description: Manda o link de senha nova se o e-mail tiver conta; responde igual
+        nos dois casos.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPassword'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForgotPassword'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ForgotPassword'
+        required: true
+      security:
+      - {}
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
   /auth/logout/:
     post:
       operationId: auth_logout_create
@@ -70,6 +98,79 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /auth/reset-password/{code}/:
+    get:
+      operationId: auth_reset_password_retrieve
+      description: Diz se o link ainda vale (200, com o e-mail mascarado) ou não (410).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetLinkOk'
+          description: ''
+        '410':
+          description: No response body
+    post:
+      operationId: auth_reset_password_create
+      description: Cria a senha nova pelo link do e-mail e encerra as sessões da pessoa.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPassword'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResetPassword'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResetPassword'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+        '410':
+          description: No response body
+  /auth/resources/:
+    get:
+      operationId: auth_resources_retrieve
+      description: Diz se o envio de e-mail está ligado (a tela só mostra "Esqueci
+        minha senha" com ele).
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResources'
           description: ''
   /auth/token/:
     post:
@@ -2864,6 +2965,13 @@ components:
           type: string
       required:
       - url
+    AuthResources:
+      type: object
+      properties:
+        email_configured:
+          type: boolean
+      required:
+      - email_configured
     AuthorizationAlert:
       type: object
       properties:
@@ -3216,6 +3324,14 @@ components:
       - erros
       - pode_publicar
       - simulado_no_mercado_livre
+    ForgotPassword:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
     ImportResult:
       type: object
       properties:
@@ -3433,6 +3549,13 @@ components:
       description: |-
         * `shopee` - Shopee
         * `mercado_livre` - Mercado Livre
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
     MlAuthLink:
       type: object
       properties:
@@ -4811,6 +4934,23 @@ components:
       description: |-
         * `purchase` - Compra
         * `production` - Produção
+    ResetLinkOk:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+      - email
+    ResetPassword:
+      type: object
+      properties:
+        password:
+          type: string
+        password_confirmation:
+          type: string
+      required:
+      - password
+      - password_confirmation
     Sale:
       type: object
       properties:

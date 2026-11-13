@@ -36,6 +36,15 @@ JSON antiga para importar uma cópia estável, sobe a stack e confere as rotas p
 Backup JSON a cada importação; backup de código anterior no workflow. Arquivos sob
 ~/backups/jalapao-store com permissões restritas.
 
+## E-mail e recuperação de senha (spec 039)
+O "Esqueci minha senha" envia o link por e-mail pelo SMTP do Gmail. No GitHub (ambiente `production`):
+variável `EMAIL_HOST_USER` (a conta Gmail), segredo `EMAIL_HOST_PASSWORD` (senha de app dessa conta) e variável
+`JPMORAIS_EMAIL` (e-mail do usuário `jpmorais`). O workflow grava a senha de app em `.env.email` na VPS
+(permissão 600) e o `deploy.sh` a entrega ao container; sem o segredo o arquivo é apagado, o envio fica desligado e
+o link some da tela de login. `URL_PUBLICA` (base dos links) está no compose. Depois das migrações o deploy roda
+`manage.py definir_emails`, que preenche o e-mail do `jpmorais` só se estiver em branco. Detalhes e testes:
+[spec 039](specs/039-recuperar-senha-por-email/spec.md).
+
 ## Arquivos: fotos e manuais (spec 020)
 
 Ficam no **SILO**, o servidor de arquivos S3 do traefikproxy (fork AGPLv3 mantido do MinIO):

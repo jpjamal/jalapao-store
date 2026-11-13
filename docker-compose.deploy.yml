@@ -54,6 +54,14 @@ services:
       S3_BUCKET: jalapao-media
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Falta a credencial do SILO (.env.silo.jalapao-store)}
       S3_SECRET_KEY: ${S3_SECRET_KEY:?Falta a credencial do SILO (.env.silo.jalapao-store)}
+      # e-mail do sistema (spec 039): a conta Gmail é a variável EMAIL_HOST_USER do GitHub e a
+      # senha de app vem do segredo EMAIL_HOST_PASSWORD (.env.email, gerado pelo deploy). Vazios =
+      # envio desligado e sem "Esqueci minha senha". URL_PUBLICA é a base dos links dos e-mails.
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      URL_PUBLICA: https://jpsys.duckdns.org/jalapao-store
+      # e-mail do usuário jpmorais, preenchido pelo deploy só se estiver em branco (definir_emails)
+      JPMORAIS_EMAIL: ${JPMORAIS_EMAIL:-}
     volumes:
       - './dados:/legacy:ro'
       # certificado do IP, do certbot central, só para avisar no painel antes de vencer

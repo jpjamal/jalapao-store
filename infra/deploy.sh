@@ -11,6 +11,10 @@ dc() {
     if [ -s .env.marketplace ]; then
         env_files+=(--env-file .env.marketplace)
     fi
+    # senha de app do Gmail (spec 039): opcional; sem o arquivo o envio de e-mail fica desligado
+    if [ -s .env.email ]; then
+        env_files+=(--env-file .env.email)
+    fi
     docker compose -f docker-compose.deploy.yml "${env_files[@]}" "$@"
 }
 
@@ -63,6 +67,8 @@ fi
 if [ -s .env.bootstrap ]; then
     dc run --rm --env-from-file .env.bootstrap jalapao-backend python manage.py bootstrap_users
 fi
+# E-mail do jpmorais (spec 039): preenche só se estiver em branco; sem JPMORAIS_EMAIL não faz nada.
+dc run --rm jalapao-backend python manage.py definir_emails
 # --remove-orphans tira os serviços que saíram: gateway, tls, certbot e os de nome antigo.
 dc up -d --wait --remove-orphans
 legacy_running=''

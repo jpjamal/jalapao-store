@@ -124,7 +124,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 100,
     "EXCEPTION_HANDLER": "apps.common.exceptions.exception_handler",
-    "DEFAULT_THROTTLE_RATES": {"login": "10/min"},
+    "DEFAULT_THROTTLE_RATES": {"login": "10/min", "forgot": "5/hour"},
 }
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
@@ -153,3 +153,18 @@ SPECTACULAR_SETTINGS = {
     # documentação interativa (http://localhost:8080/api/v1/docs/).
     "SERVERS": [{"url": "/api/v1", "description": "Backend (rede interna; local em localhost:8080)"}],
 }
+
+# E-mail do sistema (spec 039): SMTP do Gmail com senha de app (variável EMAIL_HOST_USER e segredo
+# EMAIL_HOST_PASSWORD no GitHub). Sem os dois o envio fica desligado e a tela não oferece
+# "Esqueci minha senha". URL_PUBLICA é a base dos links dos e-mails (já com o prefixo /jalapao-store).
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_TIMEOUT = 10
+DEFAULT_FROM_EMAIL = f"Jalapão Store <{EMAIL_HOST_USER or 'nao-responda@localhost'}>"
+# True só em desenvolvimento e testes: o e-mail vai para o console/memória, sem SMTP.
+EMAIL_SEM_SMTP = False
+URL_PUBLICA = os.getenv("URL_PUBLICA", "http://localhost:3000/jalapao-store").rstrip("/")

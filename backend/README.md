@@ -126,6 +126,9 @@ receber/cancelar exige change_sale, add_movement e add_cashentry. Admins têm ac
 `import_legacy /legacy/produtos.json`: uma transação, identifica legacy_id, não sobrescreve.
 `bootstrap_users`: lê BOOTSTRAP_PASSWORD do ambiente, cria admin/jpmorais superusers somente
 se ausentes, não redefine senhas. Django armazena hash. Nunca commitar arquivo de bootstrap.
+Esqueci a senha (spec 039): link de 1 hora e uso único enviado por e-mail (`/esqueci-senha`); precisa do
+e-mail cadastrado no usuário e do envio configurado (`EMAIL_HOST_USER`/`EMAIL_HOST_PASSWORD`). O comando
+`definir_emails` preenche o e-mail do `jpmorais` em branco a partir de `JPMORAIS_EMAIL`.
 Interface Django Admin em `/jalapao-store/admin/`; estoque/caixa/vendas são apenas leitura
 no Admin para não contornar os serviços. Usuários e grupos continuam administráveis.
 

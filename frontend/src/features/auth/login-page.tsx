@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -9,6 +10,15 @@ export default function Login() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [emailOn, setEmailOn] = useState(false);
+  const [senhaNova, setSenhaNova] = useState(false);
+  useEffect(() => {
+    // "Esqueci minha senha" só aparece com o envio de e-mail ligado (spec 039)
+    api<{ email_configured: boolean }>("auth/resources")
+      .then((r) => setEmailOn(r.email_configured))
+      .catch(() => setEmailOn(false));
+    setSenhaNova(new URLSearchParams(window.location.search).get("senha") === "nova");
+  }, []);
   return (
     <main className="min-h-screen grid place-items-center p-6">
       <Card className="w-full max-w-md">
@@ -65,6 +75,11 @@ export default function Login() {
               required
             />
           </div>
+          {senhaNova && !error && (
+            <p role="status" className="text-sm text-primary">
+              Senha nova criada. Entre com ela.
+            </p>
+          )}
           {error && (
             <p role="alert" className="text-destructive whitespace-pre-wrap">
               {error}
@@ -73,6 +88,13 @@ export default function Login() {
           <Button className="w-full" disabled={busy}>
             {busy ? "Entrando…" : "Entrar"}
           </Button>
+          {emailOn && (
+            <p className="text-center text-sm">
+              <Link href="/esqueci-senha" className="underline">
+                Esqueci minha senha
+              </Link>
+            </p>
+          )}
         </form>
       </Card>
     </main>

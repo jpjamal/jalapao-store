@@ -8,3 +8,5 @@ from config.settings.base import *  # noqa: F403
 
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = not DEBUG
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_SEM_SMTP = True

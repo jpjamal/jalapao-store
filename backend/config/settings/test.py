@@ -7,3 +7,5 @@ from config.settings.base import *  # noqa: F403
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 MEDIA_ROOT = tempfile.mkdtemp(prefix="jalapao-media-teste-")
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+EMAIL_SEM_SMTP = True

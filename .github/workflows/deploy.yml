@@ -199,6 +199,30 @@ jobs:
             "chmod 600 ~/${{ env.APP_NAME }}/.env.marketplace"
           rm /tmp/.env.marketplace
 
+      # Opcional (spec 039): senha de app do Gmail. Sem o segredo, o arquivo some do servidor e o
+      # envio de e-mail (e o "Esqueci minha senha") fica desligado.
+      - name: Configure e-mail (optional)
+        env:
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+        run: |
+          if [ -z "$EMAIL_HOST_PASSWORD" ]; then
+            ssh -i ~/.ssh/deploy_key ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }} \
+              "rm -f ~/${{ env.APP_NAME }}/.env.email"
+            echo "Sem EMAIL_HOST_PASSWORD: e-mail desligado"
+            exit 0
+          fi
+          if [[ "$EMAIL_HOST_PASSWORD" == *$'\n'* || "$EMAIL_HOST_PASSWORD" == *$'\r'* ]]; then
+            echo "Segredo EMAIL_HOST_PASSWORD tem quebra de linha"
+            exit 1
+          fi
+          umask 077
+          printf 'EMAIL_HOST_PASSWORD=%s\n' "$EMAIL_HOST_PASSWORD" > /tmp/.env.email
+          scp -i ~/.ssh/deploy_key /tmp/.env.email \
+            ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:~/${{ env.APP_NAME }}/.env.email
+          ssh -i ~/.ssh/deploy_key ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }} \
+            "chmod 600 ~/${{ env.APP_NAME }}/.env.email"
+          rm /tmp/.env.email
+
       - name: Deploy
         run: |
           ssh -i ~/.ssh/deploy_key ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }} bash << 'EOF'
