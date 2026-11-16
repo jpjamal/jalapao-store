@@ -95,15 +95,17 @@ class CustoNaVendaTests(TestCase):
         register_supply_adjustment(supply_id=self.box.id, delta=-3, reason="Rasgou", actor=self.user)
         self.assertEqual((self.stock(self.box).quantity, self.stock(self.box).uncosted), (4, 0))
 
-    def test_filamento_na_venda_sai_sem_custo(self):
+    def test_filamento_nao_sai_na_venda(self):
+        # spec 041: filamento é contado em gramas e sai na produção da peça, não na venda
         filaments = SupplyCategory.objects.get(is_filament=True, name="Filamentos")
         pla = Supply.objects.create(
             category=filaments, name="PLA preto", material="PLA", color="Preto",
             roll_weight_g=Decimal("1000"), roll_price=Decimal("100"),
         )
         self.buy(pla, 2, "100.00")
-        sale = self.sell([{"supply_id": pla.id, "quantity": 1}])
-        self.assertEqual(sale.supplies_cost, Decimal("0"))
+        with self.assertRaises(ValidationError):
+            self.sell([{"supply_id": pla.id, "quantity": 1}])
+        self.assertEqual(self.stock(pla).quantity, 2000)
 
     def test_cancelar_a_venda_devolve_cada_parte_ao_seu_lugar(self):
         adjust_supply_stock(supply_id=self.box.id, delta=1, reason="Saldo de antes", actor=self.user)

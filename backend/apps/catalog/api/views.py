@@ -45,7 +45,9 @@ class ProductViewSet(
 ):
     queryset = (
         Product.objects.select_related("printing", "stock", "category")
-        .prefetch_related("printing__filaments__filament", "default_supplies__supply")
+        .prefetch_related(
+            "printing__filaments__filament", "printing__components__supply", "default_supplies__supply"
+        )
         .all()
     )
     serializer_class = ProductSerializer

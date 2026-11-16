@@ -11,6 +11,12 @@ export type LinhaFilamento = {
   pesoRolo: string | number;
 };
 
+/* Componente que vai dentro da peça (spec 041): LED, parafuso, cabo. Custo = quantidade × custo unitário. */
+export type LinhaComponente = {
+  quantidade: string | number;
+  custo: string | number;
+};
+
 export type Entradas3D = {
   precoKg: string | number;
   gramas: string | number;
@@ -23,10 +29,13 @@ export type Entradas3D = {
   margem: string | number;
   /* com linhas, o filamento é a soma delas e precoKg/gramas são ignorados */
   filamentos?: LinhaFilamento[];
+  /* componentes da peça (spec 041): somam no custo antes da margem */
+  componentes?: LinhaComponente[];
 };
 
 export type Resultado3D = {
   filamento: number;
+  componentes: number;
   /* gramas totais: as digitadas, ou a soma das linhas */
   gramasTotal: number;
   kwhGastos: number;
@@ -69,13 +78,18 @@ export function calcular(entradas: Partial<Entradas3D>): Resultado3D {
         0,
       )
     : (precoKg / 1000) * gramas;
+  const componentes = (e.componentes || []).reduce(
+    (t, l) => t + num(l.quantidade) * num(l.custo),
+    0,
+  );
   const kwhGastos = (consumo * tempo) / 1000;
   const energia = kwhGastos * kwh;
-  const custoTotal = filamento + energia + mao + fixo;
+  const custoTotal = filamento + componentes + energia + mao + fixo;
   const lucro = margem > 0 ? custoTotal * (margem / 100) : 0;
 
   return {
     filamento,
+    componentes,
     gramasTotal: gramas,
     kwhGastos,
     energia,

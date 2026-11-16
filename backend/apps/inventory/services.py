@@ -8,6 +8,7 @@ from apps.common.domain.money import money
 from apps.inventory.domain.costing import check_value, outgoing_value
 from apps.integrations.models import OutboxEvent
 from apps.inventory.models import Stock, Movement, Receipt
+from apps.supplies.services import consume_supplies_for_production, restore_supplies_for_production
 
 
 def outgoing_cost(stock, quantity):
@@ -96,6 +97,8 @@ def create_receipt(*, data, actor):
     check_value(data["unit_cost"])
     total = money(data["unit_cost"] * data["quantity"])
     check_value(total)
+    # produção dá baixa no filamento e nos componentes da peça, a menos que o dono desligue (spec 041)
+    consume = data.pop("consume_supplies", True)
     receipt = Receipt.objects.create(
         **data, product_name=product.name, total=total, request_hash=digest, actor=actor
     )
@@ -107,6 +110,8 @@ def create_receipt(*, data, actor):
         actor=actor,
         receipt=receipt,
     )
+    if consume and receipt.kind == Receipt.Kind.PRODUCTION:
+        consume_supplies_for_production(production=receipt, actor=actor)
     return receipt
 
 
@@ -174,6 +179,8 @@ def cancel_receipt(*, receipt_id, actor):
         actor=actor,
         restore_value=receipt.total,
     )
+    # o filamento e os componentes que a produção baixou voltam ao saldo dos insumos (spec 041)
+    restore_supplies_for_production(production=receipt, actor=actor)
     if receipt.paid_at and receipt.total > 0:
         CashEntry.objects.create(
             direction="in",

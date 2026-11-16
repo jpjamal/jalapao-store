@@ -10,6 +10,9 @@ import {
   type Entradas3D,
 } from "@/features/tools/lib/custo3d";
 import { FilamentLines, linesToCalc, type FilamentLine } from "@/features/catalog/components/filament-lines";
+import {
+  ComponentLines, componentsPayload, componentsToCalc, type ComponentLine,
+} from "@/features/catalog/components/component-lines";
 import { allSupplies } from "@/features/supplies/api";
 import { type Supply } from "@/features/supplies/types";
 import { Button } from "@/shared/ui/button";
@@ -76,6 +79,8 @@ export default function Impressao3D() {
   // filamentos cadastrados (spec 024): a peça pode ser multicolor, com uma linha por filamento
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [filLines, setFilLines] = useState<FilamentLine[]>([]);
+  // componentes da peça (spec 041): LED, parafuso; somam no custo
+  const [parts, setParts] = useState<ComponentLine[]>([]);
   useEffect(() => {
     allSupplies()
       .then(setSupplies)
@@ -113,8 +118,13 @@ export default function Impressao3D() {
   };
 
   const r = useMemo(
-    () => calcular({ ...entradas, filamentos: linesToCalc(filLines, supplies) }),
-    [entradas, filLines, supplies],
+    () =>
+      calcular({
+        ...entradas,
+        filamentos: linesToCalc(filLines, supplies),
+        componentes: componentsToCalc(parts, supplies),
+      }),
+    [entradas, filLines, parts, supplies],
   );
 
   async function salvar() {
@@ -134,6 +144,7 @@ export default function Impressao3D() {
             .map(([meu, deles]) => [deles, Number(entradas[meu as keyof Entradas3D] || 0)]),
         ),
         filaments: filLines.map((l) => ({ filament: l.filament, grams: l.grams })),
+        components: componentsPayload(parts),
       };
       await api("products", {
         method: "POST",
@@ -153,6 +164,7 @@ export default function Impressao3D() {
 
   const linhas: [string, string, string?][] = [
     ["Filamento", brl(r.filamento), `${Number(r.gramasTotal.toFixed(3))} g`],
+    ...(parts.length ? [["Componentes", brl(r.componentes)] as [string, string]] : []),
     ["Energia", brl(r.energia), `${r.kwhGastos.toFixed(3)} kWh`],
     ["Mão de obra", brl(r.maoDeObra)],
     ["Custos fixos", brl(r.custoFixo)],
@@ -189,6 +201,7 @@ export default function Impressao3D() {
             ))}
           </div>
           <FilamentLines lines={filLines} onChange={setFilLines} supplies={supplies} />
+          <ComponentLines lines={parts} onChange={setParts} supplies={supplies} />
           {comLinhas && (
             <p className="text-sm text-muted-foreground">
               Peso e custo do filamento vêm das linhas acima.

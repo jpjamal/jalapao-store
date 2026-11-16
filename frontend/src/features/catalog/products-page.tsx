@@ -5,6 +5,9 @@ import { brl } from "@/shared/lib/format";
 import { type Category, type Product, type Printing } from "@/features/catalog/types";
 import { FilamentLines, type FilamentLine } from "@/features/catalog/components/filament-lines";
 import { DefaultSupplies, type KitLine } from "@/features/catalog/components/default-supplies";
+import {
+  ComponentLines, componentsPayload, type ComponentLine,
+} from "@/features/catalog/components/component-lines";
 import { allSupplies } from "@/features/supplies/api";
 import { type Supply } from "@/features/supplies/types";
 import { type Page } from "@/shared/api/types";
@@ -67,6 +70,17 @@ function ProductForm({
       refresh: false,
     })),
   );
+  // componentes que vão dentro da peça 3D (spec 041)
+  const [parts, setParts] = useState<ComponentLine[]>(() =>
+    (product?.printing?.components || []).map((l) => ({
+      uid: crypto.randomUUID(),
+      supply: l.supply,
+      quantity: String(l.quantity),
+      unit_cost: l.unit_cost,
+      outdated: l.price_outdated,
+      refresh: false,
+    })),
+  );
   const [supplies, setSupplies] = useState<Supply[]>([]);
   // embalagem padrão (spec 040)
   const [kit, setKit] = useState<KitLine[]>(() =>
@@ -125,6 +139,7 @@ function ProductForm({
                 grams: l.grams,
                 refresh_price: l.refresh,
               })),
+              components: componentsPayload(parts),
             };
           } else {
             payload.cost_price = f.get("cost_price");
@@ -216,6 +231,7 @@ function ProductForm({
               abaixo. Margem é o acréscimo sobre o custo.
             </p>
             <FilamentLines lines={lines} onChange={setLines} supplies={supplies} />
+            <ComponentLines lines={parts} onChange={setParts} supplies={supplies} />
             <div className="grid md:grid-cols-3 gap-4">
               {withLines ? (
                 <p className="md:col-span-3 text-sm text-muted-foreground">
@@ -392,6 +408,15 @@ export default function Products() {
               ["Valor em estoque", brl(viewing.stock_value)],
               ["Preço de venda", brl(viewing.sale_price)],
               ["Estoque", <StockQuantity key="q" quantity={viewing.quantity} />],
+              [
+                "Composição da peça",
+                [
+                  ...(viewing.printing?.filaments || []).map((l) => `${Number(l.grams)} g ${l.filament_name}`),
+                  ...(viewing.printing?.components || []).map(
+                    (l) => `${l.quantity}× ${l.supply_name} (${brl(l.unit_cost)} cada)`,
+                  ),
+                ].join(", "),
+              ],
               [
                 "Embalagem padrão",
                 (viewing.default_supplies || []).map((l) => `${l.quantity}× ${l.supply_name}`).join(", "),

@@ -15,6 +15,11 @@ def filament_cost(lines) -> Decimal:
     )
 
 
+def components_cost(lines) -> Decimal:
+    """Custo dos componentes da peça (spec 041): soma de `quantidade × custo unitário`."""
+    return sum((Decimal(quantity) * Decimal(unit_cost) for quantity, unit_cost in lines), Decimal(0))
+
+
 def printing_cost(
     *,
     filament_price_kg,
@@ -27,15 +32,17 @@ def printing_cost(
     fixed_cost,
     markup_percent,
     filament_lines=None,
+    component_lines=None,
 ) -> tuple[Decimal, Decimal]:
-    """Devolve (custo, preço sugerido): filamento + energia + mão de obra + fixos, e a margem.
-    Com `filament_lines` (peça multicolor) o filamento é a soma das linhas; sem elas vale a conta
-    de sempre, com o preço por kg e o peso total."""
+    """Devolve (custo, preço sugerido): filamento + componentes + energia + mão de obra + fixos, e a
+    margem. Com `filament_lines` (peça multicolor) o filamento é a soma das linhas; sem elas vale a conta
+    de sempre, com o preço por kg e o peso total. `component_lines` (spec 041) são `(quantidade, custo
+    unitário)` dos componentes que vão dentro da peça (LED, parafuso)."""
     duration = Decimal(hours) + Decimal(minutes) / 60
     if filament_lines:
         filament = filament_cost(filament_lines)
     else:
         filament = Decimal(filament_price_kg) * Decimal(weight_g) / 1000
     energy = Decimal(power_w) * duration * Decimal(energy_price_kwh) / 1000
-    total = filament + energy + Decimal(labor_cost) + Decimal(fixed_cost)
+    total = filament + components_cost(component_lines or []) + energy + Decimal(labor_cost) + Decimal(fixed_cost)
     return money(total), money(total * (1 + Decimal(markup_percent) / 100))

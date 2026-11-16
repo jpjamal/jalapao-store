@@ -192,9 +192,11 @@ class PrintingProfile(models.Model):
 
     def prices(self):
         lines = [(f.grams, f.roll_price, f.roll_weight_g) for f in self.filaments.all()] if self.pk else []
+        parts = [(c.quantity, c.unit_cost) for c in self.components.all()] if self.pk else []
         return printing_cost(
             **{f.name: getattr(self, f.name) for f in self._meta.fields if f.name not in ("id", "product")},
             filament_lines=lines,
+            component_lines=parts,
         )
 
 
@@ -217,4 +219,23 @@ class PrintingFilament(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["profile", "filament"], name="printing_filament_unique"),
             models.CheckConstraint(condition=models.Q(grams__gt=0), name="printing_filament_grams_positive"),
+        ]
+
+
+class PrintingComponent(models.Model):
+    """Componente que vai dentro da peça 3D (spec 041): LED, parafuso, cabo, base. Um insumo que não é
+    filamento e a quantidade por peça. O custo unitário é **copiado** na hora de salvar, como o preço do
+    rolo no filamento: o custo do componente entra no custo da peça, e mudar o insumo depois só avisa."""
+
+    profile = models.ForeignKey(PrintingProfile, on_delete=models.CASCADE, related_name="components")
+    supply = models.ForeignKey("supplies.Supply", on_delete=models.PROTECT, related_name="component_lines")
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    unit_cost = amount()
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["profile", "supply"], name="printing_component_unique"),
+            models.CheckConstraint(condition=models.Q(quantity__gt=0), name="printing_component_quantity_positive"),
         ]

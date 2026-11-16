@@ -79,6 +79,8 @@ class SupplyExpenseOptionMigrationTests(TransactionTestCase):
                 "Embalagens": False,
                 "Etiquetas e papelaria": True,
                 "Outra do dono": True,
+                # criada pela spec 041: o custo do LED e do parafuso entra no custo da peça
+                "Componentes": False,
             },
         )
 

@@ -5,10 +5,15 @@ produto, sem custo médio: o estoque de insumo guarda só a quantidade.
 Custo na venda (spec 040): cada insumo tem um custo unitário (o da última compra ou do último ajuste de
 entrada com custo) e o saldo tem uma parte **sem custo** (`SupplyStock.uncosted`): unidades cuja compra
 já entrou como despesa no Resultado do negócio, entradas sem custo e o saldo anterior à spec 040. Toda
-saída consome a parte sem custo primeiro. Assim o mesmo custo nunca conta duas vezes."""
+saída consome a parte sem custo primeiro. Assim o mesmo custo nunca conta duas vezes.
+
+Produção (spec 041): o filamento é contado em gramas (a compra continua em rolos e entra como rolos × peso
+do rolo) e a produção de uma peça 3D dá baixa no filamento e nos componentes dela. Esse consumo não mexe no
+lucro de venda nenhuma: o custo deles já está no custo da peça."""
 
 import hashlib
 import json
+from decimal import ROUND_CEILING, ROUND_HALF_UP, Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
@@ -16,15 +21,28 @@ from django.utils import timezone
 
 from apps.common.domain.money import money
 from apps.supplies.domain.pricing import check_amount
-from apps.supplies.models import ProductSupply, SaleSupply, Supply, SupplyMovement, SupplyReceipt, SupplyStock
+from apps.supplies.models import (
+    ProductionSupply,
+    ProductSupply,
+    SaleSupply,
+    Supply,
+    SupplyMovement,
+    SupplyReceipt,
+    SupplyStock,
+)
 
 LIMITE_QUANTIDADE = 2147483647
 
 
+def roll_grams(supply, rolls):
+    """Gramas que `rolls` rolos deste filamento põem no saldo (spec 041)."""
+    return int((Decimal(rolls) * Decimal(supply.roll_weight_g)).to_integral_value(rounding=ROUND_HALF_UP))
+
+
 @transaction.atomic
 def adjust_supply_stock(
-    *, supply_id, delta, reason, actor, receipt=None, sale=None, allow_inactive=False, uncosted=None,
-    unit_cost=None,
+    *, supply_id, delta, reason, actor, receipt=None, sale=None, production=None, allow_inactive=False,
+    uncosted=None, unit_cost=None,
 ):
     """Muda o saldo de um insumo e grava o movimento. Nunca deixa o saldo negativo.
 
@@ -58,6 +76,7 @@ def adjust_supply_stock(
         actor=actor,
         receipt=receipt,
         sale=sale,
+        production=production,
     )
 
 
@@ -65,9 +84,12 @@ def adjust_supply_stock(
 def register_supply_adjustment(*, supply_id, delta, reason, actor, unit_cost=None):
     """Baixa ou ajuste feito à mão (spec 024). Ajuste de **entrada com custo unitário** (spec 040), por
     exemplo embalagens que já estavam em casa: entra com esse custo nas vendas e vira o custo do insumo,
-    sem tocar no caixa. Sem custo, a entrada sai nas vendas sem custo."""
+    sem tocar no caixa. Sem custo, a entrada sai nas vendas sem custo. No filamento a quantidade é em
+    gramas e não há custo no ajuste: o preço dele é o do rolo (spec 041)."""
     if unit_cost is not None and delta <= 0:
         raise ValidationError({"unit_cost": "Custo unitário só vale para entrada (quantidade positiva)."})
+    if unit_cost is not None and Supply.objects.filter(pk=supply_id, category__is_filament=True).exists():
+        raise ValidationError({"unit_cost": "Filamento não tem custo no ajuste: o preço dele é o do rolo."})
     if unit_cost is not None:
         check_amount(unit_cost)
     movement = adjust_supply_stock(
@@ -126,14 +148,16 @@ def create_supply_receipt(*, data, actor):
         previous_unit_cost=supply.unit_cost,
         actor=actor,
     )
+    # filamento é comprado em rolos e guardado em gramas (spec 041)
+    entra = roll_grams(supply, receipt.quantity) if supply.category.is_filament else receipt.quantity
     # compra que já conta como despesa no Resultado do negócio entra sem custo para as vendas (spec 040)
     adjust_supply_stock(
         supply_id=supply.id,
-        delta=receipt.quantity,
+        delta=entra,
         reason=f"Compra de insumo: {receipt.reference or 'entrada de estoque'}",
         actor=actor,
         receipt=receipt,
-        uncosted=receipt.quantity if receipt.counts_as_expense_snapshot else 0,
+        uncosted=entra if receipt.counts_as_expense_snapshot else 0,
     )
     supply.unit_cost = money(data["unit_cost"])
     update = ["unit_cost", "updated_at"]
@@ -194,12 +218,14 @@ def cancel_supply_receipt(*, receipt_id, actor):
                 "outra compra), então ela não pode ser cancelada. Corrija pelos ajustes de estoque."
             }
         )
+    # tira exatamente o que a compra pôs (no filamento, em gramas)
+    saiu = entry.delta
     adjust_supply_stock(
         supply_id=supply.pk,
-        delta=-receipt.quantity,
+        delta=-saiu,
         reason=f"Cancelamento de compra de insumo: {receipt.reference or 'entrada de estoque'}",
         actor=actor,
-        uncosted=-receipt.quantity if receipt.counts_as_expense_snapshot else 0,
+        uncosted=-saiu if receipt.counts_as_expense_snapshot else 0,
     )
     if receipt.paid_at and receipt.total > 0:
         CashEntry.objects.create(
@@ -236,8 +262,8 @@ def consume_supplies_for_sale(*, sale, lines, actor):
     que foi baixado ficam gravados em `SaleSupply`, para a tela avisar o que faltou.
 
     Custo (spec 040): a parte sem custo do saldo sai primeiro, a custo zero; o resto sai pelo custo
-    unitário do insumo. Filamento sai sempre a custo zero (o custo dele já está no custo da peça). O custo
-    fica congelado na linha; quem chama soma e desconta do lucro da venda."""
+    unitário do insumo. O custo fica congelado na linha; quem chama soma e desconta do lucro da venda.
+    Filamento não entra (spec 041): ele sai na produção da peça."""
     if not lines:
         return []
     ids = [line["supply_id"] for line in lines]
@@ -249,6 +275,9 @@ def consume_supplies_for_sale(*, sale, lines, actor):
     }
     if len(supplies) != len(ids):
         raise ValidationError({"supplies": "Insumo inexistente."})
+    if any(s.category.is_filament for s in supplies.values()):
+        # filamento é contado em gramas e sai na produção da peça (spec 041), não na venda
+        raise ValidationError({"supplies": "Filamento não sai na venda: ele sai do estoque na produção da peça."})
     used = []
     for line in sorted(lines, key=lambda row: str(row["supply_id"])):
         supply = supplies[line["supply_id"]]
@@ -261,10 +290,7 @@ def consume_supplies_for_sale(*, sale, lines, actor):
                 supply_id=supply.id, delta=-taken, reason="Venda confirmada", actor=actor, sale=sale,
                 uncosted=-zero_cost,
             )
-        if supply.category.is_filament:
-            zero_cost, unit_cost = taken, money(0)
-        else:
-            unit_cost = money(supply.unit_cost or 0)
+        unit_cost = money(supply.unit_cost or 0)
         used.append(
             SaleSupply.objects.create(
                 sale=sale,
@@ -291,6 +317,80 @@ def restore_supplies_for_sale(*, sale, actor):
             reason="Cancelamento de venda",
             actor=actor,
             sale=sale,
+            allow_inactive=True,
+            uncosted=line.zero_cost_qty,
+        )
+
+
+def production_requirements(product, quantity):
+    """O que produzir `quantity` peças deste produto tira dos insumos (spec 041): `[(insumo, quantidade)]`.
+    Filamento em gramas (arredondado para cima), componentes em unidades. Produto sem parâmetros 3D, ou
+    peça sem linhas de filamento (preço por kg digitado), não tem filamento a baixar."""
+    profile = getattr(product, "printing", None)
+    if profile is None:
+        return []
+    needs = {}
+    for line in profile.filaments.select_related("filament"):
+        grams = int((line.grams * quantity).to_integral_value(rounding=ROUND_CEILING))
+        needs[line.filament_id] = (line.filament, grams)
+    for line in profile.components.select_related("supply"):
+        supply, before = needs.get(line.supply_id, (line.supply, 0))
+        needs[line.supply_id] = (supply, before + line.quantity * quantity)
+    return [(supply, amount) for supply, amount in needs.values() if amount > 0]
+
+
+@transaction.atomic
+def consume_supplies_for_production(*, production, actor):
+    """Dá baixa no filamento e nos componentes de uma produção (spec 041), na mesma transação dela.
+
+    Falta de saldo não impede a produção: baixa até onde tem e grava o pedido e o baixado em
+    `ProductionSupply`. Não há custo de venda aqui: o custo desses insumos já está no custo da peça, que é o
+    custo da entrada de produção."""
+    lines = production_requirements(production.product, production.quantity)
+    if not lines:
+        return []
+    ids = sorted(supply.id for supply, _ in lines)
+    locked = {s.id: s for s in Supply.objects.select_for_update().filter(id__in=ids).order_by("id")}
+    used = []
+    for supply, requested in sorted(lines, key=lambda row: str(row[0].id)):
+        supply = locked[supply.id]
+        stock, _ = SupplyStock.objects.get_or_create(supply=supply)
+        taken = min(requested, stock.quantity)
+        zero_cost = min(stock.uncosted, taken)
+        if taken > 0:
+            adjust_supply_stock(
+                supply_id=supply.id,
+                delta=-taken,
+                reason=f"Produção: {production.quantity} × {production.product_name}"[:240],
+                actor=actor,
+                production=production,
+                uncosted=-zero_cost,
+            )
+        used.append(
+            ProductionSupply.objects.create(
+                production=production,
+                supply=supply,
+                supply_name=supply.name,
+                unit=supply.unit,
+                requested=requested,
+                taken=taken,
+                zero_cost_qty=zero_cost,
+            )
+        )
+    return used
+
+
+@transaction.atomic
+def restore_supplies_for_production(*, production, actor):
+    """Devolve ao saldo o que a produção baixou (só `taken`), quando ela é cancelada (spec 041)."""
+    lines = ProductionSupply.objects.select_for_update().filter(production=production, taken__gt=0)
+    for line in lines.order_by("supply_id"):
+        adjust_supply_stock(
+            supply_id=line.supply_id,
+            delta=line.taken,
+            reason=f"Cancelamento de produção: {production.product_name}"[:240],
+            actor=actor,
+            production=production,
             allow_inactive=True,
             uncosted=line.zero_cost_qty,
         )

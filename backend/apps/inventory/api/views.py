@@ -20,7 +20,7 @@ class MovementViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.G
 
 
 class ReceiptViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    queryset = Receipt.objects.all()
+    queryset = Receipt.objects.prefetch_related("supply_lines")
     serializer_class = ReceiptSerializer
     filterset_class = ReceiptFilter
     search_fields = ["product_name", "supplier", "reference", "notes"]

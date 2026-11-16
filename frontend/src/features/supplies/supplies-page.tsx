@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/shared/api/client";
 import { brl } from "@/shared/lib/format";
 import { brlGrama } from "@/features/supplies/api";
+import { rolosTexto, saldoTexto } from "@/features/supplies/format";
 import { type Supply, type SupplyCategory } from "@/features/supplies/types";
 import { SupplyCategoriesPanel } from "@/features/supplies/components/supply-categories-panel";
 import { SupplyActionForm, type SupplyAction } from "@/features/supplies/components/supply-action-form";
@@ -105,14 +106,25 @@ function SupplyForm({
             </select>
           </div>
           <Field name="name" label="Nome do insumo" value={supply?.name} required maxLength={120} />
-          <Field
-            name="unit"
-            label={isFilament ? "Unidade (rolo)" : "Unidade"}
-            value={supply?.unit ?? (isFilament ? "rolo" : "unidade")}
-            required
-            maxLength={30}
-            key={isFilament ? "unit-fil" : "unit"}
-          />
+          {isFilament ? (
+            // filamento é contado em gramas (spec 041); a compra continua em rolos
+            <div>
+              <label>Unidade</label>
+              <input type="hidden" name="unit" value="g" />
+              <p className="mt-2 text-sm text-muted-foreground">
+                Gramas. A compra é em rolos e entra no saldo como rolos × peso do rolo.
+              </p>
+            </div>
+          ) : (
+            <Field
+              name="unit"
+              label="Unidade (como você conta: unidade, metro, folha…)"
+              value={supply?.unit ?? "unidade"}
+              required
+              maxLength={30}
+              key="unit"
+            />
+          )}
         </div>
         {isFilament && (
           <>
@@ -303,11 +315,11 @@ export default function Supplies() {
         >
           <DetailList
             items={[
-              ["Saldo", `${viewing.quantity} ${viewing.unit}`],
+              ["Saldo", saldoTexto(viewing)],
               [
                 "Custo unitário nas vendas",
                 viewing.category_is_filament
-                  ? "Filamento sai sem custo na venda (o custo está na peça)"
+                  ? "Filamento não sai na venda: sai em gramas na produção, e o custo está na peça"
                   : viewing.unit_cost != null
                     ? brl(viewing.unit_cost)
                     : "Ainda sem custo: registre uma compra ou um ajuste de entrada com custo",
@@ -423,7 +435,12 @@ export default function Supplies() {
                     </td>
                     <td data-label="Categoria">{s.category_name}</td>
                     <td data-label="Saldo">
-                      <strong>{s.quantity}</strong> {s.unit}
+                      <strong>{s.quantity.toLocaleString("pt-BR")}</strong> {s.unit}
+                      {s.category_is_filament && (
+                        <p className="text-xs text-muted-foreground font-normal">
+                          {rolosTexto(s.quantity, s.roll_weight_g).trim()}
+                        </p>
+                      )}
                       {!s.category_is_filament && s.uncosted > 0 && (
                         <p className="text-xs text-muted-foreground font-normal">{s.uncosted} sem custo</p>
                       )}

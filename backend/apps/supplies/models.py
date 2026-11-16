@@ -78,7 +78,8 @@ class Supply(Entity):
 
 
 class SupplyStock(models.Model):
-    """Saldo de um insumo: só quantidade inteira (rolos, unidades), sem custo médio.
+    """Saldo de um insumo: só quantidade inteira, sem custo médio. Filamento é contado em **gramas** desde a
+    spec 041 (a compra continua em rolos e entra como rolos × peso do rolo); os demais, na unidade do insumo.
 
     `uncosted` (spec 040) é a parte do saldo que sai **sem custo** numa venda: unidades de compras que já
     entraram como despesa no Resultado do negócio, entradas por ajuste sem custo e o saldo que existia
@@ -151,9 +152,13 @@ class SupplyMovement(Entity):
     receipt = models.OneToOneField(
         SupplyReceipt, null=True, blank=True, on_delete=models.PROTECT, related_name="movement"
     )
-    # reservado para a etapa 3 (insumos usados na venda); sem uso por enquanto
+    # a venda que usou o insumo (spec 024, etapa 3)
     sale = models.ForeignKey(
         "sales.Sale", null=True, blank=True, on_delete=models.PROTECT, related_name="supply_movements"
+    )
+    # a produção que consumiu o insumo, ou o cancelamento dela (spec 041)
+    production = models.ForeignKey(
+        "inventory.Receipt", null=True, blank=True, on_delete=models.PROTECT, related_name="supply_movements"
     )
 
     class Meta:
@@ -183,6 +188,31 @@ class SaleSupply(Entity):
             models.UniqueConstraint(fields=["sale", "supply"], name="sale_supply_unique"),
             models.CheckConstraint(condition=models.Q(requested__gt=0), name="sale_supply_requested_positive"),
             models.CheckConstraint(condition=models.Q(taken__lte=models.F("requested")), name="sale_supply_taken_le_requested"),
+        ]
+
+
+class ProductionSupply(Entity):
+    """Insumo consumido numa produção (spec 041): o filamento (em gramas) e os componentes da peça 3D,
+    multiplicados pela quantidade produzida. Como na venda, falta de saldo não impede a produção: `taken`
+    pode ser menor que `requested`. Cancelar a produção devolve exatamente `taken`, e a parte que saiu sem
+    custo (`zero_cost_qty`) volta sem custo."""
+
+    production = models.ForeignKey("inventory.Receipt", on_delete=models.PROTECT, related_name="supply_lines")
+    supply = models.ForeignKey(Supply, on_delete=models.PROTECT, related_name="production_lines")
+    supply_name = models.CharField(max_length=120)
+    unit = models.CharField(max_length=30)
+    requested = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    taken = models.PositiveIntegerField()
+    zero_cost_qty = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["supply_name", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["production", "supply"], name="production_supply_unique"),
+            models.CheckConstraint(condition=models.Q(requested__gt=0), name="production_supply_requested_positive"),
+            models.CheckConstraint(
+                condition=models.Q(taken__lte=models.F("requested")), name="production_supply_taken_le_requested"
+            ),
         ]
 
 

@@ -40,7 +40,29 @@ type Receipt = {
   notes: string;
   paid_at: string | null;
   status: string;
+  /* insumos que a produção tirou do estoque (spec 041) */
+  supply_lines?: { supply: string; supply_name: string; unit: string; requested: number; taken: number }[];
 };
+
+/* O que a produção de `quantity` peças vai tirar dos insumos (spec 041): filamento em gramas (para cima) e
+   componentes. Mesma regra do backend (`production_requirements`). */
+function composition(product: Product | undefined, quantity: number) {
+  const p = product?.printing;
+  if (!p || !(quantity > 0)) return [];
+  return [
+    ...(p.filaments || []).map((l) => ({
+      name: l.filament_name,
+      amount: Math.ceil(Number(l.grams) * quantity - 1e-9),
+      unit: "g",
+    })),
+    ...(p.components || []).map((l) => ({ name: l.supply_name, amount: l.quantity * quantity, unit: l.unit })),
+  ];
+}
+/* "360 g de PLA Preto" no filamento; "6× LED 001" nos componentes */
+const linhaInsumo = (l: { amount: number; unit: string; name: string }) =>
+  l.unit === "g"
+    ? `${l.amount.toLocaleString("pt-BR")} g de ${l.name}`
+    : `${l.amount.toLocaleString("pt-BR")}× ${l.name}`;
 // compra confirmada e ainda sem pagamento (produção não gera saída; cancelada não se paga)
 const isPayable = (r: Receipt) => r.kind === "purchase" && r.status === "confirmed" && !r.paid_at;
 const today = () => new Date().toLocaleDateString("en-CA");
@@ -62,7 +84,10 @@ export default function Receipts() {
   const [productId, setProductId] = useState("");
   const [cost, setCost] = useState("");
   const [quantity, setQuantity] = useState("1");
+  // produção dá baixa no filamento e nos componentes da peça (spec 041)
+  const [consume, setConsume] = useState(true);
   const [key, setKey] = useState("");
+  const willUse = kind === "production" ? composition(products.find((p) => p.id === productId), Number(quantity)) : [];
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -116,6 +141,7 @@ export default function Receipts() {
     if (
       !window.confirm(
         `Cancelar esta ${nome} de ${r.quantity} × ${r.product_name}? O estoque volta ao que era antes` +
+          `${r.supply_lines?.some((l) => l.taken > 0) ? ", os insumos usados voltam ao saldo" : ""}` +
           `${r.paid_at ? " e o pagamento é estornado no caixa" : ""}. O registro continua no histórico como cancelado.`,
       )
     )
@@ -175,21 +201,31 @@ export default function Receipts() {
             const form = e.currentTarget;
             const data = new FormData(form);
             try {
-              await api("receipts", {
+              const saved = await api<Receipt>("receipts", {
                 method: "POST",
                 body: JSON.stringify({
                   ...Object.fromEntries(data),
                   idempotency_key: key,
                   quantity: Number(quantity),
+                  consume_supplies: consume,
                 }),
               });
               form.reset();
               setProductId("");
               setCost("");
               setQuantity("1");
+              setConsume(true);
               setKey(crypto.randomUUID());
+              const used = saved.supply_lines || [];
+              const faltou = used.filter((l) => l.taken < l.requested);
               setNotice(
-                "Entrada registrada. Quantidade e custo médio atualizados; o caixa não foi movimentado.",
+                "Entrada registrada. Quantidade e custo médio atualizados; o caixa não foi movimentado." +
+                  (used.length
+                    ? ` Saiu dos insumos: ${used.map((l) => linhaInsumo({ amount: l.taken, unit: l.unit, name: l.supply_name })).join(", ")}.`
+                    : "") +
+                  (faltou.length
+                    ? ` Faltou saldo: ${faltou.map((l) => `${l.supply_name} (faltaram ${(l.requested - l.taken).toLocaleString("pt-BR")}${l.unit === "g" ? " g" : ""})`).join(", ")}. Confira o estoque em Insumos.`
+                    : ""),
               );
               load();
             } catch (err) {
@@ -276,6 +312,24 @@ export default function Receipts() {
           <p className="my-4 font-semibold">
             Total da entrada: {brl(Number(cost) * Number(quantity))}
           </p>
+          {willUse.length > 0 && (
+            <div className="border rounded-md p-3 mb-4 text-sm">
+              <label className="flex items-center gap-2 font-semibold">
+                <input
+                  type="checkbox"
+                  checked={consume}
+                  onChange={(e) => setConsume(e.target.checked)}
+                  disabled={busy}
+                />
+                Dar baixa nos insumos da peça
+              </label>
+              <p className="text-muted-foreground mt-1">
+                {consume
+                  ? `Vai sair do estoque de insumos: ${willUse.map(linhaInsumo).join(", ")}.`
+                  : "Nada sai dos insumos. Use assim só para peças que já estavam prontas, cujo material já saiu do estoque."}
+              </p>
+            </div>
+          )}
           <p className="text-sm text-muted-foreground mb-4">
             Confira o custo sugerido pelo cadastro e informe o valor real deste
             lote.{" "}
@@ -316,6 +370,18 @@ export default function Receipts() {
                       : "A pagar",
               ],
               ["Observações", viewing.notes],
+              [
+                "Insumos usados",
+                (viewing.supply_lines || [])
+                  .map(
+                    (l) =>
+                      linhaInsumo({ amount: l.taken, unit: l.unit, name: l.supply_name }) +
+                      (l.taken < l.requested
+                        ? ` (faltaram ${(l.requested - l.taken).toLocaleString("pt-BR")}${l.unit === "g" ? " g" : ""})`
+                        : ""),
+                  )
+                  .join(", "),
+              ],
             ]}
           />
         </DetailDialog>

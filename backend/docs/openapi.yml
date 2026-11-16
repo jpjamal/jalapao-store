@@ -4596,6 +4596,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PrintingFilament'
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrintingComponent'
         filament_price_kg:
           type: string
           format: decimal
@@ -4633,6 +4637,44 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+    PrintingComponent:
+      type: object
+      description: |-
+        Componente que vai dentro da peça 3D (spec 041): LED, parafuso, cabo. O custo unitário é copiado do
+        insumo quando a linha é salva; depois, mudar o insumo só avisa (`price_outdated`).
+      properties:
+        supply:
+          type: string
+          format: uuid
+        supply_name:
+          type: string
+          readOnly: true
+        unit:
+          type: string
+          readOnly: true
+        quantity:
+          type: integer
+          maximum: 1000
+          minimum: 1
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        price_outdated:
+          type: boolean
+          readOnly: true
+        refresh_price:
+          type: boolean
+          writeOnly: true
+          default: false
+      required:
+      - price_outdated
+      - quantity
+      - supply
+      - supply_name
+      - unit
+      - unit_cost
     PrintingFilament:
       type: object
       properties:
@@ -4833,6 +4875,35 @@ components:
       required:
       - file
       - product
+    ProductionSupplyOutput:
+      type: object
+      description: Insumo que a produção tirou do estoque (spec 041).
+      properties:
+        supply:
+          type: string
+          format: uuid
+        supply_name:
+          type: string
+          maxLength: 120
+        unit:
+          type: string
+          maxLength: 30
+        requested:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+        taken:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - requested
+      - supply
+      - supply_name
+      - taken
+      - unit
     PushStockResult:
       type: object
       properties:
@@ -4854,6 +4925,11 @@ components:
         id:
           type: string
           format: uuid
+          readOnly: true
+        supply_lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductionSupplyOutput'
           readOnly: true
         created_at:
           type: string
@@ -4921,6 +4997,7 @@ components:
       - product
       - product_name
       - quantity
+      - supply_lines
       - updated_at
     ReceiptInput:
       type: object
@@ -4956,6 +5033,9 @@ components:
           type: string
           default: ''
           maxLength: 500
+        consume_supplies:
+          type: boolean
+          default: true
       required:
       - idempotency_key
       - kind

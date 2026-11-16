@@ -10,6 +10,15 @@ export type PrintingFilament = {
   price_per_kg: string;
   price_outdated: boolean;
 };
+/* Componente que vai dentro da peça 3D (spec 041): o custo foi copiado do insumo quando a linha foi salva. */
+export type PrintingComponent = {
+  supply: string;
+  supply_name: string;
+  unit: string;
+  quantity: number;
+  unit_cost: string;
+  price_outdated: boolean;
+};
 export type Printing = {
   filament_price_kg: string;
   weight_g: string;
@@ -21,6 +30,7 @@ export type Printing = {
   fixed_cost: string;
   markup_percent: string;
   filaments?: PrintingFilament[];
+  components?: PrintingComponent[];
 };
 export type Category = {
   id: string;

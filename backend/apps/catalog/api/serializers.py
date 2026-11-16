@@ -12,6 +12,7 @@ from apps.catalog.models import (
     Category,
     ListingDraft,
     ListingDraftImage,
+    PrintingComponent,
     PrintingFilament,
     PrintingProfile,
     Product,
@@ -26,6 +27,7 @@ from apps.inventory.models import Stock
 
 
 MAX_FILAMENT_LINES = 8
+MAX_COMPONENT_LINES = 20
 
 
 class PrintingFilamentSerializer(serializers.ModelSerializer):
@@ -59,13 +61,55 @@ class PrintingFilamentSerializer(serializers.ModelSerializer):
         return supply
 
 
+class PrintingComponentSerializer(serializers.ModelSerializer):
+    """Componente que vai dentro da peça 3D (spec 041): LED, parafuso, cabo. O custo unitário é copiado do
+    insumo quando a linha é salva; depois, mudar o insumo só avisa (`price_outdated`)."""
+
+    supply = serializers.PrimaryKeyRelatedField(queryset=Supply.objects.select_related("category"))
+    supply_name = serializers.CharField(source="supply.name", read_only=True)
+    unit = serializers.CharField(source="supply.unit", read_only=True)
+    quantity = serializers.IntegerField(min_value=1, max_value=1000)
+    price_outdated = serializers.SerializerMethodField()
+    # só na entrada: o dono pediu para trazer o custo atual do insumo para esta linha
+    refresh_price = serializers.BooleanField(write_only=True, required=False, default=False)
+
+    class Meta:
+        model = PrintingComponent
+        fields = ["supply", "supply_name", "unit", "quantity", "unit_cost", "price_outdated", "refresh_price"]
+        read_only_fields = ["unit_cost"]
+
+    def get_price_outdated(self, line) -> bool:
+        return line.unit_cost != money(line.supply.unit_cost or 0)
+
+    def validate_supply(self, supply):
+        if supply.category.is_filament:
+            raise serializers.ValidationError("Filamento entra nas linhas de filamento, em gramas.")
+        return supply
+
+
 class PrintingSerializer(serializers.ModelSerializer):
     filaments = PrintingFilamentSerializer(many=True, required=False)
+    components = PrintingComponentSerializer(many=True, required=False)
 
     class Meta:
         model = PrintingProfile
         exclude = ["id", "product"]
         extra_kwargs = {"weight_g": {"required": False}}
+
+    def validate_components(self, lines):
+        if len(lines) > MAX_COMPONENT_LINES:
+            raise serializers.ValidationError(f"Use no máximo {MAX_COMPONENT_LINES} componentes por peça.")
+        ids = [line["supply"].pk for line in lines]
+        if len(ids) != len(set(ids)):
+            raise serializers.ValidationError("Não repita o mesmo componente na peça.")
+        product = getattr(self.parent, "instance", None)
+        profile = PrintingProfile.objects.filter(product=product).first() if product else None
+        already = set(profile.components.values_list("supply_id", flat=True)) if profile else set()
+        for line in lines:
+            supply = line["supply"]
+            if not supply.active and supply.pk not in already:
+                raise serializers.ValidationError(f"O insumo {supply.name} está inativo.")
+        return lines
 
     def validate_filaments(self, lines):
         if len(lines) > MAX_FILAMENT_LINES:
@@ -241,7 +285,27 @@ class ProductSerializer(serializers.ModelSerializer):
             )
         return resolved
 
+    @staticmethod
+    def _save_components(profile, lines):
+        """Grava os componentes da peça (spec 041). Linha que já existia mantém o custo que tinha, a menos
+        que o dono peça o custo atual (`refresh_price`); linha nova copia o custo atual do insumo."""
+        kept = {line.supply_id: line for line in profile.components.all()}
+        profile.components.exclude(supply_id__in=[line["supply"].pk for line in lines]).delete()
+        for position, line in enumerate(lines):
+            supply, old = line["supply"], kept.get(line["supply"].pk)
+            fresh = old is None or line.get("refresh_price")
+            PrintingComponent.objects.update_or_create(
+                profile=profile,
+                supply=supply,
+                defaults={
+                    "quantity": line["quantity"],
+                    "unit_cost": money(supply.unit_cost or 0) if fresh else old.unit_cost,
+                    "position": position,
+                },
+            )
+
     def _profile(self, product, data):
+        components = data.pop("components", None)
         lines = data.pop("filaments", None)
         profile = PrintingProfile.objects.filter(product=product).first()
         resolved = self._resolve_lines(lines, profile) if lines else []
@@ -260,6 +324,8 @@ class ProductSerializer(serializers.ModelSerializer):
                     filament=line["filament"],
                     defaults={k: line[k] for k in ("grams", "roll_price", "roll_weight_g", "position")},
                 )
+        if components is not None:
+            self._save_components(profile, components)
         product.cost_price, product.sale_price = profile.prices()
         product.save(update_fields=["cost_price", "sale_price", "updated_at"])
 

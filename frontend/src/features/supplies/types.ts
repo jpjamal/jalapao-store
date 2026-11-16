@@ -25,7 +25,7 @@ export type Supply = {
   roll_price: string | null;
   price_per_gram: string | null;
   price_per_kg: string | null;
-  /* saldo atual em rolos ou unidades */
+  /* saldo atual na unidade do insumo; filamento em gramas (spec 041) */
   quantity: number;
   /* custo de cada unidade que sai numa venda: o da última compra ou ajuste de entrada com custo (spec 040) */
   unit_cost: string | null;

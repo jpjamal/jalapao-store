@@ -8,6 +8,7 @@ import { Input } from "@/shared/ui/input";
 import { FormActions } from "@/shared/components/form-actions";
 import { ErrorMessage } from "@/shared/components/feedback";
 import { Field } from "@/shared/components/fields";
+import { saldoTexto } from "@/features/supplies/format";
 
 /* Compra, baixa e ajuste do saldo de um insumo (spec 024, etapa 2). O saldo só muda por aqui:
    compra entra e fica a pagar, baixa ("usei 1 rolo") tira, ajuste corrige para mais ou para menos. */
@@ -99,13 +100,21 @@ export function SupplyActionForm({
         {titles[action]} — {supply.name}
       </h2>
       <p className="text-sm text-muted-foreground mb-3">
-        Saldo atual: <strong>{supply.quantity}</strong> {unit}
+        Saldo atual: <strong>{saldoTexto(supply)}</strong>
       </p>
       <ErrorMessage message={error} />
       <form onSubmit={submit}>
         {action === "buy" ? (
           <div className="grid md:grid-cols-3 gap-4">
-            <Field name="quantity" label={`Quantidade (${unit})`} type="number" min="1" step="1" value="1" required />
+            <Field
+              name="quantity"
+              label={isFilament ? "Quantidade (rolos)" : `Quantidade (${unit})`}
+              type="number"
+              min="1"
+              step="1"
+              value="1"
+              required
+            />
             <Field
               name="unit_cost"
               label={isFilament ? "Preço do rolo (R$)" : "Custo unitário (R$)"}
@@ -121,7 +130,8 @@ export function SupplyActionForm({
             <Field name="notes" label="Observação" maxLength={500} />
             {isFilament ? (
               <p className="md:col-span-3 text-sm text-muted-foreground">
-                O preço do rolo informado passa a ser o preço do filamento no cadastro (último preço pago).
+                Cada rolo entra no saldo em gramas ({Number(supply.roll_weight_g || 0).toLocaleString("pt-BR")} g por
+                rolo). O preço do rolo informado passa a ser o preço do filamento no cadastro (último preço pago).
                 Peças já salvas não mudam: só aparece o aviso de preço desatualizado.
               </p>
             ) : (
@@ -157,6 +167,12 @@ export function SupplyActionForm({
                 placeholder={action === "baixa" ? "Usei em produção, envio…" : "Contagem, perda, correção…"}
               />
             </div>
+            {isFilament && (
+              <p className="md:col-span-3 text-sm text-muted-foreground">
+                Em gramas. A produção de peças 3D já tira o filamento sozinha: use a baixa para falha de impressão,
+                teste ou peça que não foi registrada, e o ajuste para acertar o saldo depois de pesar o rolo.
+              </p>
+            )}
             {action === "ajuste" && !isFilament && (
               <>
                 <Field

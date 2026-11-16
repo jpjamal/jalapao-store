@@ -27,7 +27,8 @@ conversa: as embalagens ficam em **Insumos** (não no estoque de produtos) e o c
    - ajustes de entrada **sem** custo.
    Toda saída (venda, baixa, ajuste para menos) consome essa parte primeiro. Cancelar a venda devolve cada parte
    ao seu lugar.
-5. **Filamento** escolhido numa venda sai sem custo: o custo dele já está na peça.
+5. **Filamento** escolhido numa venda sai sem custo: o custo dele já está na peça. *(Substituído pela
+   [spec 041](../041-componentes-e-producao-3d/spec.md): filamento não entra mais na venda; sai na produção.)*
 6. **Ajuste de entrada com custo** (opcional): para embalagens que já estavam em casa. Entra com o custo informado,
    que vira o custo do insumo, e não mexe no caixa.
 7. **Embalagem padrão do produto**: lista de insumos por unidade vendida (ex.: Caneca = 1 Caixa M + 1 saco). Na

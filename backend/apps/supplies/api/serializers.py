@@ -44,7 +44,8 @@ class SupplySerializer(serializers.ModelSerializer):
     category_is_filament = serializers.BooleanField(source="category.is_filament", read_only=True)
     price_per_gram = serializers.SerializerMethodField()
     price_per_kg = serializers.SerializerMethodField()
-    # saldo atual (rolos ou unidades); muda só por compra, baixa e ajuste
+    # saldo atual na unidade do insumo (filamento em gramas, spec 041); muda por compra, baixa, ajuste,
+    # venda e produção
     quantity = serializers.IntegerField(source="stock.quantity", read_only=True, default=0)
     # parte do saldo que sai sem custo numa venda (spec 040)
     uncosted = serializers.IntegerField(source="stock.uncosted", read_only=True, default=0)
@@ -115,6 +116,8 @@ class SupplySerializer(serializers.ModelSerializer):
             if errors:
                 raise serializers.ValidationError(errors)
             attrs["material"], attrs["color"] = material, color
+            # o saldo do filamento é em gramas (spec 041); a compra continua em rolos
+            attrs["unit"] = "g"
         else:
             sobra = {f: "Só vale para filamento." for f in filament_fields if attrs.get(f) not in (None, "")}
             if sobra:

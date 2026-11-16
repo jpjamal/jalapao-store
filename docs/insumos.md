@@ -37,7 +37,21 @@ preço por kg é esse valor × 1.000. A tela mostra os dois. Na categoria de pro
 das linhas. O preço de cada linha é **copiado** ao salvar; se o filamento ficar mais caro depois, a
 peça não muda sozinha, só aparece o aviso. Ver [custo de impressão 3D](custo-impressao-3d.md).
 
-## Estoque: rolos e unidades inteiras, sem custo médio
+## Componentes da peça e baixa na produção (spec 041)
+
+LED, parafuso, cabo e base são insumos da categoria **Componentes** (criada sem contar como despesa na compra). Na
+peça 3D, a seção **Componentes da peça** diz quantos vão em cada peça; o custo deles entra no custo da peça, como o
+filamento. Ao registrar uma **Produção** em Compras e produção, o filamento (gramas × peças, para cima) e os
+componentes (quantidade × peças) **saem do estoque de insumos sozinhos**; cancelar a produção devolve. Falta de saldo
+não impede a produção: a tela avisa o que faltou. Para lançar peças que já estavam prontas, desligue *Dar baixa nos
+insumos da peça*. Ver [spec 041](specs/041-componentes-e-producao-3d/spec.md).
+
+| Onde o insumo entra | Custo vai para | Sai do estoque |
+|---|---|---|
+| Dentro da peça (filamento, LED, parafuso) | custo da peça | na produção |
+| No envio (caixa, saco, etiqueta) | lucro da venda | na venda |
+
+## Estoque: unidades inteiras (filamento em gramas), sem custo médio
 
 > **Custo na venda (spec 040).** Cada insumo tem um **custo unitário**: o da última compra, ou o de um ajuste de
 > entrada com custo. Ele não se edita à mão. Parte do saldo pode sair **sem custo** nas vendas (a lista mostra
@@ -45,20 +59,23 @@ peça não muda sozinha, só aparece o aviso. Ver [custo de impressão 3D](custo
 > despesa e ajustes de entrada sem custo. Toda saída usa essa parte primeiro. Assim o mesmo custo nunca entra duas
 > vezes no Resultado do negócio. Ver [spec 040](specs/040-custo-das-embalagens-na-venda/spec.md).
 
-O saldo é um número inteiro (rolos, pacotes, unidades) e nunca fica negativo. Ele **só muda por quatro
-caminhos**, todos gravados no histórico com o motivo e quem fez:
+O saldo é um número inteiro na unidade do insumo (unidade, metro, folha…) e nunca fica negativo. **Filamento é
+contado em gramas** desde a spec 041: a compra continua em rolos e entra como rolos × peso do rolo; a tela mostra
+"1.640 g (≈ 1,6 rolo)". Escolha como unidade o menor pedaço que você usa inteiro (saco: unidade; plástico bolha:
+metro). Ele **só muda por estes caminhos**, todos gravados no histórico com o motivo e quem fez:
 
 | Caminho | O que faz |
 |---|---|
 | **Comprar** | Entra no saldo na hora e fica **a pagar**. |
-| **Dar baixa** | "Usei 1 rolo": tira do saldo, com motivo. |
+| **Dar baixa** | "Usei 3 caixas", "falha de impressão: 80 g": tira do saldo, com motivo. |
 | **Ajustar** | Corrige para mais ou para menos (contagem, perda), com motivo. Na entrada aceita um **custo unitário opcional** (embalagem que já estava em casa): entra com esse custo nas vendas, sem mexer no caixa. |
 | **Cancelar compra** | Desfaz uma compra lançada errada (abaixo). |
+| **Venda** | Embalagens e outros insumos de envio (abaixo). |
+| **Produção** | Filamento e componentes da peça 3D (acima). |
 
-**Não há desconto automático por produção**: usar um rolo na impressão é uma baixa que você lança. Caixa e
-etiqueta podem dar baixa junto com a venda (ver abaixo). O estoque de insumo guarda só a quantidade, **sem custo médio** e sem valor de estoque; o custo
-que vale para o lucro vem do preço por grama do filamento escolhido na peça. Insumo inativo não recebe
-entradas, mas ainda dá baixa no que sobrou.
+O ajuste de filamento é em gramas e não aceita custo (o preço é o do rolo); use-o para acertar o saldo depois de
+pesar o rolo. O estoque de insumo guarda só a quantidade, **sem custo médio** e sem valor de estoque. Insumo inativo
+não recebe entradas, mas ainda dá baixa no que sobrou.
 
 ## Comprar e pagar
 
@@ -91,8 +108,9 @@ o saldo) e a quantidade, por exemplo 1 caixa pequena e 2 etiquetas. Ao confirmar
 - **Cancelar a venda devolve os insumos**, só o que foi realmente baixado. Cancelar duas vezes não devolve
   duas vezes.
 - **O custo sai do lucro da venda (spec 040).** Cada linha guarda quantas unidades saíram sem custo, o custo
-  unitário e o total; a venda soma tudo em *custo das embalagens e insumos* e desconta do lucro. Filamento sai sem
-  custo (o custo dele já está na peça). Vendas anteriores à spec 040 ficam como estavam.
+  unitário e o total; a venda soma tudo em *custo das embalagens e insumos* e desconta do lucro. Vendas anteriores
+  à spec 040 ficam como estavam.
+- **Filamento não entra na venda (spec 041)**: ele sai na produção da peça.
 - **Embalagem padrão por produto (spec 040).** No cadastro do produto, a seção *Embalagem padrão* diz o que vai em
   cada unidade vendida (ex.: 1 Caixa M + 1 saco). A venda já vem preenchida com o kit × quantidade; mexeu, vale o
   que você escolheu; *Voltar para a embalagem padrão* refaz. A tela mostra o custo estimado antes de confirmar.
@@ -110,7 +128,8 @@ o saldo) e a quantidade, por exemplo 1 caixa pequena e 2 etiquetas. Ao confirmar
 | Saldo, compra, pagamento e cancelamento | `backend/apps/supplies/services.py` |
 | API | `/api/v1/supply-categories/`, `supplies/`, `supply-receipts/`, `supply-movements/` (rede interna; o navegador usa o BFF `/jalapao-store/api/`) |
 | Insumos na venda | `backend/apps/supplies/services.py` (`consume_supplies_for_sale`, `restore_supplies_for_sale`) e `frontend/src/features/sales/sales-page.tsx` |
-| Linhas de filamento da peça | `backend/apps/catalog/models.py` (`PrintingFilament`) |
+| Linhas de filamento e componentes da peça | `backend/apps/catalog/models.py` (`PrintingFilament`, `PrintingComponent`) |
+| Baixa na produção | `backend/apps/supplies/services.py` (`consume_supplies_for_production`, `restore_supplies_for_production`), chamada por `backend/apps/inventory/services.py` |
 | Testes | `backend/apps/supplies/tests/` e `backend/apps/catalog/tests/test_filamentos.py` |
 
 Ainda não existe: alerta de pouco estoque e baixa automática de insumo nas vendas importadas do Mercado Livre.

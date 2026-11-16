@@ -15,7 +15,7 @@ ficou de fora de propósito.
 ```
 filamento = (preço do quilo ÷ 1000) × gramas usados
 energia   = (watts × horas ÷ 1000) × valor do kWh
-total     = filamento + energia + mão de obra + custos fixos
+total     = filamento + componentes + energia + mão de obra + custos fixos
 lucro     = total × margem
 preço     = total + lucro
 ```
@@ -39,6 +39,14 @@ só o total final vira centavos. Energia, mão de obra, custos fixos e margem n�
 dão R$ 4,0788 de filamento; com 2 h a 200 W e R$ 1,56 o kWh, o custo é R$ 4,70 e o preço sugerido,
 com 100% de margem, R$ 9,41. O backend e a ferramenta têm testes com esses mesmos números. Sem
 linhas, vale a conta de sempre, com o preço por kg e o peso digitados.
+
+### Componentes da peça (spec 041)
+
+LED, parafuso, cabo, base: insumos que vão **dentro** da peça. Cada linha é um insumo e a quantidade por peça;
+`componentes = soma de quantidade × custo unitário`, antes da margem. O custo de cada linha é o do insumo quando a
+linha foi salva; se ele mudar, aparece o aviso para usar o custo atual. Exemplo: 120 g a R$ 100/kg (R$ 12,00) +
+2 LEDs de R$ 3,50 + 4 parafusos de R$ 0,10 + 2 h a 200 W (R$ 0,624) = **R$ 20,02**; com 100% de margem, R$ 40,05.
+Ao registrar a produção, os componentes e o filamento saem do estoque de insumos ([insumos](insumos.md)).
 
 ## Os campos
 

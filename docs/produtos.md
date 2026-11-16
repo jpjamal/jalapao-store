@@ -73,6 +73,14 @@ Em **Ferramentas → Impressão 3D** você faz a conta de uma peça e, se gostar
 dá um nome e clica em **Salvar produto**. Ele entra no catálogo na categoria de produção
 3D, com esses parâmetros e estoque zero.
 
+## Componentes da peça 3D (spec 041)
+
+Na peça 3D, além das linhas de filamento, a seção **Componentes da peça** lista o que vai dentro dela (LED,
+parafuso, cabo) e quantos por peça. O custo entra no custo e no preço sugerido. Ao registrar a **Produção**, o
+filamento e os componentes saem do estoque de insumos. A janela do produto mostra a *Composição da peça*. Não
+confunda com a embalagem padrão: componente vai **na peça** (custo do produto); embalagem vai **no envio** (lucro da
+venda).
+
 ## Embalagem padrão (spec 040)
 
 No formulário do produto, a seção **Embalagem padrão** lista os insumos usados para enviar **uma unidade** (caixa,

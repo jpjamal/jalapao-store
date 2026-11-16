@@ -60,7 +60,8 @@ resultado = lucro real
   **Acabamento** e **Colas e fitas** começam sem contar. Etiquetas e papelaria, Ferramentas e Outros contam, porque
   não estão em custo nenhum. **Embalagens** deixou de contar na compra com a [spec 040](specs/040-custo-das-embalagens-na-venda/spec.md):
   o custo da embalagem entra no lucro de cada venda, só pelo que foi usado (compras antigas continuam como foram
-  classificadas).
+  classificadas). **Componentes** (LED, parafuso; [spec 041](specs/041-componentes-e-producao-3d/spec.md)) nasce sem
+  contar: o custo entra no custo da peça 3D.
 - **Compra de produto não é despesa**: é estoque, e o custo do produto já está no lucro de cada venda.
 - Empréstimo, aporte e retirada não entram, mas estão no saldo do Caixa.
 - Tudo desde o começo, como os outros números da tela inicial; não há filtro por período.

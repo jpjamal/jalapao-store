@@ -111,7 +111,8 @@ export default function Sales() {
     ])
       .then(([p, s]) => {
         setProducts(p);
-        setSupplies(s.list);
+        // filamento sai na produção da peça, não na venda (spec 041)
+        setSupplies(s.list.filter((x) => !x.category_is_filament));
         setSuppliesError(s.failure);
       })
       .catch((e) => setError(e.message));
@@ -507,7 +508,7 @@ export default function Sales() {
                           .map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name} — saldo {s.quantity} {s.unit}
-                              {!s.category_is_filament && s.unit_cost != null ? ` · ${brl(s.unit_cost)} cada` : ""}
+                              {s.unit_cost != null ? ` · ${brl(s.unit_cost)} cada` : ""}
                             </option>
                           ))}
                       </select>
