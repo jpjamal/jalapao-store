@@ -66,15 +66,25 @@ export function SupplyActionForm({
         done(`Compra de ${supply.name} registrada. Ela fica a pagar até você confirmar o pagamento.`);
       } else {
         const amount = Number(f.get("amount"));
+        // custo unitário só vale num ajuste de entrada (spec 040): embalagem que já estava em casa
+        const cost = String(f.get("unit_cost") ?? "").trim();
+        const withCost = action === "ajuste" && amount > 0 && cost !== "";
         await api("supply-movements", {
           method: "POST",
           body: JSON.stringify({
             supply: supply.id,
             delta: action === "baixa" ? -Math.abs(amount) : amount,
             reason: f.get("reason"),
+            ...(withCost ? { unit_cost: cost } : {}),
           }),
         });
-        done(action === "baixa" ? "Baixa registrada." : "Saldo ajustado.");
+        done(
+          action === "baixa"
+            ? "Baixa registrada."
+            : withCost
+              ? "Saldo ajustado. O custo informado passa a valer para essas unidades nas vendas; o caixa não mudou."
+              : "Saldo ajustado.",
+        );
       }
     } catch (err) {
       setError((err as Error).message);
@@ -109,10 +119,16 @@ export function SupplyActionForm({
             <Field name="supplier" label="Fornecedor" maxLength={200} />
             <Field name="reference" label="Referência / nota" maxLength={100} />
             <Field name="notes" label="Observação" maxLength={500} />
-            {isFilament && (
+            {isFilament ? (
               <p className="md:col-span-3 text-sm text-muted-foreground">
                 O preço do rolo informado passa a ser o preço do filamento no cadastro (último preço pago).
                 Peças já salvas não mudam: só aparece o aviso de preço desatualizado.
+              </p>
+            ) : (
+              <p className="md:col-span-3 text-sm text-muted-foreground">
+                O custo unitário informado passa a ser o custo deste insumo nas vendas (último preço pago). Se a
+                categoria conta como despesa na compra, estas unidades saem sem custo nas vendas, para não contar
+                duas vezes.
               </p>
             )}
           </div>
@@ -141,6 +157,21 @@ export function SupplyActionForm({
                 placeholder={action === "baixa" ? "Usei em produção, envio…" : "Contagem, perda, correção…"}
               />
             </div>
+            {action === "ajuste" && !isFilament && (
+              <>
+                <Field
+                  name="unit_cost"
+                  label="Custo unitário (R$) — opcional, só para entrada"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                />
+                <p className="md:col-span-2 text-sm text-muted-foreground self-end">
+                  Para o que você já tinha em casa: informe quanto pagou em cada unidade e elas entram com esse custo
+                  no lucro das vendas, sem mexer no caixa. Sem custo, elas saem das vendas sem custo.
+                </p>
+              </>
+            )}
           </div>
         )}
         <FormActions className="mt-4">

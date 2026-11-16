@@ -202,3 +202,30 @@ class DefinirEmailsTests(TestCase):
         self.rodar(JPMORAIS_EMAIL="isso-nao-e-email")
         self.jp.refresh_from_db()
         self.assertEqual(self.jp.email, "")
+
+
+class EspacosNaSenhaTests(TestCase):
+    """A senha criada pelo link entra no login mesmo se foi digitada ou colada com espaço sobrando."""
+
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.usuario = get_user_model().objects.create_user(
+            "jpmorais", email="dono@exemplo.com", password=SENHA_ANTIGA
+        )
+
+    def test_senha_com_espaco_nas_pontas_entra_no_login(self):
+        self.client.post("/api/v1/auth/forgot-password/", {"email": "dono@exemplo.com"}, format="json")
+        codigo = codigo_do_email(mail.outbox[-1])
+        digitada = f"  {SENHA_NOVA}  "
+        resposta = self.client.post(
+            f"/api/v1/auth/reset-password/{codigo}/",
+            {"password": digitada, "password_confirmation": digitada},
+            format="json",
+        )
+        self.assertEqual(resposta.status_code, 200)
+        for senha in (digitada, SENHA_NOVA):  # o login corta os espaços, com ou sem eles
+            entrou = self.client.post(
+                "/api/v1/auth/token/", {"username": "jpmorais", "password": senha}, format="json"
+            )
+            self.assertEqual(entrou.status_code, 200)

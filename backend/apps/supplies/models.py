@@ -48,6 +48,11 @@ class Supply(Entity):
     roll_price = models.DecimalField(
         max_digits=14, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
     )
+    # custo de cada unidade que sai numa venda (spec 040): o da última compra ou do último ajuste de
+    # entrada com custo. Muda só por esses caminhos, nunca editado à mão.
+    unit_cost = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
+    )
 
     class Meta:
         ordering = ["name", "id"]
@@ -73,11 +78,23 @@ class Supply(Entity):
 
 
 class SupplyStock(models.Model):
-    """Saldo de um insumo: só quantidade inteira (rolos, unidades), sem custo médio."""
+    """Saldo de um insumo: só quantidade inteira (rolos, unidades), sem custo médio.
+
+    `uncosted` (spec 040) é a parte do saldo que sai **sem custo** numa venda: unidades de compras que já
+    entraram como despesa no Resultado do negócio, entradas por ajuste sem custo e o saldo que existia
+    antes da spec 040. Toda saída consome essa parte primeiro."""
 
     supply = models.OneToOneField(Supply, primary_key=True, on_delete=models.PROTECT, related_name="stock")
     quantity = models.PositiveIntegerField(default=0)
+    uncosted = models.PositiveIntegerField(default=0)
     version = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(uncosted__lte=models.F("quantity")), name="supply_stock_uncosted_le_quantity"
+            )
+        ]
 
 
 class SupplyReceipt(Entity):
@@ -106,6 +123,8 @@ class SupplyReceipt(Entity):
     cancelled_at = models.DateTimeField(null=True, blank=True)
     # preço do rolo antes da compra, para voltar a ele ao cancelar (só filamento)
     previous_roll_price = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    # custo unitário do insumo antes da compra, para voltar a ele ao cancelar (spec 040)
+    previous_unit_cost = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
 
     class Meta:
@@ -125,6 +144,8 @@ class SupplyMovement(Entity):
     delta = models.IntegerField()
     balance_after = models.PositiveIntegerField()
     reason = models.CharField(max_length=240)
+    # custo unitário informado num ajuste de entrada (spec 040); vazio nos demais movimentos
+    unit_cost = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     # a movimentação de entrada da compra (as de cancelamento e ajuste não têm)
     receipt = models.OneToOneField(
@@ -150,6 +171,11 @@ class SaleSupply(Entity):
     supply_name = models.CharField(max_length=120)
     requested = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     taken = models.PositiveIntegerField()
+    # custo na venda (spec 040), congelado: das unidades baixadas, `zero_cost_qty` saíram sem custo
+    # (já contadas como despesa ou sem custo conhecido); as outras custaram `unit_cost` cada.
+    zero_cost_qty = models.PositiveIntegerField(default=0)
+    unit_cost = amount()
+    cost_total = amount()
 
     class Meta:
         ordering = ["supply_name", "id"]
@@ -157,4 +183,19 @@ class SaleSupply(Entity):
             models.UniqueConstraint(fields=["sale", "supply"], name="sale_supply_unique"),
             models.CheckConstraint(condition=models.Q(requested__gt=0), name="sale_supply_requested_positive"),
             models.CheckConstraint(condition=models.Q(taken__lte=models.F("requested")), name="sale_supply_taken_le_requested"),
+        ]
+
+
+class ProductSupply(Entity):
+    """Embalagem padrão do produto (spec 040): insumos sugeridos na venda, por unidade vendida."""
+
+    product = models.ForeignKey("catalog.Product", on_delete=models.CASCADE, related_name="default_supplies")
+    supply = models.ForeignKey(Supply, on_delete=models.PROTECT, related_name="product_defaults")
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+
+    class Meta:
+        ordering = ["supply__name", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["product", "supply"], name="product_supply_unique"),
+            models.CheckConstraint(condition=models.Q(quantity__gt=0), name="product_supply_quantity_positive"),
         ]

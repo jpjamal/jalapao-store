@@ -21,6 +21,12 @@
   link continuou valendo; uma senha válida levou ao login com "Senha nova criada. Entre com ela."
 - Depois: senha antiga → 401, senha nova → 200, o mesmo link → 410.
 
+## Correção depois da publicação (16/11/2026)
+
+A tela de senha nova gravava a senha exatamente como digitada; o login do `simplejwt` corta espaços nas pontas. Senha
+digitada ou colada com espaço sobrando nunca passava no login. Agora a senha nova também é cortada nas pontas
+(`ResetPasswordSerializer`), com teste (`EspacosNaSenhaTests`): 24 testes em `apps.accounts`.
+
 ## Não conferido
 
 - Produção: depende de o dono criar as variáveis/segredo no GitHub (ver a spec). A consulta ao banco da VPS para

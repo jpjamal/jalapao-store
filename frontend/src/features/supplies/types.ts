@@ -27,6 +27,10 @@ export type Supply = {
   price_per_kg: string | null;
   /* saldo atual em rolos ou unidades */
   quantity: number;
+  /* custo de cada unidade que sai numa venda: o da última compra ou ajuste de entrada com custo (spec 040) */
+  unit_cost: string | null;
+  /* parte do saldo que sai sem custo numa venda (já contada como despesa ou sem custo conhecido) */
+  uncosted: number;
 };
 
 export type SupplyReceipt = {
@@ -52,5 +56,6 @@ export type SupplyMovement = {
   delta: number;
   balance_after: number;
   reason: string;
+  unit_cost: string | null;
   created_at: string;
 };

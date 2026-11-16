@@ -39,6 +39,12 @@ peça não muda sozinha, só aparece o aviso. Ver [custo de impressão 3D](custo
 
 ## Estoque: rolos e unidades inteiras, sem custo médio
 
+> **Custo na venda (spec 040).** Cada insumo tem um **custo unitário**: o da última compra, ou o de um ajuste de
+> entrada com custo. Ele não se edita à mão. Parte do saldo pode sair **sem custo** nas vendas (a lista mostra
+> "N sem custo" debaixo do saldo): o saldo que existia antes da spec 040, compras de categorias que ainda contam como
+> despesa e ajustes de entrada sem custo. Toda saída usa essa parte primeiro. Assim o mesmo custo nunca entra duas
+> vezes no Resultado do negócio. Ver [spec 040](specs/040-custo-das-embalagens-na-venda/spec.md).
+
 O saldo é um número inteiro (rolos, pacotes, unidades) e nunca fica negativo. Ele **só muda por quatro
 caminhos**, todos gravados no histórico com o motivo e quem fez:
 
@@ -46,7 +52,7 @@ caminhos**, todos gravados no histórico com o motivo e quem fez:
 |---|---|
 | **Comprar** | Entra no saldo na hora e fica **a pagar**. |
 | **Dar baixa** | "Usei 1 rolo": tira do saldo, com motivo. |
-| **Ajustar** | Corrige para mais ou para menos (contagem, perda), com motivo. |
+| **Ajustar** | Corrige para mais ou para menos (contagem, perda), com motivo. Na entrada aceita um **custo unitário opcional** (embalagem que já estava em casa): entra com esse custo nas vendas, sem mexer no caixa. |
 | **Cancelar compra** | Desfaz uma compra lançada errada (abaixo). |
 
 **Não há desconto automático por produção**: usar um rolo na impressão é uma baixa que você lança. Caixa e
@@ -84,8 +90,12 @@ o saldo) e a quantidade, por exemplo 1 caixa pequena e 2 etiquetas. Ao confirmar
   avisa o que faltou ("pedido 5, baixado 3"). O pedido e o que foi de fato baixado ficam gravados na venda.
 - **Cancelar a venda devolve os insumos**, só o que foi realmente baixado. Cancelar duas vezes não devolve
   duas vezes.
-- **O lucro não muda.** O custo do insumo não entra na venda; o lucro continua só com o custo do produto.
-- **Não há kit padrão por produto**: você escolhe os insumos em cada venda.
+- **O custo sai do lucro da venda (spec 040).** Cada linha guarda quantas unidades saíram sem custo, o custo
+  unitário e o total; a venda soma tudo em *custo das embalagens e insumos* e desconta do lucro. Filamento sai sem
+  custo (o custo dele já está na peça). Vendas anteriores à spec 040 ficam como estavam.
+- **Embalagem padrão por produto (spec 040).** No cadastro do produto, a seção *Embalagem padrão* diz o que vai em
+  cada unidade vendida (ex.: 1 Caixa M + 1 saco). A venda já vem preenchida com o kit × quantidade; mexeu, vale o
+  que você escolheu; *Voltar para a embalagem padrão* refaz. A tela mostra o custo estimado antes de confirmar.
 - **Vendas importadas do Mercado Livre não baixam insumo**: a baixa continua manual, por *Dar baixa*.
 - Informar insumos na venda e cancelar uma venda que baixou insumo exigem a permissão de movimentar o
   estoque de insumos.
@@ -103,4 +113,4 @@ o saldo) e a quantidade, por exemplo 1 caixa pequena e 2 etiquetas. Ao confirmar
 | Linhas de filamento da peça | `backend/apps/catalog/models.py` (`PrintingFilament`) |
 | Testes | `backend/apps/supplies/tests/` e `backend/apps/catalog/tests/test_filamentos.py` |
 
-Ainda não existe: alerta de pouco estoque, kit padrão por produto e custo de insumo no lucro.
+Ainda não existe: alerta de pouco estoque e baixa automática de insumo nas vendas importadas do Mercado Livre.

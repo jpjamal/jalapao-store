@@ -4,6 +4,7 @@ import { api } from "@/shared/api/client";
 import { brl } from "@/shared/lib/format";
 import { type Category, type Product, type Printing } from "@/features/catalog/types";
 import { FilamentLines, type FilamentLine } from "@/features/catalog/components/filament-lines";
+import { DefaultSupplies, type KitLine } from "@/features/catalog/components/default-supplies";
 import { allSupplies } from "@/features/supplies/api";
 import { type Supply } from "@/features/supplies/types";
 import { type Page } from "@/shared/api/types";
@@ -67,6 +68,14 @@ function ProductForm({
     })),
   );
   const [supplies, setSupplies] = useState<Supply[]>([]);
+  // embalagem padrão (spec 040)
+  const [kit, setKit] = useState<KitLine[]>(() =>
+    (product?.default_supplies || []).map((l) => ({
+      uid: crypto.randomUUID(),
+      supply: l.supply,
+      quantity: String(l.quantity),
+    })),
+  );
   useEffect(() => {
     allSupplies()
       .then(setSupplies)
@@ -100,6 +109,9 @@ function ProductForm({
             weight_g: f.get("product_weight_g") || null,
             description: f.get("description"),
             active: f.get("active") === "on",
+            default_supplies: kit
+              .filter((l) => l.supply)
+              .map((l) => ({ supply: l.supply, quantity: Number(l.quantity) })),
           };
           if (usesPrinting) {
             // com linhas, o peso e o preço por kg vêm delas e o servidor calcula
@@ -291,6 +303,7 @@ function ProductForm({
             />
           </div>
         )}
+        <DefaultSupplies lines={kit} onChange={setKit} supplies={supplies} />
         <label className="flex items-center gap-2 my-5">
           <input
             type="checkbox"
@@ -379,6 +392,10 @@ export default function Products() {
               ["Valor em estoque", brl(viewing.stock_value)],
               ["Preço de venda", brl(viewing.sale_price)],
               ["Estoque", <StockQuantity key="q" quantity={viewing.quantity} />],
+              [
+                "Embalagem padrão",
+                (viewing.default_supplies || []).map((l) => `${l.quantity}× ${l.supply_name}`).join(", "),
+              ],
               ["Situação", viewing.active ? "Ativo" : "Inativo"],
             ]}
           />

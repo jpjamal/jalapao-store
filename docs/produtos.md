@@ -73,6 +73,12 @@ Em **Ferramentas → Impressão 3D** você faz a conta de uma peça e, se gostar
 dá um nome e clica em **Salvar produto**. Ele entra no catálogo na categoria de produção
 3D, com esses parâmetros e estoque zero.
 
+## Embalagem padrão (spec 040)
+
+No formulário do produto, a seção **Embalagem padrão** lista os insumos usados para enviar **uma unidade** (caixa,
+saco, etiqueta…), com o custo atual. Ao registrar a venda eles vêm preenchidos (multiplicados pela quantidade) e o
+custo sai do lucro da venda. Filamento não entra: o custo dele já está na peça. Ver [insumos](insumos.md).
+
 ## Busca e listagem
 
 Busca por nome, código (SKU), código de barras, marca e modelo, paginação de 100 em 100. Cada linha mostra quantidade, custo

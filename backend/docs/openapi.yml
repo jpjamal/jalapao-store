@@ -3263,6 +3263,25 @@ components:
       - receivable
       - stock_value
       - unclassified_count
+    DefaultSupply:
+      type: object
+      description: Uma linha da embalagem padrão do produto (spec 040), por unidade
+        vendida.
+      properties:
+        supply:
+          type: string
+          format: uuid
+        supply_name:
+          type: string
+          readOnly: true
+        quantity:
+          type: integer
+          maximum: 1000
+          minimum: 1
+      required:
+      - quantity
+      - supply
+      - supply_name
     DraftPublication:
       type: object
       properties:
@@ -4399,6 +4418,10 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
           readOnly: true
           default: '0.000000'
+        default_supplies:
+          type: array
+          items:
+            $ref: '#/components/schemas/DefaultSupply'
         created_at:
           type: string
           format: date-time
@@ -4489,6 +4512,16 @@ components:
           nullable: true
           readOnly: true
         quantity:
+          type: integer
+          readOnly: true
+          default: 0
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        uncosted:
           type: integer
           readOnly: true
           default: 0
@@ -4715,6 +4748,10 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
           readOnly: true
           default: '0.000000'
+        default_supplies:
+          type: array
+          items:
+            $ref: '#/components/schemas/DefaultSupply'
         created_at:
           type: string
           format: date-time
@@ -5023,6 +5060,10 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        supplies_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
         net:
           type: string
           format: decimal
@@ -5232,6 +5273,19 @@ components:
         shortfall:
           type: integer
           readOnly: true
+        zero_cost_qty:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        cost_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
       required:
       - requested
       - shortfall
@@ -5301,6 +5355,16 @@ components:
           type: integer
           readOnly: true
           default: 0
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        uncosted:
+          type: integer
+          readOnly: true
+          default: 0
         created_at:
           type: string
           format: date-time
@@ -5319,6 +5383,8 @@ components:
       - price_per_gram
       - price_per_kg
       - quantity
+      - uncosted
+      - unit_cost
       - updated_at
     SupplyCategory:
       type: object
@@ -5387,6 +5453,11 @@ components:
         reason:
           type: string
           maxLength: 240
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
         receipt:
           type: string
           format: uuid

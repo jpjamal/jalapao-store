@@ -77,8 +77,13 @@ def create_sale(*, data, actor):
         adjust_stock(
             product_id=product.id, delta=-row["quantity"], reason="Venda confirmada", actor=actor, sale=sale
         )
-    # insumos usados (caixa, etiqueta…): baixa só do que tem, sem mexer no custo nem no lucro
-    consume_supplies_for_sale(sale=sale, lines=data.get("supplies") or [], actor=actor)
+    # insumos usados (caixa, saco, etiqueta…): baixa só do que tem; o custo deles sai do lucro (spec 040)
+    used = consume_supplies_for_sale(sale=sale, lines=data.get("supplies") or [], actor=actor)
+    supplies_cost = sum((line.cost_total for line in used), Decimal(0))
+    if supplies_cost:
+        sale.supplies_cost = supplies_cost
+        sale.profit = net - costs - supplies_cost
+        sale.save(update_fields=["supplies_cost", "profit", "updated_at"])
     if data.get("zpl"):
         SaleLabel.objects.create(
             sale=sale,
@@ -168,7 +173,7 @@ def cancel_sale(*, sale_id, actor):
 
 def _snapshot(sale):
     fields = ("channel", "reference", "external_channel", "external_id", "gross", "discount",
-              "platform_fee", "shipping_cost", "net", "profit", "cost_total", "status",
+              "platform_fee", "shipping_cost", "net", "profit", "cost_total", "supplies_cost", "status",
               "received_at", "cancelled_at", "deleted_at")
     result = {name: str(getattr(sale, name)) if getattr(sale, name) is not None else None for name in fields}
     result["items"] = [
@@ -210,7 +215,8 @@ def edit_sale(*, sale_id, data, actor):
         items=[{"quantity": item.quantity, "unit_price": item.unit_price} for item in items],
         discount=sale.discount, fee=sale.platform_fee, shipping=sale.shipping_cost,
     )
-    sale.gross, sale.net, sale.profit = totals.gross, totals.net, totals.net - sale.cost_total
+    sale.gross, sale.net = totals.gross, totals.net
+    sale.profit = totals.net - sale.cost_total - sale.supplies_cost
     sale.save(update_fields=["channel", "reference", "discount", "platform_fee", "shipping_cost",
                              "gross", "net", "profit", "updated_at"])
     SaleItem.objects.bulk_update(items, ["unit_price"])

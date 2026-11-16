@@ -223,7 +223,8 @@ class SupplyStockApiTests(TestCase):
 
     def test_pay_and_cancel_through_the_api(self):
         receipt = self.client.post("/api/v1/supply-receipts/", self.receipt_body(), format="json").json()
-        self.assertTrue(receipt["counts_as_expense_snapshot"])
+        # Embalagens não conta mais como despesa na compra: o custo entra em cada venda (spec 040)
+        self.assertFalse(receipt["counts_as_expense_snapshot"])
         paid = self.client.post(
             f"/api/v1/supply-receipts/{receipt['id']}/pay/", {"occurred_on": str(timezone.localdate())}, format="json"
         )

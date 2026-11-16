@@ -75,7 +75,8 @@ class SupplyExpenseOptionMigrationTests(TransactionTestCase):
                 "Filamentos": False,
                 "Acabamento": False,
                 "Colas e fitas": False,
-                "Embalagens": True,
+                # desligada pela spec 040: o custo da embalagem entra em cada venda
+                "Embalagens": False,
                 "Etiquetas e papelaria": True,
                 "Outra do dono": True,
             },

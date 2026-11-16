@@ -15,8 +15,10 @@ class ForgotPasswordSerializer(serializers.Serializer):
 
 
 class ResetPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(trim_whitespace=False)
-    password_confirmation = serializers.CharField(trim_whitespace=False)
+    # Com o corte de espaços nas pontas (padrão), igual ao login do simplejwt: senha gravada com
+    # espaço sobrando nunca passaria no login.
+    password = serializers.CharField()
+    password_confirmation = serializers.CharField()
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password_confirmation"]:

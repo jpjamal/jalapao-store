@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from apps.supplies.domain.pricing import normalize_material
 from apps.supplies.models import Supply, SupplyCategory, SupplyMovement, SupplyReceipt, SupplyStock
-from apps.supplies.services import adjust_supply_stock
+from apps.supplies.services import register_supply_adjustment
 
 
 class SupplyCategorySerializer(serializers.ModelSerializer):
@@ -46,15 +46,18 @@ class SupplySerializer(serializers.ModelSerializer):
     price_per_kg = serializers.SerializerMethodField()
     # saldo atual (rolos ou unidades); muda só por compra, baixa e ajuste
     quantity = serializers.IntegerField(source="stock.quantity", read_only=True, default=0)
+    # parte do saldo que sai sem custo numa venda (spec 040)
+    uncosted = serializers.IntegerField(source="stock.uncosted", read_only=True, default=0)
 
     class Meta:
         model = Supply
         fields = [
             "id", "category", "category_name", "category_is_filament", "name", "unit", "notes", "active",
             "material", "color", "roll_weight_g", "roll_price", "price_per_gram", "price_per_kg", "quantity",
-            "created_at", "updated_at",
+            "unit_cost", "uncosted", "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        # o custo unitário muda só pela compra ou por um ajuste de entrada com custo (spec 040)
+        read_only_fields = ["id", "unit_cost", "created_at", "updated_at"]
 
     def create(self, validated_data):
         supply = super().create(validated_data)
@@ -143,7 +146,7 @@ class SupplyPaymentInput(serializers.Serializer):
 class SupplyReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupplyReceipt
-        exclude = ["request_hash", "previous_roll_price"]
+        exclude = ["request_hash", "previous_roll_price", "previous_unit_cost"]
         read_only_fields = ["counts_as_expense_snapshot"]
 
 
@@ -152,13 +155,19 @@ class SupplyMovementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SupplyMovement
-        fields = ["id", "supply", "supply_name", "delta", "balance_after", "reason", "receipt", "actor", "created_at"]
+        fields = [
+            "id", "supply", "supply_name", "delta", "balance_after", "reason", "unit_cost", "receipt", "actor",
+            "created_at",
+        ]
         read_only_fields = ["id", "balance_after", "receipt", "actor", "created_at"]
+        # custo unitário opcional, só num ajuste de entrada (spec 040)
+        extra_kwargs = {"unit_cost": {"required": False, "allow_null": True, "min_value": 0}}
 
     def create(self, data):
-        return adjust_supply_stock(
+        return register_supply_adjustment(
             supply_id=data["supply"].id,
             delta=data["delta"],
             reason=data["reason"],
             actor=self.context["request"].user,
+            unit_cost=data.get("unit_cost"),
         )

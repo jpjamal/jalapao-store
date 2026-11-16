@@ -50,7 +50,8 @@ class SupplyViewSet(
     filterset_class = SupplyFilter
     search_fields = ["name", "color", "material", "category__name"]
     ordering_fields = [
-        "name", "category__name", "stock__quantity", "roll_price", "material", "color", "unit", "active",
+        "name", "category__name", "stock__quantity", "roll_price", "unit_cost", "material", "color", "unit",
+        "active",
     ]
     ordering_text_fields = ["name", "category__name", "material", "color", "unit"]
     ordering_zero_fields = ["stock__quantity"]

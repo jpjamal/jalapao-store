@@ -35,6 +35,27 @@ import { DetailDialog, DetailList, RowTitle, rowOpen } from "@/shared/components
 
 type Draft = { product_id: string; quantity: number; unit_price: string };
 type SupplyDraft = { supply_id: string; quantity: number };
+
+/* Embalagem padrão dos produtos da venda (spec 040): kit de cada produto × quantidade, somado por insumo. */
+function kitFor(items: Draft[], products: Product[]): SupplyDraft[] {
+  const total = new Map<string, number>();
+  for (const item of items) {
+    const product = products.find((p) => p.id === item.product_id);
+    for (const line of product?.default_supplies || []) {
+      total.set(line.supply, (total.get(line.supply) || 0) + line.quantity * Math.max(1, item.quantity || 1));
+    }
+  }
+  return [...total].map(([supply_id, quantity]) => ({ supply_id, quantity }));
+}
+
+/* Custo que a venda vai descontar do lucro (spec 040): a parte sem custo do saldo sai primeiro; filamento
+   sai sem custo. É uma estimativa da tela: o valor certo é calculado e congelado pelo servidor. */
+function supplyCost(line: SupplyDraft, supply: Supply | undefined): number {
+  if (!supply || supply.category_is_filament || supply.unit_cost == null) return 0;
+  const taken = Math.min(line.quantity || 0, supply.quantity);
+  const costed = Math.max(0, taken - Math.min(supply.uncosted, taken));
+  return costed * Number(supply.unit_cost);
+}
 const saleColumns: SortColumn[] = [
   { key: "created_at", label: "Data", kind: "date" },
   { key: "channel", label: "Canal", kind: "text" },
@@ -64,6 +85,12 @@ export default function Sales() {
   // insumos que a loja pode usar na venda (caixa, etiqueta…); sem permissão a lista vem vazia
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [usedSupplies, setUsedSupplies] = useState<SupplyDraft[]>([]);
+  // enquanto a pessoa não mexe nos insumos, eles seguem a embalagem padrão dos produtos (spec 040)
+  const [suppliesTouched, setSuppliesTouched] = useState(false);
+  function editSupplies(next: SupplyDraft[]) {
+    setSuppliesTouched(true);
+    setUsedSupplies(next);
+  }
   // por que a lista de insumos veio vazia: falha ao carregar (ex.: sem permissão) ou nada cadastrado
   const [suppliesError, setSuppliesError] = useState("");
   const [key, setKey] = useState(() => crypto.randomUUID());
@@ -96,6 +123,14 @@ export default function Sales() {
   }, [q.queryString]);
   useEffect(loadAux, [loadAux]);
   useEffect(loadRows, [loadRows]);
+  useEffect(() => {
+    if (!suppliesTouched) setUsedSupplies(kitFor(items, products));
+  }, [items, products, suppliesTouched]);
+  const kit = kitFor(items, products);
+  const suppliesEstimate = usedSupplies.reduce(
+    (sum, u) => sum + supplyCost(u, supplies.find((s) => s.id === u.supply_id)),
+    0,
+  );
   const load = useCallback(() => {
     loadAux();
     loadRows();
@@ -225,6 +260,7 @@ export default function Sales() {
               ["Taxas da plataforma", Number(viewing.platform_fee) ? brl(viewing.platform_fee) : ""],
               ["Frete pago pela loja", Number(viewing.shipping_cost) ? brl(viewing.shipping_cost) : ""],
               ["Valor líquido", brl(viewing.net)],
+              ["Custo das embalagens e insumos", Number(viewing.supplies_cost) ? brl(viewing.supplies_cost) : ""],
               ["Lucro", brl(viewing.profit)],
               ["Etiqueta", viewing.has_label ? viewing.label_filename || "Salva na venda" : ""],
             ]}
@@ -246,6 +282,7 @@ export default function Sales() {
                 {viewing.supplies.map((u, n) => (
                   <li key={n}>
                     {u.taken}× {u.supply_name}
+                    {Number(u.cost_total) ? ` · ${brl(u.cost_total)}` : u.taken ? " · sem custo" : ""}
                     {u.shortfall > 0 ? ` (faltou ${u.shortfall} de ${u.requested})` : ""}
                   </li>
                 ))}
@@ -316,6 +353,7 @@ export default function Sales() {
                 setOpen(false);
                 setItems([{ product_id: "", quantity: 1, unit_price: "0" }]);
                 setUsedSupplies([]);
+                setSuppliesTouched(false);
                 setSaleLabel(emptySaleLabel());
                 setReference("");
                 automaticReference.current = "";
@@ -428,10 +466,11 @@ export default function Sales() {
             </div>
             {(
               <div className="border rounded-md p-4 mb-5">
-                <h3>Insumos usados (opcional)</h3>
+                <h3>Embalagens e insumos usados (opcional)</h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Caixa, etiqueta e outros: dão baixa no saldo de insumos junto com a venda. Se faltar saldo, a
-                  venda continua e o insumo é baixado só até onde tem.
+                  Caixa, saco, etiqueta e outros: dão baixa no saldo de insumos junto com a venda e o custo deles sai
+                  do lucro desta venda. A embalagem padrão dos produtos já vem preenchida; mude se usou outra. Se
+                  faltar saldo, a venda continua e o insumo é baixado só até onde tem.
                 </p>
                 {suppliesError ? (
                   <p role="alert" className="text-sm text-destructive mb-3">
@@ -454,7 +493,7 @@ export default function Sales() {
                         id={`sup-${index}`}
                         value={u.supply_id}
                         onChange={(e) =>
-                          setUsedSupplies(
+                          editSupplies(
                             usedSupplies.map((r, i) => (i === index ? { ...r, supply_id: e.target.value } : r)),
                           )
                         }
@@ -468,6 +507,7 @@ export default function Sales() {
                           .map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name} — saldo {s.quantity} {s.unit}
+                              {!s.category_is_filament && s.unit_cost != null ? ` · ${brl(s.unit_cost)} cada` : ""}
                             </option>
                           ))}
                       </select>
@@ -482,7 +522,7 @@ export default function Sales() {
                         required
                         value={u.quantity}
                         onChange={(e) =>
-                          setUsedSupplies(
+                          editSupplies(
                             usedSupplies.map((r, i) =>
                               i === index ? { ...r, quantity: Number(e.target.value) } : r,
                             ),
@@ -493,20 +533,32 @@ export default function Sales() {
                     <Button
                       type="button"
                       variant="ghost"
-                      onClick={() => setUsedSupplies(usedSupplies.filter((_, i) => i !== index))}
+                      onClick={() => editSupplies(usedSupplies.filter((_, i) => i !== index))}
                     >
                       Remover
                     </Button>
                   </div>
                 ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={supplies.length === 0 || usedSupplies.length >= supplies.length}
-                  onClick={() => setUsedSupplies([...usedSupplies, { supply_id: "", quantity: 1 }])}
-                >
-                  Adicionar insumo
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={supplies.length === 0 || usedSupplies.length >= supplies.length}
+                    onClick={() => editSupplies([...usedSupplies, { supply_id: "", quantity: 1 }])}
+                  >
+                    Adicionar insumo
+                  </Button>
+                  {suppliesTouched && kit.length > 0 && (
+                    <Button type="button" variant="ghost" onClick={() => setSuppliesTouched(false)}>
+                      Voltar para a embalagem padrão
+                    </Button>
+                  )}
+                  {usedSupplies.some((u) => u.supply_id) && (
+                    <p className="text-sm text-muted-foreground">
+                      Custo estimado: <strong className="money">{brl(suppliesEstimate)}</strong> (sai do lucro)
+                    </p>
+                  )}
+                </div>
               </div>
             )}
             <div className="grid md:grid-cols-3 gap-4">

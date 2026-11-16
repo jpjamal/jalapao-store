@@ -21,6 +21,7 @@ from apps.catalog.models import (
 )
 from apps.supplies.domain.pricing import price_per_kg
 from apps.supplies.models import Supply
+from apps.supplies.services import set_product_supplies
 from apps.inventory.models import Stock
 
 
@@ -116,6 +117,19 @@ class CategorySerializer(serializers.ModelSerializer):
         return attrs
 
 
+class DefaultSupplySerializer(serializers.Serializer):
+    """Uma linha da embalagem padrão do produto (spec 040), por unidade vendida."""
+
+    supply = serializers.PrimaryKeyRelatedField(queryset=Supply.objects.select_related("category"))
+    supply_name = serializers.CharField(source="supply.name", read_only=True)
+    quantity = serializers.IntegerField(min_value=1, max_value=1000)
+
+    def validate_supply(self, supply):
+        if supply.category.is_filament:
+            raise serializers.ValidationError("Filamento não entra na embalagem padrão: o custo dele já está na peça.")
+        return supply
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), required=False)
     category_name = serializers.CharField(source="category.name", read_only=True)
@@ -128,6 +142,8 @@ class ProductSerializer(serializers.ModelSerializer):
     average_cost = serializers.DecimalField(
         source="stock.average_cost", max_digits=18, decimal_places=6, read_only=True, default=0
     )
+    # embalagem padrão: insumos sugeridos na venda deste produto (spec 040)
+    default_supplies = DefaultSupplySerializer(many=True, required=False)
 
     class Meta:
         model = Product
@@ -149,6 +165,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "quantity",
             "stock_value",
             "average_cost",
+            "default_supplies",
             "created_at",
             "updated_at",
         ]
@@ -196,10 +213,13 @@ class ProductSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         profile = validated_data.pop("printing", None)
+        kit = validated_data.pop("default_supplies", None)
         product = Product.objects.create(**validated_data)
         Stock.objects.create(product=product)
         if profile:
             self._profile(product, profile)
+        if kit:
+            set_product_supplies(product=product, lines=kit)
         return product
 
     def _resolve_lines(self, lines, profile):
@@ -247,7 +267,10 @@ class ProductSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance = Product.objects.select_for_update().get(pk=instance.pk)
         profile = validated_data.pop("printing", None)
+        kit = validated_data.pop("default_supplies", None)
         instance = super().update(instance, validated_data)
+        if kit is not None:
+            set_product_supplies(product=instance, lines=kit)
         if instance.category.uses_printing_profile:
             self._profile(instance, profile or {})
         else:

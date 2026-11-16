@@ -25,6 +25,8 @@ class Sale(Entity):
     platform_fee = amount()
     shipping_cost = amount()
     cost_total = amount()
+    # custo dos insumos usados (embalagem, etiqueta…), congelado na venda e descontado do lucro (spec 040)
+    supplies_cost = amount()
     net = models.DecimalField(max_digits=14, decimal_places=2)
     profit = models.DecimalField(max_digits=14, decimal_places=2)
     status = models.CharField(

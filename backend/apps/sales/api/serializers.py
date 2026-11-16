@@ -124,7 +124,7 @@ class SaleSupplyOutput(serializers.ModelSerializer):
 
     class Meta:
         model = SaleSupply
-        fields = ["supply", "supply_name", "requested", "taken", "shortfall"]
+        fields = ["supply", "supply_name", "requested", "taken", "shortfall", "zero_cost_qty", "unit_cost", "cost_total"]
 
     def get_shortfall(self, line) -> int:
         return line.requested - line.taken

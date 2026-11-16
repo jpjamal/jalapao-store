@@ -45,6 +45,7 @@ foi feito e o que falta) → `validation.md` (evidência). Regras em
 | [036](036-orcamento-de-pecas-3d/spec.md) | Orçamento de peças 3D para o cliente, só com o valor final | conferir o PDF em produção |
 | [037](037-retirada-uso-pessoal/spec.md) | Motivo "Uso pessoal" para retirar produto do estoque sem ser venda, perda ou defeito | conferir em produção |
 | [038](038-calculadora-de-roas/spec.md) | Calculadora de ROAS (empate, visibilidade e rentabilidade) ao lado das taxas de marketplace | conferir em produção e no celular |
+| [040](040-custo-das-embalagens-na-venda/spec.md) | Custo das embalagens no lucro da venda e embalagem padrão por produto | conferir em produção |
 | [039](039-recuperar-senha-por-email/spec.md) | Recuperar a senha por e-mail ("Esqueci minha senha") e e-mail do `jpmorais` | criar variáveis no GitHub; conferir em produção |
 
-Próxima spec: **040**.
+Próxima spec: **041**.

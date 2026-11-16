@@ -189,7 +189,7 @@ const supplyColumns: SortColumn[] = [
   { key: "name", label: "Insumo", kind: "text" },
   { key: "category__name", label: "Categoria", kind: "text" },
   { key: "stock__quantity", label: "Saldo", kind: "number" },
-  { key: "roll_price", label: "Preço do rolo", kind: "number" },
+  { key: "unit_cost", label: "Custo unitário", kind: "number" },
   { key: "active", label: "Status", kind: "text" },
 ];
 
@@ -304,6 +304,20 @@ export default function Supplies() {
           <DetailList
             items={[
               ["Saldo", `${viewing.quantity} ${viewing.unit}`],
+              [
+                "Custo unitário nas vendas",
+                viewing.category_is_filament
+                  ? "Filamento sai sem custo na venda (o custo está na peça)"
+                  : viewing.unit_cost != null
+                    ? brl(viewing.unit_cost)
+                    : "Ainda sem custo: registre uma compra ou um ajuste de entrada com custo",
+              ],
+              [
+                "Sem custo nas vendas",
+                viewing.uncosted
+                  ? `${viewing.uncosted} ${viewing.unit} (já contados como despesa ou sem custo informado; saem primeiro)`
+                  : "",
+              ],
               ["Material", viewing.material],
               ["Cor", viewing.color],
               ["Peso do rolo", viewing.roll_weight_g ? `${Number(viewing.roll_weight_g)} g` : ""],
@@ -387,7 +401,7 @@ export default function Supplies() {
                   <SortableTh label="Insumo" sortKey="name" sort={q.sort} onSort={q.toggleSort} />
                   <SortableTh label="Categoria" sortKey="category__name" sort={q.sort} onSort={q.toggleSort} />
                   <SortableTh label="Saldo" sortKey="stock__quantity" sort={q.sort} onSort={q.toggleSort} />
-                  <SortableTh label="Preço do rolo" sortKey="roll_price" sort={q.sort} onSort={q.toggleSort} />
+                  <SortableTh label="Custo unitário" sortKey="unit_cost" sort={q.sort} onSort={q.toggleSort} />
                   <th>Por grama / por kg</th>
                   <SortableTh label="Status" sortKey="active" sort={q.sort} onSort={q.toggleSort} />
                   <th>
@@ -410,9 +424,14 @@ export default function Supplies() {
                     <td data-label="Categoria">{s.category_name}</td>
                     <td data-label="Saldo">
                       <strong>{s.quantity}</strong> {s.unit}
+                      {!s.category_is_filament && s.uncosted > 0 && (
+                        <p className="text-xs text-muted-foreground font-normal">{s.uncosted} sem custo</p>
+                      )}
                     </td>
-                    <td data-label="Preço do rolo" className="money">
-                      {s.roll_price != null ? brl(s.roll_price) : "—"}
+                    <td data-label="Custo unitário" className="money">
+                      {s.category_is_filament
+                        ? s.roll_price != null ? `${brl(s.roll_price)} o rolo` : "—"
+                        : s.unit_cost != null ? brl(s.unit_cost) : "—"}
                     </td>
                     <td data-label="Por grama / por kg" className="money">
                       {s.price_per_gram != null

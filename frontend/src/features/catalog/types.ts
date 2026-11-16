@@ -48,4 +48,6 @@ export type Product = {
   active: boolean;
   quantity: number;
   printing: Printing | null;
+  /* embalagem padrão: insumos sugeridos na venda, por unidade vendida (spec 040) */
+  default_supplies?: { supply: string; supply_name: string; quantity: number }[];
 };

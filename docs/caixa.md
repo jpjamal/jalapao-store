@@ -57,8 +57,10 @@ resultado = lucro real
 - **Lucro real** é o das vendas já recebidas ([lucro real](specs/025-lucro-real/spec.md)).
 - **Regra única: o que já está no custo da peça 3D não vira despesa.** O custo da peça inclui o filamento (linhas
   de filamento) e uma energia estimada, por isso a categoria **Energia** e os insumos **Filamentos**,
-  **Acabamento** e **Colas e fitas** começam sem contar. Embalagens, Etiquetas e papelaria, Ferramentas e Outros
-  contam, porque não estão em custo nenhum.
+  **Acabamento** e **Colas e fitas** começam sem contar. Etiquetas e papelaria, Ferramentas e Outros contam, porque
+  não estão em custo nenhum. **Embalagens** deixou de contar na compra com a [spec 040](specs/040-custo-das-embalagens-na-venda/spec.md):
+  o custo da embalagem entra no lucro de cada venda, só pelo que foi usado (compras antigas continuam como foram
+  classificadas).
 - **Compra de produto não é despesa**: é estoque, e o custo do produto já está no lucro de cada venda.
 - Empréstimo, aporte e retirada não entram, mas estão no saldo do Caixa.
 - Tudo desde o começo, como os outros números da tela inicial; não há filtro por período.

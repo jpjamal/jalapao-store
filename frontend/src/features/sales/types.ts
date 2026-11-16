@@ -12,13 +12,24 @@ export type Sale = {
   shipping_cost: string;
   net: string;
   profit: string;
+  /* custo dos insumos usados (embalagem, etiqueta…), já descontado do lucro (spec 040) */
+  supplies_cost: string;
   status: string;
   received_at: string | null;
   has_label: boolean;
   label_order_id: string;
   label_filename: string;
   items: SaleItem[];
-  supplies?: { supply_name: string; requested: number; taken: number; shortfall: number }[];
+  supplies?: {
+    supply_name: string;
+    requested: number;
+    taken: number;
+    shortfall: number;
+    /* das unidades baixadas, quantas saíram sem custo (spec 040) */
+    zero_cost_qty: number;
+    unit_cost: string;
+    cost_total: string;
+  }[];
 };
 
 export type SaleLabel = {
